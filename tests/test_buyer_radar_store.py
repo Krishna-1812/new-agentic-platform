@@ -151,3 +151,48 @@ def test_rfp_searches_are_spaced_and_recent_companies_are_read_for_the_several_p
         "the verdict's company, else the post's; a lead marked not a fit does not count"
     db._exec("UPDATE br_leads SET created_at = now() - interval '70 days' WHERE id=%s", (ids[0],))
     assert db.recent_companies("acct:1") == [("rfp", "City of Pune")] and db.recent_companies("acct:2") == []
+
+
+def test_identities_cursors_and_the_daily_view(db):
+    run = db.create_run("acct:1", br.merged({}), 2.0)
+    [a, b] = db.add_leads("acct:1", run, [_lead("p1"), _lead("p2", person="in/ravi")])
+    assert db.backfill_identities("acct:1", br.identities) == 2, "leads from before identities were kept get them"
+    assert db.backfill_identities("acct:1", br.identities) == 0, "once"
+    assert db.known_identities("acct:1", ["person:in/jane", "person:in/ravi", "person:in/x", "lead:%d" % a]) == \
+        {"person:in/jane", "person:in/ravi", "lead:%d" % a}
+    assert db.known_identities("acct:2", ["person:in/jane"]) == set(), "each workspace its own"
+    db.add_identities("acct:1", [(b, ["person:in/jane"])])
+    assert db._exec("SELECT lead_id FROM br_identities WHERE owner='acct:1' AND ident='person:in/jane'", fetch="one")[0] == a, \
+        "the first lead keeps it"
+    db.update_lead(b, "acct:1", person="in/ravi-k")
+    assert "person:in/ravi-k" in db.known_identities("acct:1", ["person:in/ravi-k"]), "a profile found later counts too"
+    assert db.get_cursor("acct:1", "icp:x") == 1
+    db.set_cursor("acct:1", "icp:x", 4)
+    db.set_cursor("acct:1", "icp:x", 5)
+    assert db.get_cursor("acct:1", "icp:x") == 5 and db.get_cursor("acct:2", "icp:x") == 1
+    from datetime import datetime, timedelta, timezone
+    d = db.create_run("acct:1", br.merged({}), 2.0, trigger="daily")
+    since = datetime.now(timezone.utc) - timedelta(hours=1)
+    assert [r["id"] for r in db.daily_runs_since("acct:1", since)] == [d] and db.daily_runs_since("acct:2", since) == []
+    db.update_run(d, status="ready", summary={"slack": "waiting", "slack_at": "2026-10-22T03:30:00+00:00", "new": 3})
+    assert [r[0] for r in db.slack_waiting()] == [d]
+    assert db.claim_slack(d) is True and db.claim_slack(d) is False, "posted once"
+    db.set_run_summary_key(d, "slack", "sent")
+    assert db.get_run(d, "acct:1")["summary"] == {"slack": "sent", "slack_at": "2026-10-22T03:30:00+00:00", "new": 3}
+    assert [x["id"] for x in db.run_leads("acct:1", run, 80)] == [a, b] and db.run_leads("acct:1", run, 95) == []
+
+
+def test_the_sheet_gets_new_and_changed_leads_and_every_send_changes_a_lead(db):
+    run = db.create_run("acct:1", br.merged({}), 2.0)
+    [a, b] = db.add_leads("acct:1", run, [_lead("p1", emails=["jane@acme.com"]), _lead("p2", person="in/ravi")])
+    assert [x["id"] for x in db.sheet_pending("acct:1")] == [a, b] and db.sheet_pending("acct:1")[0]["sends"] == []
+    at = db.db_now()
+    db.mark_sheet("acct:1", [a, b], at)
+    assert db.sheet_pending("acct:1") == []
+    db.record_send("acct:1", a, "email", "jane@acme.com", "in/jane", "sent")
+    assert [x["id"] for x in db.sheet_pending("acct:1")] == [a] and db.sheet_pending("acct:1")[0]["status"] == "contacted"
+    db.mark_sheet("acct:1", [a], db.db_now())
+    db.record_send("acct:1", a, "linkedin", "in/jane", "in/jane", "sent")
+    got = db.sheet_pending("acct:1")
+    assert [x["id"] for x in got] == [a] and len(got[0]["sends"]) == 2, "a second send changes the row too"
+    assert db.sheet_pending("acct:2") == []

@@ -313,11 +313,23 @@ SLACK_LINK = {"jobs": "Open the company", "comment": "Open the post they comment
               "reddit": "Open the thread"}
 
 
-def slack_message(owner_label, leads, page_url):
+def slack_message(owner_label, leads, page_url, *, total=None, daily=False, sheet_url=""):
+    """The strong leads, each as the team reads it. `total` is every new lead of the run (the strong ones
+    are some of them); the daily run says how its day went even when none is strong; `sheet_url` adds a
+    button to the workspace's Google Sheet."""
     from . import buyer_radar as br, watch_alerts
     esc = watch_alerts.esc
-    blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": "*Buyer Radar: %d new lead%s%s*" % (
-        len(leads), "" if len(leads) == 1 else "s", (" for " + esc(owner_label)) if owner_label else "")}}]
+    who = (" for " + esc(owner_label)) if owner_label else ""
+    if leads:
+        head = "*Buyer Radar: %d new lead%s%s*" % (len(leads), "" if len(leads) == 1 else "s", who)
+    else:
+        head = "*Buyer Radar%s: no strong leads today*" % who if total else "*Buyer Radar%s: nothing new today*" % who
+    blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": head}}]
+    if total is not None and (daily or total > len(leads)):
+        blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": (
+            "%d new lead%s today, %d strong%s" % (total, "" if total == 1 else "s", len(leads),
+                                                  ", all in the Google Sheet" if sheet_url else "")
+            if daily else "%d new leads in all, the %d strong ones below" % (total, len(leads)))}]})
     for lead in leads[:10]:
         p, v = lead["post"], lead["verdict"]
         a = p.get("author") or {}
@@ -335,13 +347,17 @@ def slack_message(owner_label, leads, page_url):
             esc(v.get("intent_label") or ""), lead["score"], "%s: %s" % (who, esc(v.get("need") or "")), link)}})
     if len(leads) > 10:
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "and %d more" % (len(leads) - 10)}]})
+    buttons = []
     if page_url:
-        blocks.append({"type": "actions", "elements": [{"type": "button", "text": {"type": "plain_text", "text": "Open Buyer Radar"},
-                                                        "url": page_url}]})
+        buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open Buyer Radar"}, "url": page_url})
+    if sheet_url:
+        buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open the Google Sheet"}, "url": sheet_url})
+    if buttons:
+        blocks.append({"type": "actions", "elements": buttons})
     return {"text": "Buyer Radar: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
 
 
-def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=None):
+def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=None, total=None, daily=False, sheet_url=""):
     """(ok, why). Never raises."""
     from . import gads_digest
     token = slack_token()
@@ -350,7 +366,7 @@ def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=No
     post = post or gads_digest.post
     url = page_url or (base_url() + "/strategic-agents/buyer-radar")
     try:
-        ok, err, _ = post(token, channel, slack_message(owner_label, leads, url))
+        ok, err, _ = post(token, channel, slack_message(owner_label, leads, url, total=total, daily=daily, sheet_url=sheet_url))
     except Exception as e:
         return False, "%s" % type(e).__name__
     return (True, "") if ok else (False, err or "failed")

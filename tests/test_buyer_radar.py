@@ -286,16 +286,35 @@ def test_a_draft_has_no_em_dashes_and_a_note_linkedin_accepts():
 # == the run =============================================================================================
 
 class FakeStore:
-    def __init__(self, known=(), unipile_today=0, recent=(), rfp_hours_ago=None):
+    def __init__(self, known=(), unipile_today=0, recent=(), rfp_hours_ago=None, idents=()):
         self.known, self.spend, self.leads, self.updates, self.sent = set(known), [], {}, [], {"email": 0, "linkedin": 0}
         self.unipile_today, self.seen, self.recent, self.rfp_hours_ago = unipile_today, set(), list(recent), rfp_hours_ago
+        self.idents, self.cursors = {i: 0 for i in idents}, {}
 
     def install(self, monkeypatch):
         monkeypatch.setenv("UNIPILE_API_KEY", "u")
         monkeypatch.setenv("SALESHANDY_API_KEY", "s")
         for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
-                     "unipile_results_today", "mark_seen", "spent_within", "recent_companies"):
+                     "unipile_results_today", "mark_seen", "spent_within", "recent_companies", "known_identities",
+                     "add_identities", "backfill_identities", "get_cursor", "set_cursor"):
             monkeypatch.setattr(store, name, getattr(self, name))
+
+    def known_identities(self, owner, idents):
+        return {i for i in idents if i in self.idents}
+
+    def add_identities(self, owner, pairs):
+        for lead_id, idents in pairs:
+            for i in idents:
+                self.idents.setdefault(i, lead_id)
+
+    def backfill_identities(self, owner, identities_of):
+        return 0
+
+    def get_cursor(self, owner, key):
+        return self.cursors.get(key, 1)
+
+    def set_cursor(self, owner, key, page):
+        self.cursors[key] = page
 
     def spent_within(self, owner, op, hours):
         return op == "rfp-search" and self.rfp_hours_ago is not None and self.rfp_hours_ago < hours
@@ -374,8 +393,9 @@ def deps(scores, out, **over):
         out.setdefault("messaged", []).append(lead["id"])
         return {"ok": True}
 
-    def slack(channel, owner, leads):
+    def slack(channel, owner, leads, **kw):
         out["slack"] = (channel, [x["score"] for x in leads])
+        out["slack_kw"] = kw
         return True, ""
 
     def find_emails(leads):
@@ -396,7 +416,7 @@ def deps(scores, out, **over):
          "job_locations": lambda places: (["101"] * len(places), []), "comments": comments,
          "people": lambda leads, offers: None,
          "rfps": lambda queries, budget, model: out.setdefault("rfps", len(queries)) and {"rfps": [], "notes": [], "searches": 0},
-         "reddit": lambda queries, per_query: out.setdefault("reddit", (len(queries), per_query)) and {"posts": [], "notes": []}, "icp": lambda pairs, per_icp, known: out.setdefault("icp", (len(pairs), per_icp)) and ([], []),
+         "reddit": lambda queries, per_query: out.setdefault("reddit", (len(queries), per_query)) and {"posts": [], "notes": []}, "icp": lambda pairs, per_icp, known, cursor=None: out.setdefault("icp", (len(pairs), per_icp)) and ([], []),
          "sequence": lambda owner, lead, settings, by, auto: out.setdefault("sequenced", []).append(lead["id"]) or {"ok": True}}
     d.update(over)
     return d, posts
@@ -421,12 +441,14 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     assert fake.updates[:6] == ["searching", "reading", "reading comments", "searching for RFPs", "finding people", "drafting"]
     assert out["rfps"] == sum(len(q) for q in rfp.OFFER_QUERIES.values()) and "reddit" not in out, \
         "RFPs searched with every offer's searches; Reddit skipped without its keys"
-    assert out["icp"] == (6, 5), "30 people a search, shared by the six customer profiles"
+    assert out["icp"] == (6, 7), "28 more to reach the 30 aimed for, half again over the six profiles: 7 each"
     assert out["comments_of"] == [posts[0]["key"], posts[2]["key"]], "the comments of the posts kept, best first"
     assert fake.seen == {p["key"] for p in posts}, "every post read is remembered, kept or not"
     assert [(c["score"], c["role"]) for c in summary["closest"]] == [(40, "buyer"), (10, "buyer")], \
         "the best posts not kept, so a search that keeps nothing says how close it came"
-    assert summary["closest"][0]["url"].startswith("https://www.linkedin.com/posts/") and summary["notes"] == []
+    assert summary["closest"][0]["url"].startswith("https://www.linkedin.com/posts/")
+    assert summary["notes"] == ["2 new leads, under the 30 aimed for: the customer profiles found 0 new people who fit. "
+                                "Widen them in Settings (more titles, places or industries)."], "says why the day came up short"
 
 
 def test_posts_claude_could_not_read_are_said_in_the_runs_notes(monkeypatch):
@@ -436,7 +458,7 @@ def test_posts_claude_could_not_read_are_said_in_the_runs_notes(monkeypatch):
     d["judge"] = lambda ps, offers, budget, model: {posts[0]["key"]: verdict(92)}
     summary = br.run(1, "k", br.merged({}), deps=d)
     assert summary["read"] == 1 and summary["kept"] == 1 and summary["closest"] == []
-    assert summary["notes"][-1] == "Claude could not read 2 of the 3 posts."
+    assert "Claude could not read 2 of the 3 posts." in summary["notes"]
 
 
 def test_a_post_already_kept_is_not_read_again(monkeypatch):
@@ -909,16 +931,20 @@ def test_the_daily_search_needs_the_token_and_keeps_to_each_cap(mem, monkeypatch
     monkeypatch.setenv("UNIPILE_API_KEY", "u")
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
-    mem["settings"].update({"acct:1": {"daily": True}, "acct:2": {"daily": True}, "acct:3": {"daily": True, "monthly_cap_usd": 1},
-                            "acct:4": {"daily": True, "source": "apify", "sources": ["posts"]}})
+    on = {"daily": True, "daily_hour": 0}              # due from India midnight, whenever the test runs
+    mem["settings"].update({"acct:1": on, "acct:2": on, "acct:3": dict(on, monthly_cap_usd=1),
+                            "acct:4": dict(on, source="apify", sources=["posts"])})
     monkeypatch.setattr(store, "daily_owners", lambda: ["acct:1", "acct:2", "acct:3", "acct:4"])
-    monkeypatch.setattr(store, "ran_today", lambda owner: owner == "acct:2")
+    monkeypatch.setattr(store, "daily_runs_since", lambda owner, since: [{"id": 9, "status": "ready"}] if owner == "acct:2" else [])
     monkeypatch.setattr(store, "month_spend", lambda owner: {"usd": 5.0 if owner == "acct:3" else 0, "credits": 0})
+    monkeypatch.setattr(br, "deliver_waiting", lambda now=None: 2)
     r = c.post("/api/buyer-radar/daily", headers={"Authorization": "Bearer s3cret"})
-    assert r.get_json() == {"ok": True, "started": 1, "skipped": {"ran_today": 1, "monthly_cap": 1, "running": 0,
-                                                                   "no_search_key": 1}}, "acct:4 searches with Apify, unset"
+    assert r.get_json() == {"ok": True, "started": 1, "slack_posted": 2,
+                            "skipped": {"not_yet": 0, "done_today": 1, "monthly_cap": 1, "running": 0, "no_search_key": 1}}, \
+        "acct:4 searches with Apify, unset"
     assert [x[0] for x in mem["runs"]] == ["acct:1"] and mem["runs"][0][3] == "daily"
     assert mem["runs"][0][1]["posted"] == "3months", "a first search reads as far back as Settings says"
+    assert mem["runs"][0][1]["deliver_at"].endswith("+00:00"), "the Slack time goes with the run"
     mem.update(runs=[], ran_within={"acct:1"})
     c.post("/api/buyer-radar/daily", headers={"Authorization": "Bearer s3cret"})
     assert mem["runs"][0][1]["posted"] == "week", "searched this week already: the last week's posts are the new ones"

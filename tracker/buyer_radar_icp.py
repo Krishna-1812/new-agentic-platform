@@ -249,14 +249,29 @@ def signal(icp, offer, person, company=None):
             "reactions": 0, "comments": 0, "query": icp["name"], "social_id": ""}
 
 
-def find(icps, *, client=None, per_icp=PER_ICP, known=None):
+def cursor_key(icp):
+    """One profile's search, as its filters: editing the profile starts its search again from page 1."""
+    import hashlib
+    import json
+    raw = json.dumps([people_filters(icp), company_filters(icp)], sort_keys=True, default=str)
+    return "icp:" + hashlib.sha1(raw.encode()).hexdigest()[:16]
+
+
+def find(icps, *, client=None, per_icp=PER_ICP, known=None, cursor=None):
     """The people each ICP finds that the workspace has not met, best first, at most per_icp each:
     [(offer, icp, signal, score)] and notes. `icps` is [(offer, icp)]; `known(keys)` says which of the keys
     the workspace has met before (a lead, or looked at), so the search pages on past them (MAX_PAGES at
-    most) instead of finding the same first page every day. Free."""
+    most). Free.
+
+    `cursor` is (get(key) -> page, set(key, page)): where each profile's search stopped last time. A run
+    starts there, so day after day it goes on through Saleshandy's results instead of reading the same
+    first pages and running dry. It stays on a page it did not finish (the people left on it are for the
+    next run) and goes back to page 1 at the end of the results, where people who newly fit (new in their
+    role this week) come first."""
     from . import saleshandy_client as sh
     client = client or sh.Client()
     known = known or (lambda keys: set())
+    get_page, set_page = cursor or (lambda key: 1, lambda key, page: None)
     out, notes, taken = [], [], set()      # taken: people an earlier profile kept this run
 
     for offer, icp in icps:
@@ -276,12 +291,14 @@ def find(icps, *, client=None, per_icp=PER_ICP, known=None):
             return new
 
         cf = company_filters(icp)
+        ckey = cursor_key(icp)
+        start = max(1, int(get_page(ckey) or 1))
+        next_page = start
         try:
-            for page in range(1, MAX_PAGES + 1):
+            for page in range(start, start + MAX_PAGES):
                 if cf is None:
                     res = client.search_people(people_filters(icp), page=page)
                     found += fresh([(p, None) for p in res.get("people") or []])
-                    more = res.get("has_next")
                 else:
                     res = client.search_companies(cf, page=page)
                     companies = res.get("companies") or []
@@ -291,14 +308,20 @@ def find(icps, *, client=None, per_icp=PER_ICP, known=None):
                         found += fresh([(p, c) for p in (client.search_people(people_filters(icp, company=c)).get("people") or [])[:2]])
                         if len(found) >= per_icp:
                             break
-                    more = res.get("has_next")
-                if len(found) >= per_icp or not more:
+                more = bool(res.get("has_next"))
+                if len(found) >= per_icp:
+                    next_page = page                 # not finished: the rest of this page is the next run's
+                    break
+                next_page = page + 1 if more else 1  # the end of the results: back to the newest
+                if not more:
                     break
         except sh.SaleshandyError as e:
             notes.append("Saleshandy stopped at “%s”: %s" % (icp["name"], e))
             if isinstance(e, (sh.AuthError, sh.RateLimited)):
                 break
             failed = True
+        if not failed:
+            set_page(ckey, next_page)
         rows = sorted(((offer, icp, signal(icp, offer, p, c), score(icp, p)) for p, c in found), key=lambda r: -r[3])[:per_icp]
         taken.update(r[2]["key"] for r in rows)
         out += rows

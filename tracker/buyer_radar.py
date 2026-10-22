@@ -150,7 +150,8 @@ DEFAULTS = {
     "jobs_per_query": 20,             # job ads per title
     "comment_posts": 10,              # the best posts kept whose comments are read
     "icps": {},                       # offer -> its customer profiles, in place of buyer_radar_icp.DEFAULT_ICPS
-    "icp_per_run": 30,                # people the customer profiles add to a run, all profiles together
+    "icp_per_run": 30,                # the most people the customer profiles add to a run, all profiles together
+    "daily_leads": 30,                # new leads a run aims for: the profiles fill what the other places leave
     "rfp_queries": {},                # offer -> its own RFP searches, in place of buyer_radar_rfp.OFFER_QUERIES
     "rfp_days": 7,                    # the RFP search runs once in this many days, not every run
     "reddit_queries": {},             # offer -> its own Reddit searches, in place of buyer_radar_reddit.OFFER_QUERIES
@@ -163,6 +164,8 @@ DEFAULTS = {
     "keep_score": 50,                 # a post scored below this is not kept as a lead
     "alert_score": 70,                # Slack and the "strong" filter
     "daily": False,                   # the once-a-day run (.github/workflows/buyer-radar-daily.yml)
+    "daily_hour": 9,                  # India time: the daily run's Slack message goes out at this hour
+    "sheet_id": "",                   # a Google Sheet every lead goes to, one detailed row each (buyer_radar_sheet)
     "run_cap_usd": 2.0,               # the most one run may spend
     "monthly_cap_usd": 40.0,          # the daily run is skipped once this month's spend reaches it
     "slack_channel": "",
@@ -178,7 +181,7 @@ DEFAULTS = {
 LIMITS = {"per_query": (5, 100), "keep_score": (0, 100), "alert_score": (0, 100), "send_score": (50, 100),
           "daily_email_cap": (0, 100), "daily_linkedin_cap": (0, 80), "jobs_days": (1, 30),
           "jobs_per_query": (5, 100), "comment_posts": (0, 30), "icp_per_run": (0, 100), "rfp_days": (1, 30),
-          "reddit_per_query": (5, 100)}
+          "reddit_per_query": (5, 100), "daily_hour": (0, 23), "daily_leads": (0, 100)}
 USD_LIMITS = {"run_cap_usd": (0.1, 20.0), "monthly_cap_usd": (1.0, 500.0)}
 MAX_QUERIES = 20
 MAX_JOB_QUERIES = 20
@@ -404,6 +407,13 @@ def clean_settings(body, current=None):
     for k in ("daily", "auto_email", "auto_linkedin", "find_emails", "auto_sequence"):
         if k in body:
             out[k] = body[k] is True
+    if "sheet_id" in body:
+        from . import buyer_radar_sheet as sheet
+        raw = str(body["sheet_id"] or "").strip()
+        sid = sheet.sheet_id_of(raw)
+        if raw and not sid:
+            raise ValueError("The Google Sheet should be its link (https://docs.google.com/spreadsheets/d/...).")
+        out["sheet_id"] = sid
     if "slack_channel" in body:
         ch = str(body["slack_channel"] or "").strip()
         if ch and not CHANNEL_RX.match(ch):
@@ -585,6 +595,111 @@ def multi_signal(leads, recent=()):
     return n
 
 
+# == nobody twice ========================================================================================
+# A post, comment, job ad, RFP or thread read once is never read again (br_seen), and the same one is never
+# two leads (br_leads is unique by key). These go further: the same person, hiring company or RFP is never
+# a new lead twice, however it was found again (another post by them, their company's job ads next month,
+# the same RFP at another link). br_identities keeps them for every lead.
+
+def _norm_words(v):
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", str(v or "").lower())).strip()
+
+
+def _lead_person_name(lead):
+    p = lead.get("post") or {}
+    if lead.get("source") == "jobs":         # the company's decision maker the lead is written to
+        from . import buyer_radar_source as src
+        person = lead.get("person") or ""
+        for c in p.get("contacts") or []:
+            if person and person in (c.get("key"), src.profile_key(c.get("linkedin"))):
+                return c.get("name") or ""
+        return ""
+    a = p.get("author") or {}
+    return "" if a.get("company") else (a.get("name") or "")
+
+
+def identities(lead):
+    """Who or what a lead is, each a string kept in br_identities:
+        person:<key>            their LinkedIn profile, Saleshandy id, LinkedIn member id or Reddit name
+        name:<name>|<company>   a person by name at their company (a LinkedIn author found again by Saleshandy)
+        hiring:<company>        a company found by its job ads, once ever, not once a month
+        rfp:<issuer>|<title>    an RFP, whatever link it was found at
+    A company page's posts count as one author; "Self-employed" and the like are never a company."""
+    p = lead.get("post") or {}
+    source = lead.get("source") or "post"
+    out = set()
+    person = str(lead.get("person") or "").strip()
+    if person and not (source == "jobs" and person.startswith("company/")):
+        out.add("person:" + person)
+    name, company = _norm_words(_lead_person_name(lead)), lead_company(lead)
+    if name and company:
+        out.add("name:%s|%s" % (name, company))
+    if source == "jobs":
+        from . import buyer_radar_jobs as jobs_src
+        co = jobs_src.company_norm((p.get("company") or {}).get("name") or (p.get("author") or {}).get("name"))
+        if co and co not in GENERIC_COMPANIES:
+            out.add("hiring:" + co)
+        key = (p.get("author") or {}).get("key") or ""
+        if key.startswith("company/"):
+            out.add("hiring:" + key)
+    if source == "rfp":
+        r = p.get("rfp") or {}
+        issuer, title = _norm_words(r.get("issuer")), _norm_words(r.get("title"))
+        if title:
+            out.add("rfp:%s|%s" % (issuer, title))
+    return out
+
+
+def dedupe(leads, known=()):
+    """The leads, best first, without any whose person, company or RFP is already a lead (`known`, from
+    br_identities) or came earlier in this list. (kept, dropped)."""
+    seen, kept, dropped = set(known), [], []
+    for lead in sorted(leads, key=lambda x: -int(x.get("score") or 0)):
+        ids = identities(lead)
+        if ids & seen:
+            dropped.append(lead)
+            continue
+        seen |= ids
+        kept.append(lead)
+    return kept, dropped
+
+
+# == the daily schedule ===================================================================================
+# .github/workflows/buyer-radar-daily.yml asks the site every hour. A workspace's daily run starts in the
+# hour before its time (daily_hour, India time) and its Slack message waits for the time itself; a run
+# that failed is tried once more that day; one that finished late posts as soon as it is done.
+IST_OFFSET_MIN = 330
+DAILY_LEAD_MIN = 60               # the run starts this long before the Slack time
+DAILY_TRIES = 2
+
+
+def ist_day_start(now):
+    """Midnight India time on now's India date, as an aware UTC datetime."""
+    from datetime import timedelta, timezone
+    ist = now.astimezone(timezone(timedelta(minutes=IST_OFFSET_MIN)))
+    return ist.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+
+
+def daily_slot(settings, now):
+    """(start from, Slack at) for today's daily run, as aware UTC datetimes."""
+    from datetime import timedelta
+    day = ist_day_start(now)
+    at = day + timedelta(hours=int(settings.get("daily_hour", DEFAULTS["daily_hour"]) or 0))
+    return max(day, at - timedelta(minutes=DAILY_LEAD_MIN)), at
+
+
+def daily_due(settings, now, todays):
+    """Should today's daily run start now? `todays` is this owner's daily runs since India midnight
+    (buyer_radar_store.daily_runs_since). Not before its start time; not when one finished or is going;
+    not after DAILY_TRIES failed (a stale "running" one, whose service restarted, counts as failed)."""
+    start, _ = daily_slot(settings, now)
+    if now < start:
+        return False
+    if any(r["status"] == "ready" or (r["status"] == "running" and not r.get("stale")) for r in todays):
+        return False
+    return sum(1 for r in todays if r["status"] == "failed" or r.get("stale")) < DAILY_TRIES
+
+
 # == one run ==============================================================================================
 
 def run(run_id, owner, settings, *, started_by=None, deps=None):
@@ -600,7 +715,9 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     from . import buyer_radar_send as send, buyer_radar_source as src
     from . import buyer_radar_store as store, contact_lab_search as cls
     from . import buyer_radar_unipile as uni
+    from . import buyer_radar_sheet as sheet
     deps = dict({"search": src.collect, "unipile_search": uni.collect, "judge": judge.judge_posts, "draft": judge.draft,
+                 "sheet": sheet.sync_run,
                  "check": judge.check, "jobs_search": jobs_src.collect, "job_locations": jobs_src.locations,
                  "comments": comments_src.collect, "people": jobs_src.decision_makers, "icp": icp_src.find,
                  "rfps": rfp_src.collect, "reddit": reddit_src.collect,
@@ -644,6 +761,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     gone = {k for k, _, _ in missing}
     want_posts, want_jobs = want_posts and "posts" not in gone, want_jobs and "jobs" not in gone
     want_icp, want_reddit = want_icp and "icp" not in gone, want_reddit and "reddit" not in gone
+    store.backfill_identities(owner, identities)     # leads from before identities were kept count too
     # Claude reads one test post first: a run it cannot read would pay for the search and keep nothing.
     check_budget = cls.Budget(Decimal("0.05"))
     try:
@@ -866,40 +984,66 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         summary["by_source"]["rfp"] = len(rfp_leads)
         leads += rfp_leads
 
-    # 6. people who fit a customer profile at a moment that matters: Saleshandy's search, free
+    # nobody twice: a person, hiring company or RFP already a lead is not a new one (identities)
+    def fresh_only(items):
+        idents = set().union(*(identities(x) for x in items)) if items else set()
+        kept_, dropped_ = dedupe(items, store.known_identities(owner, idents))
+        if dropped_:
+            store.mark_seen(owner, [x["post"]["key"] for x in dropped_])
+        summary["repeats"] = summary.get("repeats", 0) + len(dropped_)
+        return kept_
+
+    leads = fresh_only(leads)
+
+    # 6. people who fit a customer profile at a moment that matters: Saleshandy's search, free. They fill
+    # the run up to its daily_leads, whatever the other places found today, so every day brings about as
+    # many new leads (icp_per_run at most)
+    target = int(settings.get("daily_leads") or 0)
+    want = min(int(settings["icp_per_run"]), max(0, target - len(leads))) if target else int(settings["icp_per_run"])
+    summary["target"] = target
     pairs = [(o, x) for o in settings["offers"] for x in icp_src.icps_for(settings, o) if x.get("on", True)] if want_icp else []
-    if pairs:
+    if pairs and want:
         stage("finding people")
-        per = -(-int(settings["icp_per_run"]) // len(pairs))
-        found, notes = deps["icp"](pairs, per_icp=per, known=lambda keys: store.known_posts(owner, keys))
+        per = max(3, -(-want * 3 // (2 * len(pairs))))      # half again as many as needed: some are repeats
+        found, notes = deps["icp"](pairs, per_icp=per, known=lambda keys: store.known_posts(owner, keys),
+                                   cursor=(lambda key: store.get_cursor(owner, key),
+                                           lambda key, page: store.set_cursor(owner, key, page)))
         summary["notes"].extend(notes)
         met = store.known_posts(owner, [f[2]["key"] for f in found])
-        taken, icp_leads = {}, []
+        candidates, low = [], []
         for offer, x, sig, sc in found:
-            if sig["key"] in met or taken.get(x["name"], 0) >= per:
+            if sig["key"] in met:
                 continue
-            taken[x["name"]] = taken.get(x["name"], 0) + 1
             if sc < settings["keep_score"]:
+                low.append(sig["key"])
                 continue
             why = sig["icp"]["why"]
-            icp_leads.append({"post": sig, "offer": offer, "score": sc, "source": "icp", "emails": [], "person": sig["author"]["key"],
-                              "verdict": {"role": "buyer", "offer": offer, "intent": "fits_profile", "score": sc,
-                                          "intent_label": judge.INTENT_LABELS["fits_profile"],
-                                          "need": (why[:1].upper() + why[1:]) if why else "Fits “%s”" % x["name"],
-                                          "company": sig["company"]["name"], "region": sig["contacts"][0]["location"],
-                                          "deadline": "", "reason": sig["text"]}})
-        store.mark_seen(owner, [f[2]["key"] for f in found if f[2]["key"] not in met])
-        icp_leads = sorted(icp_leads, key=lambda x: -x["score"])[:int(settings["icp_per_run"])]
+            candidates.append({"post": sig, "offer": offer, "score": sc, "source": "icp", "emails": [], "person": sig["author"]["key"],
+                               "verdict": {"role": "buyer", "offer": offer, "intent": "fits_profile", "score": sc,
+                                           "intent_label": judge.INTENT_LABELS["fits_profile"],
+                                           "need": (why[:1].upper() + why[1:]) if why else "Fits “%s”" % x["name"],
+                                           "company": sig["company"]["name"], "region": sig["contacts"][0]["location"],
+                                           "deadline": "", "reason": sig["text"]}})
+        store.mark_seen(owner, low)
+        # against the workspace's leads and this run's own: a person already found today is not found again
+        mine = set().union(*(identities(x) for x in leads)) if leads else set()
+        idents = set().union(*(identities(x) for x in candidates)) if candidates else set()
+        icp_leads, dropped = dedupe(candidates, store.known_identities(owner, idents) | mine)
+        store.mark_seen(owner, [x["post"]["key"] for x in dropped])
+        summary["repeats"] = summary.get("repeats", 0) + len(dropped)
+        icp_leads = icp_leads[:want]           # the rest stay unread, for another day
         summary["people"] = len(icp_leads)
         summary["by_source"]["icp"] = len(icp_leads)
         leads += icp_leads
+        if target and len(leads) < target:
+            summary["notes"].append("%d new leads, under the %d aimed for: the customer profiles found %d new people "
+                                    "who fit. Widen them in Settings (more titles, places or industries)."
+                                    % (len(leads), target, len(icp_leads)))
 
     # one company in two places scores higher: this run's leads, and the workspace's of the last 60 days
     if leads:
         summary["multi"] = multi_signal(leads, store.recent_companies(owner, MULTI_DAYS))
     leads.sort(key=lambda lead: -lead["score"])
-    summary["kept"] = len(leads)
-    summary["strong"] = sum(1 for lead in leads if lead["score"] >= settings["alert_score"])
 
     # 7. who to write to at each company hiring: Saleshandy's people search, free
     if any(lead["source"] == "jobs" for lead in leads):
@@ -907,6 +1051,9 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         note = deps["people"](leads, offers)
         if note:
             summary["notes"].append(note)
+        leads = fresh_only(leads)              # a decision maker who is already a lead is not written to again
+    summary["kept"] = len(leads)
+    summary["strong"] = sum(1 for lead in leads if lead["score"] >= settings["alert_score"])
 
     # 8. draft: an email and a LinkedIn note for every lead, best first, until the cap
     stage("drafting")
@@ -930,6 +1077,8 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     for lead, lead_id in zip(leads, saved):
         lead["id"] = lead_id
     leads = [lead for lead in leads if lead.get("id")]
+    store.add_identities(owner, [(lead["id"], identities(lead) | {"lead:%d" % lead["id"]}) for lead in leads])
+    summary["new"] = len(leads)
 
     # 9. send, where the workspace switched it on: to the offer's Saleshandy sequence, or one email. An RFP
     # is answered by the team, and a Reddit thread in the thread, so neither is ever sent automatically.
@@ -986,13 +1135,61 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                     summary["notes"].append("LinkedIn stopped: %s" % res["detail"])
                     break
 
-    # 10. Slack: the strong leads
+    # 10. the Google Sheet: a row for each new lead, and the changed ones brought up to date
+    if settings.get("sheet_id"):
+        stage("updating the Google Sheet")
+        summary["sheet"] = deps["sheet"](owner, settings, run_id=run_id, summary=summary)
+
+    # 11. Slack: the strong leads. The daily run's message waits for the workspace's hour (deliver_at),
+    # and the hourly call posts it then (deliver_waiting); a manual run's goes now.
     strong = [lead for lead in leads if lead["score"] >= settings["alert_score"]]
-    if settings["slack_channel"] and strong:
-        stage("posting to Slack")
-        ok, why = deps["slack"](settings["slack_channel"], owner, strong)
-        summary["slack"] = "sent" if ok else why
+    daily = bool(settings.get("deliver_at"))
+    if settings["slack_channel"] and (strong or daily):
+        if daily and datetime.now(timezone.utc) < datetime.fromisoformat(settings["deliver_at"]):
+            summary["slack"], summary["slack_at"] = "waiting", settings["deliver_at"]
+        else:
+            stage("posting to Slack")
+            ok, why = deps["slack"](settings["slack_channel"], owner, strong, **slack_extra(settings, summary, daily))
+            summary["slack"] = "sent" if ok else why
     return summary
+
+
+def slack_extra(settings, summary, daily):
+    """What a Slack message adds to its strong leads: the run's count of new leads, whether it is the
+    daily one (which posts even with none strong), and the Google Sheet's link."""
+    from . import buyer_radar_sheet as sheet
+    return {"total": int(summary.get("new") or 0), "daily": daily,
+            "sheet_url": sheet.sheet_url(settings.get("sheet_id")) if settings.get("sheet_id") else ""}
+
+
+def deliver_waiting(*, now=None, store=None, post=None):
+    """Posts every daily run's Slack message whose hour has come (the hourly call, app.py). Each is
+    claimed first, so two calls never post it twice. How many were posted."""
+    from datetime import datetime, timezone
+    from . import buyer_radar_send as send, buyer_radar_store
+    store = store or buyer_radar_store
+    post = post or send.slack_leads
+    now = now or datetime.now(timezone.utc)
+    n = 0
+    for run_id, owner, summary in store.slack_waiting():
+        try:
+            at = datetime.fromisoformat(summary.get("slack_at") or "")
+        except ValueError:
+            at = now
+        if at > now or not store.claim_slack(run_id):
+            continue
+        settings = store.get_settings(owner)
+        result = "not_configured"
+        if settings.get("slack_channel"):
+            strong = store.run_leads(owner, run_id, settings["alert_score"])
+            try:
+                ok, why = post(settings["slack_channel"], owner, strong, **slack_extra(settings, summary, True))
+            except Exception as e:             # never leave it "sending": say why
+                ok, why = False, type(e).__name__
+            result = "sent" if ok else why
+            n += 1 if ok else 0
+        store.set_run_summary_key(run_id, "slack", result)
+    return n
 
 
 def _book_claude(budget, spend, op, since=Decimal(0)):

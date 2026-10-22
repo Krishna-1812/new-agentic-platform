@@ -327,10 +327,76 @@ The steps from `CLAUDE.md` and `docs/account-memory-plan.md`:
 
 ## The daily search
 
-`.github/workflows/buyer-radar-daily.yml` runs at 06:47 India time. It calls `POST /api/buyer-radar/daily`
-with `BUYER_RADAR_CRON_TOKEN`, which starts one search for each workspace whose "Search LinkedIn every day"
-is on. It skips a workspace that already ran that day, that has reached its monthly cap, or that has a
-search still going.
+Settings → "Search every day" (`daily`), with "Slack message at" (`daily_hour`, India time, default 9:00 AM).
+`.github/workflows/buyer-radar-daily.yml` calls `POST /api/buyer-radar/daily` every hour (minute 31 UTC,
+one minute past the hour in India) with `BUYER_RADAR_CRON_TOKEN`. Each call:
+
+- Starts a workspace's search in the hour before its time (from 8:00 for a 9:00 message): not before,
+  not when one finished or is going today (India date), and once more after a failure (a search whose
+  service restarted mid-way counts as failed), at most two tries a day. Skipped once the month's spend
+  reaches `monthly_cap_usd`.
+- Posts each finished daily search's Slack message once its time has come (`deliver_waiting`, claimed
+  first so it is never posted twice). A search that finishes after its time posts at once.
+
+The daily message posts even when nothing is strong ("no strong leads today", "nothing new today"), with
+the day's count of new leads and a button to the Google Sheet. A late or skipped GitHub call is made up by
+the next one, an hour later.
+
+## Nobody twice
+
+What was read is never read again (`br_seen`), and the same post, comment, job ad, RFP or thread is never
+two leads (`br_leads` is unique by key). On top of that, every lead's identities are kept in
+`br_identities` (`buyer_radar.identities`), and a lead whose identity is already there is not a new lead:
+
+| Identity | Catches |
+|---|---|
+| `person:<key>` | the same LinkedIn profile, Saleshandy person, LinkedIn member or Reddit user again |
+| `name:<name>\|<company>` | the same person found two ways (a LinkedIn author, then a Saleshandy profile match) |
+| `hiring:<company>` | a company's job ads again, any month (they used to come back each month) |
+| `rfp:<issuer>\|<title>` | the same RFP at another link |
+
+The check runs on what the other places found, again on the customer-profile matches (against those and
+this run's own), and again after a hiring company's decision maker is chosen. A repeat is marked as read,
+counted in the run ("N repeats skipped") and never posted to Slack or the sheet. Leads from before this
+was built are given their identities at the next run (`backfill_identities`). When Saleshandy later shows
+a person's LinkedIn, that profile becomes one of their identities too.
+
+## About the same number every day
+
+Posts asking for help, job ads and RFPs come when they come: many on the first search (three months of
+posts), fewer each day after. So each search aims for `daily_leads` new leads (default 30, Settings "New
+leads a search, about"), and the customer profiles fill what the other places left, up to `icp_per_run`.
+They ask Saleshandy for half again as many as needed, since some are repeats; the ones not needed are not
+marked as read, so the next day takes them.
+
+The profile search used to start on page 1 every day and stop after 5 pages of people already met, so a
+profile would run dry in about a month. Now each profile's place is kept (`br_cursors`, by its filters):
+a run goes on from there, stays on a page it did not finish, and goes back to page 1 after the last page,
+where people who newly fit (new in their role this week) come first. Editing a profile starts it again.
+A search that came up short says so in its notes ("22 new leads, under the 30 aimed for... widen them").
+
+## Google Sheet (`tracker/buyer_radar_sheet.py`)
+
+Settings → "Google Sheet": the sheet's link, shared with the service account (`GOOGLE_SA_JSON`'s address,
+shown on the page) as an Editor. "Check the sheet" sets up its tabs; "Update the sheet now" sends what is
+not in it yet. After every search, the sheet is updated by itself:
+
+- **Leads**: one row per lead, 42 columns (who, company and its website, size and industry, where, their
+  profile, email and where it came from, what they want and why it was kept, the deadline, other places
+  the company was found, the link, their own words, the search that found it, the post a comment was
+  under, a company's open jobs and who decides there, the customer profile and why now, the RFP's title,
+  issuer and contact, the subreddit, every message written, who was written to and when).
+- **Never twice**: before adding, the sheet's own "Lead ID" column is read; a lead already there is
+  updated, not added, even if the database missed the last update (`br_leads.sheet_at`).
+- **Kept up to date**: a lead that changed (status, email, messages, a send) has those cells rewritten
+  in its own row, wherever sorting moved it.
+- **The team's own columns**: columns are found by their header; a column of the team's own is never
+  written, and a Buyer Radar header that was deleted is added back at the end.
+- **Runs**: one row per search, once: new leads by place, the number aimed for, repeats skipped, strong,
+  read, cost, when the Slack message goes out, notes.
+- Written as plain values (RAW): a post starting with "=" stays text.
+- A failed update is a note in the run and never stops it; what was not sent goes on the next update (500
+  leads at most each time).
 
 ## Variables (Railway → web → Variables)
 
@@ -339,8 +405,8 @@ search still going.
 | `UNIPILE_API_KEY`, `UNIPILE_DSN` | The search with Unipile, and LinkedIn sending |
 | `APIFY_API_TOKEN` | The search with Apify (already set for other agents) |
 | `ANTHROPIC_API_KEY` | Reading and writing (already set) |
-| `BUYER_RADAR_CRON_TOKEN` | The daily search; also a GitHub repository secret of the same name |
-| `GMAIL_SENDER`, `GOOGLE_SA_JSON` | Email (as Market Radar's weekly email) |
+| `BUYER_RADAR_CRON_TOKEN` | The daily search (called hourly); also a GitHub repository secret of the same name |
+| `GMAIL_SENDER`, `GOOGLE_SA_JSON` | Email (as Market Radar's weekly email); `GOOGLE_SA_JSON` also writes the Google Sheet |
 | `UNIPILE_API_KEY`, `UNIPILE_DSN` | LinkedIn sending; `UNIPILE_LINKEDIN_ACCOUNT_ID` pins the account |
 | `SALESHANDY_API_KEY` | Optional email finding (already set) |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Reddit threads (a Reddit "script" app; already used by Social Media Intelligence if set) |
@@ -361,3 +427,5 @@ search still going.
 - [ ] The opt-out link tried from a real inbox.
 - [ ] One RFP search per offer checked by hand: are the RFPs real, open and in scope? Tune the searches.
 - [ ] One Reddit search with the keys set: are the threads buyers?
+- [ ] One daily search at a set hour: the Slack message at that hour, the Leads and Runs tabs filled.
+- [ ] A week of daily searches: about the number aimed for each day, and no person or company twice.

@@ -10,6 +10,10 @@ each run kept in started_by; otherwise it is the person's own email.
                   (a company's LinkedIn job ads, once a month) or 'icp' (a person who fits a customer profile)
     br_seen       every post, comment and company Claude has read, kept or not, so the next run does not
                   pay to read it again
+    br_identities who each lead is (a person by profile or by name at a company, a hiring company, an RFP
+                  by issuer and title), so nobody becomes a new lead twice (buyer_radar.identities)
+    br_cursors    where each customer profile's Saleshandy search stopped, so the next run goes on from
+                  there instead of the first pages again
     br_sends      every email and LinkedIn message sent, by whom ("" for the automatic send)
     br_settings   each owner's settings (tracker/buyer_radar.py DEFAULTS)
     br_suppress   people who opted out, or must never be written to; for every owner
@@ -102,6 +106,20 @@ SCHEMA = [
         credits NUMERIC(12,2) NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now())""",
     "CREATE INDEX IF NOT EXISTS idx_br_spend_at ON br_spend (created_at)",
+    """CREATE TABLE IF NOT EXISTS br_identities (
+        owner TEXT NOT NULL,
+        ident TEXT NOT NULL,
+        lead_id BIGINT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (owner, ident))""",
+    """CREATE TABLE IF NOT EXISTS br_cursors (
+        owner TEXT NOT NULL,
+        key TEXT NOT NULL,
+        page INTEGER NOT NULL DEFAULT 1,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (owner, key))""",
+    # when the lead's row last went to the workspace's Google Sheet (buyer_radar_sheet.sync)
+    "ALTER TABLE br_leads ADD COLUMN IF NOT EXISTS sheet_at TIMESTAMPTZ",
 ]
 _READY = False
 
@@ -237,6 +255,33 @@ def running_run(owner):
     return None
 
 
+def daily_runs_since(owner, since):
+    """[{"id", "status", "stale"}] of this owner's daily runs started since `since` (an aware datetime):
+    the daily schedule's view of today."""
+    rows = _exec("""SELECT id, status, EXTRACT(EPOCH FROM now() - updated_at) FROM br_runs
+                    WHERE owner=%s AND trigger='daily' AND created_at >= %s ORDER BY id""", (owner, since), fetch="all")
+    return [{"id": r[0], "status": r[1], "stale": r[1] == "running" and float(r[2] or 0) > STALE_AFTER_S} for r in rows]
+
+
+def slack_waiting():
+    """Runs whose Slack message waits for its time: [(run id, owner, summary)]."""
+    rows = _exec("""SELECT id, owner, summary FROM br_runs WHERE status='ready' AND summary->>'slack' = 'waiting'
+                    ORDER BY id""", fetch="all")
+    return [(r[0], r[1], r[2] or {}) for r in rows]
+
+
+def claim_slack(run_id):
+    """Marks a waiting Slack message as being sent, once: True for the caller that gets it."""
+    row = _exec("""UPDATE br_runs SET summary = jsonb_set(summary, '{slack}', '"sending"'), updated_at=now()
+                   WHERE id=%s AND summary->>'slack' = 'waiting' RETURNING id""", (run_id,), fetch="one")
+    return bool(row)
+
+
+def set_run_summary_key(run_id, key, value):
+    _exec("UPDATE br_runs SET summary = jsonb_set(COALESCE(summary, '{}'::jsonb), %s, %s::jsonb) WHERE id=%s",
+          ("{%s}" % key, json.dumps(value), run_id))
+
+
 def ran_today(owner, trigger="daily"):
     row = _exec("""SELECT 1 FROM br_runs WHERE owner=%s AND trigger=%s
                    AND created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' LIMIT 1""",
@@ -315,6 +360,44 @@ def recent_companies(owner, days=60):
     return [(r[0], r[1]) for r in rows if r[1]]
 
 
+def known_identities(owner, idents):
+    """The identities this owner already has a lead for (buyer_radar.identities)."""
+    idents = sorted({i for i in idents if i})
+    if not idents:
+        return set()
+    rows = _exec("SELECT ident FROM br_identities WHERE owner=%s AND ident = ANY(%s)", (owner, idents), fetch="all")
+    return {r[0] for r in rows}
+
+
+def add_identities(owner, pairs):
+    """[(lead id, [identity])] remembered; an identity already there keeps its first lead."""
+    rows = [(owner, i, lead_id) for lead_id, idents in pairs for i in sorted(set(idents)) if i]
+    if not rows:
+        return
+    _exec("""INSERT INTO br_identities (owner, ident, lead_id)
+             SELECT %s, x.ident, x.lead_id FROM unnest(%s::text[], %s::bigint[]) AS x(ident, lead_id)
+             ON CONFLICT (owner, ident) DO NOTHING""",
+          (owner, [r[1] for r in rows], [r[2] for r in rows]))
+
+
+def leads_without_identities(owner, limit=2000):
+    """Leads saved before identities were kept (or whose save stopped between the two): to be given them."""
+    rows = _exec(_LEAD_SELECT + """ WHERE owner=%s AND NOT EXISTS (
+                     SELECT 1 FROM br_identities i WHERE i.owner = br_leads.owner AND i.lead_id = br_leads.id)
+                     ORDER BY id LIMIT %s""", (owner, int(limit)), fetch="all")
+    return [_lead(r) for r in rows]
+
+
+def get_cursor(owner, key):
+    row = _exec("SELECT page FROM br_cursors WHERE owner=%s AND key=%s", (owner, key), fetch="one")
+    return int(row[0]) if row else 1
+
+
+def set_cursor(owner, key, page):
+    _exec("""INSERT INTO br_cursors (owner, key, page) VALUES (%s, %s, %s)
+             ON CONFLICT (owner, key) DO UPDATE SET page=EXCLUDED.page, updated_at=now()""", (owner, key, int(page)))
+
+
 def add_leads(owner, run_id, leads):
     """Each lead's id, or None where the post was already a lead of this owner's."""
     ids = []
@@ -334,14 +417,53 @@ def add_leads(owner, run_id, leads):
 
 
 LEAD_COLS = ("id", "run_id", "post", "offer", "score", "verdict", "draft", "person", "email", "email_source",
-             "status", "created_at", "updated_at", "source")
+             "status", "created_at", "updated_at", "source", "sheet_at")
 _LEAD_SELECT = "SELECT %s FROM br_leads" % ", ".join(LEAD_COLS)
 
 
 def _lead(r):
     out = dict(zip(LEAD_COLS, r))
-    out["created_at"], out["updated_at"] = _iso(out["created_at"]), _iso(out["updated_at"])
+    out["created_at"], out["updated_at"], out["sheet_at"] = _iso(out["created_at"]), _iso(out["updated_at"]), _iso(out["sheet_at"])
     return out
+
+
+def _with_sends(owner, leads):
+    if leads:
+        sent = _exec("""SELECT lead_id, channel, status, recipient, by_email, created_at, detail FROM br_sends
+                        WHERE owner=%s AND lead_id = ANY(%s) ORDER BY created_at""",
+                     (owner, [x["id"] for x in leads]), fetch="all")
+        by = {}
+        for lead_id, channel, st, to, who, at, detail in sent:
+            by.setdefault(lead_id, []).append({"channel": channel, "status": st, "to": to, "by": who,
+                                               "at": _iso(at), "detail": detail})
+        for x in leads:
+            x["sends"] = by.get(x["id"], [])
+    return leads
+
+
+def run_leads(owner, run_id, min_score=0):
+    """The leads one run kept, best first: its Slack message, sent at the workspace's time."""
+    rows = _exec(_LEAD_SELECT + " WHERE owner=%s AND run_id=%s AND score >= %s ORDER BY score DESC, id",
+                 (owner, run_id, int(min_score)), fetch="all")
+    return [_lead(r) for r in rows]
+
+
+def sheet_pending(owner, limit=1000):
+    """Leads whose row is not in the Google Sheet yet, or changed since it went there, oldest first."""
+    rows = _exec(_LEAD_SELECT + """ WHERE owner=%s AND (sheet_at IS NULL OR updated_at > sheet_at)
+                 ORDER BY id LIMIT %s""", (owner, int(limit)), fetch="all")
+    return _with_sends(owner, [_lead(r) for r in rows])
+
+
+def db_now():
+    """The database's clock: what a lead's updated_at is compared with."""
+    return _exec("SELECT now()", fetch="one")[0]
+
+
+def mark_sheet(owner, ids, at):
+    """The leads' rows are in the sheet as of `at` (when they were read), so a change after it is sent again."""
+    if ids:
+        _exec("UPDATE br_leads SET sheet_at=%s WHERE owner=%s AND id = ANY(%s)", (at, owner, list(ids)))
 
 
 def list_leads(owner, *, status=None, offer=None, source=None, min_score=0, limit=200):
@@ -358,18 +480,7 @@ def list_leads(owner, *, status=None, offer=None, source=None, min_score=0, limi
     params.append(int(limit))
     rows = _exec(_LEAD_SELECT + " WHERE %s ORDER BY created_at DESC, score DESC LIMIT %%s" % " AND ".join(where),
                  params, fetch="all")
-    leads = [_lead(r) for r in rows]
-    if leads:
-        sent = _exec("""SELECT lead_id, channel, status, recipient, by_email, created_at, detail FROM br_sends
-                        WHERE owner=%s AND lead_id = ANY(%s) ORDER BY created_at""",
-                     (owner, [x["id"] for x in leads]), fetch="all")
-        by = {}
-        for lead_id, channel, st, to, who, at, detail in sent:
-            by.setdefault(lead_id, []).append({"channel": channel, "status": st, "to": to, "by": who,
-                                               "at": _iso(at), "detail": detail})
-        for x in leads:
-            x["sends"] = by.get(x["id"], [])
-    return leads
+    return _with_sends(owner, [_lead(r) for r in rows])
 
 
 def get_lead(lead_id, owner):
@@ -402,7 +513,16 @@ def update_lead(lead_id, owner, *, status=None, email=None, email_source=None, d
     params += [lead_id, owner]
     row = _exec("UPDATE br_leads SET %s WHERE id=%%s AND owner=%%s RETURNING id" % ", ".join(sets), params,
                 fetch="one")
+    if row and person:
+        add_identities(owner, [(lead_id, ["person:" + person])])    # found by their LinkedIn now too
     return bool(row)
+
+
+def backfill_identities(owner, identities_of):
+    """Gives every lead saved before identities were kept its identities, so it counts against repeats."""
+    leads = leads_without_identities(owner)
+    add_identities(owner, [(x["id"], set(identities_of(x)) | {"lead:%d" % x["id"]}) for x in leads])
+    return len(leads)
 
 
 def counts(owner):
@@ -423,7 +543,9 @@ def record_send(owner, lead_id, channel, recipient, person, status, detail="", b
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
           (owner, lead_id, channel, recipient, person or "", status, (detail or "")[:500], by or ""))
     if status == "sent" and lead_id:
-        _exec("UPDATE br_leads SET status='contacted', updated_at=now() WHERE id=%s AND status='new'", (lead_id,))
+        # every send changes the lead (its Google Sheet row says who was written to, and when)
+        _exec("""UPDATE br_leads SET status = CASE WHEN status='new' THEN 'contacted' ELSE status END, updated_at=now()
+                 WHERE id=%s""", (lead_id,))
 
 
 def sent_today(owner, channel):

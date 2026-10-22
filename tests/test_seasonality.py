@@ -740,8 +740,11 @@ def test_the_warm_route_counts_more_parts_for_a_meta_account_than_for_a_google_o
     c = client_as(STAFF)
     g_parts = c.get("/strategic-agents/paid-marketing/api/gads/seasonality/warm?account=" + CID).get_json()["parts"]
     m_parts = c.get("/strategic-agents/paid-marketing/api/gads/seasonality/warm?account=" + ACT).get_json()["parts"]
-    assert (g_parts, m_parts) == (3, 12)
-    assert c.get("/strategic-agents/paid-marketing/api/gads/seasonality/warm?account=%s%%2B%s" % (CID, ACT)).get_json()["parts"] == 12
+    # The route reads up to the real yesterday, so the counts come from today's window, not a fixed date.
+    window = S.window(36)
+    g_want, m_want = len(S.slices(*window, S.SLICE_DAYS)), len(S.slices(*window, S.SLICE_DAYS_META))
+    assert (g_parts, m_parts) == (g_want, m_want) and m_want > g_want
+    assert c.get("/strategic-agents/paid-marketing/api/gads/seasonality/warm?account=%s%%2B%s" % (CID, ACT)).get_json()["parts"] == m_want
 
 
 def test_the_operational_agents_page_and_every_workspace_list_the_new_agent():
