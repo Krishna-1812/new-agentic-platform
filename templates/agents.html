@@ -1140,12 +1140,12 @@
     <div class="login-in">
       <span class="lbl">Sign in</span>
       <h1 class="d3">{% if returning %}Welcome <span class="it">back.</span>{% else %}<span class="it">Welcome.</span>{% endif %}</h1>
-      <p class="login-sub">{% if returning %}Pick up where you left off. Sign in with Google.{% else %}One click with Google and you&rsquo;re in. New here? The same click creates your account.{% endif %}</p>
+      <p class="login-sub">{% if staff_only %}For the Markify Digital team. Sign in with your Google work account.{% elif returning %}Pick up where you left off. Sign in with Google.{% else %}One click with Google and you&rsquo;re in. New here? The same click creates your account.{% endif %}</p>
       {% if logged_out %}<div class="g-ok">You&rsquo;re signed out. Sign back in with Google whenever you&rsquo;re ready.</div>{% endif %}
       <div class="g-err" id="gerr" style="display:{% if error %}flex{% else %}none{% endif %}">{{ error or '' }}</div>
       <div class="gbtn"><div id="gsiBtn" data-cid="{{ google_client_id }}"></div></div>
       <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Signed in securely through Google</div>
-      <div class="login-foot">New to {{ brand.name }}? Same button. We&rsquo;ll set you up automatically.</div>
+      {% if not staff_only %}<div class="login-foot">New to {{ brand.name }}? Same button. We&rsquo;ll set you up automatically.</div>{% endif %}
     </div>
   </div>
   <script>
@@ -1160,7 +1160,7 @@
     if(response && response.select_by === 'auto'){ try{ google.accounts.id.disableAutoSelect(); }catch(e){} return; }
     fetch('/auth/google',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:response.credential})})
     .then(function(r){return r.json();})
-    .then(function(d){ if(d.success){ window.location.href=d.redirect||'/app'; } else { if(c){ c.textContent=(d.error||'Sign-in failed.'); c.style.display='flex'; } } })
+    .then(function(d){ if(d.success){ window.location.href=d.redirect||'/hub'; } else { if(c){ c.textContent=(d.error||'Sign-in failed.'); c.style.display='flex'; } } })
     .catch(function(){ if(c){ c.textContent='Network error. Please try again.'; c.style.display='flex'; } });
   }
   (function(){
