@@ -1006,6 +1006,19 @@ def _is_admin(email):
     return (email or "").strip().lower() in ADMIN_EMAILS
 
 
+# Sign-in is for the team alone (since 2026-10-23): only staff (_is_staff: @markifydigital.com and the admins,
+# Krishna's personal Gmail among them) can sign in, anyone else already signed in is signed out on their next
+# request, and the public member area (/app) is gone. The client portals and accounts shared with clients stay
+# in the code but no client can reach them while this is on. Set to False to open sign-in to everyone again.
+STAFF_ONLY = True
+STAFF_ONLY_REFUSAL = "Sign-in is limited to the Markify Digital team."
+
+
+def _is_public_app_path(path):
+    """The public member area: /app and everything under it."""
+    return path == "/app" or path.startswith("/app/")
+
+
 # Staff domains from before the move to Markify Digital on 2026-09-24. Every
 # login, page view and agent run the team recorded before then is under one of
 # these addresses, and the analytics sheets keep the address a row was written
@@ -1058,6 +1071,23 @@ def _remember_person():
         people_store.remember(user["email"], user.get("name", ""))
     except Exception:
         app.logger.warning("people: the name could not be saved", exc_info=True)
+
+
+@app.before_request
+def _staff_only():
+    """With STAFF_ONLY on: sign out anyone who is not staff (a session from before the switch, or one that
+    got through some other way), and send /app to the staff hub (logged-out visitors then reach the sign-in
+    page from there). Runs before every other hook that reads the signed-in person."""
+    if not STAFF_ONLY:
+        return None
+    user = session.get("google_user")
+    if user and not _is_staff(user.get("email", "")):
+        session.clear()
+    if _is_public_app_path(request.path):
+        if request.method in ("GET", "HEAD"):
+            return redirect("/hub")
+        abort(404)
+    return None
 
 
 @app.before_request
@@ -1160,9 +1190,15 @@ def auth_google():
             return jsonify({"success": False, "error": str(e)}), 401
 
     email = idinfo.get("email", "")
-    # v17: sign-in is open to ANY Google account. Area-level access control is enforced
-    # separately -- only @markifydigital.com may reach the internal /* pages (see
-    # position2_required). General users land on the blank signed-in home (/app).
+    # With STAFF_ONLY on, only staff may sign in at all. Otherwise sign-in is open to any Google account and
+    # area-level access control is enforced separately -- only staff may reach the internal pages (see
+    # position2_required) and general users land on the blank signed-in home (/app).
+    if STAFF_ONLY and not _is_staff(email):
+        return jsonify({"success": False, "error": STAFF_ONLY_REFUSAL}), 403
+    # Google vouches for the address only when email_verified is true; a staff address it has not verified
+    # is not let in as staff.
+    if STAFF_ONLY and idinfo.get("email_verified") is False:
+        return jsonify({"success": False, "error": STAFF_ONLY_REFUSAL}), 403
 
     session["google_user"] = {
         "email":      email,
@@ -3187,9 +3223,9 @@ def terms_page():
 @app.route("/login")
 def login_page():
     if _get_user():
-        return redirect("/app")
+        return redirect("/hub" if STAFF_ONLY else "/app")
     return render_template("agents.html", page="login", agents=AGENTS, agent=None,
-                           related=[], google_client_id=GOOGLE_CLIENT_ID,
+                           related=[], google_client_id=GOOGLE_CLIENT_ID, staff_only=STAFF_ONLY,
                            error=request.args.get("error", ""),
                            logged_out=bool(request.args.get("logged_out")),
                            returning=bool(request.cookies.get("p2_seen")))

@@ -57,3 +57,12 @@ def _reset_cpi_rate_limits():
     appmod._CPI_RATE_STATE.clear()
     yield
     appmod._CPI_RATE_STATE.clear()
+
+
+@pytest.fixture(autouse=True)
+def _sign_in_open(request, monkeypatch):
+    """Production signs in staff only (app.STAFF_ONLY). The client portals, the accounts shared with clients and
+    the public /app area are still in the code for the day sign-in opens again, so their tests run with it open;
+    tests/test_staff_only_signin.py checks the switch itself, with it on."""
+    if request.module.__name__.rsplit(".", 1)[-1] != "test_staff_only_signin":
+        monkeypatch.setattr(appmod, "STAFF_ONLY", False)
