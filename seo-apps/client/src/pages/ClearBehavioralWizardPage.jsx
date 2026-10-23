@@ -5,12 +5,11 @@ import { ProgressSteps } from '../ui/ProgressSteps';
 import { btnStyle, inputStyle, labelStyle, PickerList, SectionCard, CharCount, SourceTag, RegenButton } from '../ui/wizardKit';
 
 // Matches server/locationPageBuilder/seed.js CBH_CLIENT_ID. Scoped to one
-// client, like the Gentle Dental wizard it borrows its first two steps from.
+// client, so it is fixed, not selected.
 const CBH_CLIENT_ID = 'client_clear_behavioral_health';
 
-// The step this flow exists for. Gentle Dental goes keywords -> [research,
-// plan and write in one call] -> review, and nobody ever sees the plan. Here
-// the plan is a BRIEF: drafted, edited, saved, and then written from.
+// The step this flow exists for: the plan is a BRIEF, drafted, edited, saved,
+// and then written from, so the reviewer sees the plan before any copy exists.
 const STEPS = ['Select Location + Service', 'Keyword Research', 'Content Brief', 'Generated Page'];
 
 // Program families, in the order the SEO team thinks about them. The label is

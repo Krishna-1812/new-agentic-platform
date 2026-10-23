@@ -35,38 +35,6 @@
       ]
     },
     {
-      "id": "gentle-dental",
-      "category": "brand",
-      "client": "gentle-dental",
-      "path": "brand/gentle-dental.md",
-      "active": true,
-      "tags": [
-        "dental",
-        "dso",
-        "brand"
-      ],
-      "linked_modules": [
-        "content-research",
-        "keyword-research"
-      ]
-    },
-    {
-      "id": "great-lakes",
-      "category": "brand",
-      "client": "great-lakes",
-      "path": "brand/great-lakes.md",
-      "active": true,
-      "tags": [
-        "dental",
-        "dso",
-        "brand"
-      ],
-      "linked_modules": [
-        "content-research",
-        "keyword-research"
-      ]
-    },
-    {
       "id": "riccobene",
       "category": "brand",
       "client": "riccobene",
@@ -154,22 +122,6 @@
         "best-practices"
       ],
       "linked_modules": [
-        "keyword-research"
-      ]
-    },
-    {
-      "id": "gentle-dental-feedback-2026-q2",
-      "category": "client-feedback",
-      "client": "gentle-dental",
-      "path": "client-feedback/gentle-dental/2026-q2.md",
-      "active": true,
-      "tags": [
-        "gentle-dental",
-        "client-feedback",
-        "2026-q2"
-      ],
-      "linked_modules": [
-        "content-research",
         "keyword-research"
       ]
     },

@@ -13,7 +13,7 @@ function hasContent(body) {
   return stripped.length > 20;
 }
 
-// GET /api/kb-context?client=gentle-dental&module=content-research
+// GET /api/kb-context?client=neuro-wellness-spa&module=content-research
 router.get('/', async (req, res) => {
   const { client, module: moduleId } = req.query;
   if (!client || !moduleId) {

@@ -75,7 +75,7 @@ function slugText(url) {
   }
 }
 
-// "gentledental.com" / "www.gentledental.com" -> "gentledental". Slug-only
+// "brightsidedental.com" / "www.brightsidedental.com" -> "brightsidedental". Slug-only
 // mode has no <title> tail to compare variants against (that half of brand
 // detection is a Stage 4/Checkpoint-4 concern, once crawled titles exist).
 function deriveBrandTokens(domain) {

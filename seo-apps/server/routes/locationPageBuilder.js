@@ -9,7 +9,7 @@ const router = express.Router();
 
 const config = require('../locationPageBuilder/config');
 const store = require('../locationPageBuilder/store');
-const { seedGentleDental, seedClearBehavioral } = require('../locationPageBuilder/seed');
+const { seedClearBehavioral } = require('../locationPageBuilder/seed');
 const cbhBrief = require('../locationPageBuilder/cbhBrief');
 const cbhWizard = require('../locationPageBuilder/cbhWizard');
 const cbhRegen = require('../locationPageBuilder/cbhRegen');
@@ -20,8 +20,7 @@ const compose = require('../locationPageBuilder/compose');
 const pageService = require('../locationPageBuilder/pageService');
 const exporter = require('../locationPageBuilder/exporter');
 const keywordAdapter = require('../locationPageBuilder/keywordAdapter');
-const dentalWizard = require('../locationPageBuilder/dentalWizard');
-const qaEngine = require('../locationPageBuilder/qaEngine');
+const keywordSelections = require('../locationPageBuilder/keywordSelections');
 
 // Feature flag (Spec §0.2)
 router.use((req, res, next) => {
@@ -33,8 +32,8 @@ router.use((req, res, next) => {
 // the rejection goes unhandled, and on modern Node that terminates the whole
 // server process. The read routes below have no try/catch of their own, so a
 // single store error in any of them took the entire app down (this is exactly
-// how the export route killed the server on a Gentle Dental page). wrap()
-// turns any such rejection into a 500 on that one request.
+// how the export route once killed the server). wrap() turns any such
+// rejection into a 500 on that one request.
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch((e) => {
   console.error(`[LPB] ${req.method} ${req.originalUrl} failed:`, e.message);
   if (!res.headersSent) res.status(500).json({ error: e.message });
@@ -54,19 +53,14 @@ function mintToken(payload) {
 // no route that seeds an arbitrary client, and adding one would put setup back
 // in the app.
 //
-// These two routes are the exception, and not for setup: each wizard's
+// This route is the exception, and not for setup: the Clear Behavioral wizard's
 // "Sync list" re-imports a changed service/location taxonomy without making the
-// SEO team leave the page. Both are re-runnable and preserve hand-entered NAP
+// SEO team leave the page. It is re-runnable and preserves hand-entered NAP
 // (see seed.mergeLocation).
 //
-// They re-seed ONE client each, by calling that client's seeder directly, so a
-// sync from the dental wizard cannot touch Clear Behavioral's rows or the other
-// way round (the seeders are scoped with store.replaceAllForClient).
-router.post('/seed-gentle-dental', async (req, res) => {
-  try { res.json(await seedGentleDental()); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
-
+// It re-seeds ONE client, by calling that client's seeder directly, so a sync
+// cannot touch any other client's rows (the seeder is scoped with
+// store.replaceAllForClient).
 router.post('/seed-clear-behavioral', async (req, res) => {
   try { res.json(await seedClearBehavioral()); }
   catch (e) { res.status(500).json({ error: e.message }); }
@@ -111,18 +105,22 @@ router.delete('/entities/:collection/:id', wrap(async (req, res) => {
 
 // ── Pages: tracking dashboard + detail ──────────────────────────────────────
 // This dashboard + LocationPageDetailPage.jsx are built entirely around the
-// Neuro page_object shape (approach/competitor_section/faqs). Dental wizard
-// pages have a completely different shape (hero/breadcrumb/officeInfo/
-// servicesInCity/educationalBody/faq/schema) and are reviewed inline in the
-// wizard itself, not through this dashboard — exclude them so they don't
-// appear as broken-looking rows here or crash the detail page if clicked.
+// Neuro page_object shape (approach/competitor_section/faqs). Wizard pages
+// (CBH) have a completely different shape and are reviewed inline in their
+// wizard, not through this dashboard.
+//
+// A Neuro page is created by pageService.createPage, which sets no page_type,
+// so only those rows are listed. Filtering positively rather than excluding
+// known wizard types means a row of any other type -- including one left
+// behind by a retired wizard -- never appears here as a row that breaks the
+// moment it is opened.
+function isNeuroPage(p) {
+  return !p.page_type || p.page_type === 'location_service';
+}
+
 router.get('/pages', wrap(async (req, res) => {
   const all = await store.list('pages', req.query.client_id ? { client_id: req.query.client_id } : {});
-  // Excludes every wizard page type: this dashboard renders the Neuro
-  // page_object shape, and none of them use it. A CBH page listed here is a
-  // row that breaks the moment it is opened.
-  const pages = all.filter(p => !dentalWizard.WIZARD_PAGE_TYPES.has(p.page_type)
-    && p.page_type !== cbhWizard.PAGE_TYPE);
+  const pages = all.filter(isNeuroPage);
   // Enrich with service/location names for the dashboard.
   const [services, locations, clients] = await Promise.all([
     store.list('services'), store.list('locations'), store.list('clients'),
@@ -145,25 +143,17 @@ router.get('/pages', wrap(async (req, res) => {
 router.get('/pages/:id', wrap(async (req, res) => {
   const page = await store.get('pages', req.params.id);
   if (!page) return res.status(404).json({ error: 'Page not found.' });
-  if (page.page_type === 'dental_location_service') {
-    return res.status(400).json({ error: 'This is a Gentle Dental wizard page — review it from the wizard, not this detail view.' });
+  if (!isNeuroPage(page)) {
+    return res.status(400).json({ error: 'This page belongs to a wizard — review it from that wizard, not this detail view.' });
   }
   res.json(page);
 }));
 
 // New Page wizard — eligibility + already-exists (Stage 1)
-// This whole pipeline (SERP/SEMrush keyword mining, competitor scraping,
-// Neuro-shaped section template, multi-gate approval) is Neuro-specific.
-// Reject a dental client here so it can't be driven through the wrong
-// template — direct callers to POST /wizard/generate instead.
 router.post('/pages', async (req, res) => {
   try {
     const { clientId, serviceId, locationId, assigneeId, targetDate } = req.body;
     if (!clientId || !serviceId || !locationId) return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
-    const template = await store.findOne('globalTemplates', { client_id: clientId });
-    if (template?.page_type === 'dental_location_service') {
-      return res.status(400).json({ error: 'This client uses the Gentle Dental wizard, not this pipeline. Use the "Gentle Dental Wizard" flow instead.' });
-    }
     res.json(await pageService.createPage({ clientId, serviceId, locationId, assigneeId, targetDate }));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -179,7 +169,7 @@ router.delete('/pages/:id', async (req, res) => {
     // keyword record must not report the delete as having failed.
     if (page) {
       try {
-        const tuple_key = dentalWizard.tupleKey({
+        const tuple_key = keywordSelections.tupleKey({
           clientId: page.client_id, serviceId: page.service_id, locationId: page.location_id,
         });
         await store.removeWhere('keywordSelections', { tuple_key });
@@ -281,10 +271,9 @@ router.post('/pages/:id/comments', async (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-// ── Gentle Dental wizard (Build Brief) ──────────────────────────────────────
-// Steps 2-4: keyword candidates, single-call generation, QC. Deliberately
-// separate from the Neuro pages/keywords/content routes above — no SSE, no
-// approval workflow.
+// ── Wizard keyword research ─────────────────────────────────────────────────
+// Keyword candidates for one service + location. Deliberately separate from
+// the Neuro pages/keywords/content routes above — no SSE, no approval workflow.
 router.post('/keyword-candidates', async (req, res) => {
   try {
     const { service, city, state, stateName, region, seedQuery, clientId, serviceSlug } = req.body;
@@ -296,26 +285,10 @@ router.post('/keyword-candidates', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/wizard/generate', async (req, res) => {
-  try {
-    const { clientId, serviceId, locationId, primaryKeywords, secondaryKeywords } = req.body;
-    if (!clientId || !serviceId || !locationId) return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
-    if (!Array.isArray(primaryKeywords) || !primaryKeywords.filter(Boolean).length) {
-      return res.status(400).json({ error: 'primaryKeywords (array, at least 1) is required.' });
-    }
-    const result = await dentalWizard.generatePage({
-      clientId, serviceId, locationId, primaryKeywords, secondaryKeywords: secondaryKeywords || [],
-    });
-    res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-
-
 // ── Clear Behavioral Health flow ────────────────────────────────────────────
 // Its own contract (cbhContract.js): ten sections with hard character
-// caps, replacing the dental section shape entirely. Keyword research in front
-// of this is shared with the other wizards (/keyword-candidates).
+// caps. Keyword research in front of this is the shared /keyword-candidates
+// and /wizard/keywords routes.
 
 // The limits the wizard shows beside each field. Served rather than duplicated
 // in the client: a target displayed in the UI that differs from the one QC
@@ -454,7 +427,7 @@ router.delete('/cbh/pages/:id', async (req, res) => {
   try {
     const page = await store.get('pages', req.params.id);
     // Type-checked before removing: this route is reachable with any id, and a
-    // CBH list must not be able to delete a dental or Neuro page.
+    // CBH list must not be able to delete a Neuro page.
     if (!page || page.page_type !== cbhWizard.PAGE_TYPE) return res.status(404).json({ error: 'Page not found.' });
     const removed = await store.remove('pages', req.params.id);
     res.json({ removed });
@@ -480,9 +453,6 @@ router.post('/cbh/regen-field', async (req, res) => {
 router.post('/cbh/export/docx', async (req, res) => {
   try {
     const { page } = req.body;
-    // Checked against the CBH predicate FIRST: a CBH page also satisfies
-    // isDentalPage (both have sections.hero), so testing the other way round
-    // would export it through the wrong renderer.
     if (!exporter.isCbhPage(page)) return res.status(400).json({ error: 'A CBH page object is required.' });
     const buffer = await exporter.toCbhDocxBuffer(page);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -519,31 +489,6 @@ router.post('/cbh/qc', (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Only one page per (client, service, location) tuple is ever stored — this
-// lets Step 1 detect "you've already generated this combo" and offer to open
-// the existing page instead of blindly regenerating (and re-billing).
-router.get('/wizard/existing', async (req, res) => {
-  try {
-    const { clientId, serviceId, locationId } = req.query;
-    if (!clientId || !serviceId || !locationId) return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
-    const page = await dentalWizard.getExistingPage({ clientId, serviceId, locationId });
-    res.json({ exists: !!page, pageId: page?.id || null, page: page?.page_object || null, updatedAt: page?.updated_at || null });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Regenerate ONE section of an already-generated page in place (no full
-// re-generation, no duplicate row — see dentalWizard.regenerateSection).
-router.post('/wizard/regenerate', async (req, res) => {
-  try {
-    const { clientId, serviceId, locationId, section, blockIndex } = req.body;
-    if (!clientId || !serviceId || !locationId || !section) {
-      return res.status(400).json({ error: 'clientId, serviceId, locationId, section are required.' });
-    }
-    const result = await dentalWizard.regenerateSection({ clientId, serviceId, locationId, section, blockIndex });
-    res.json(result);
-  } catch (e) { res.status(400).json({ error: e.message }); }
-});
-
 // ── Approved keywords (durable) ─────────────────────────────────────────────
 // Approval used to be implicit in generation, so approving and leaving lost the
 // work, and re-opening a page had nothing to rehydrate from and silently re-ran
@@ -553,7 +498,7 @@ router.post('/wizard/keywords', async (req, res) => {
   try {
     const { clientId, serviceId, locationId, primary, secondary, candidates, approved } = req.body;
     if (!clientId || !serviceId || !locationId) return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
-    const saved = await dentalWizard.saveSelection({
+    const saved = await keywordSelections.saveSelection({
       clientId, serviceId, locationId,
       primary: primary || [], secondary: secondary || [], candidates: candidates || [],
       // Default true: an explicit POST with no flag is a deliberate approval.
@@ -567,7 +512,7 @@ router.get('/wizard/keywords', async (req, res) => {
   try {
     const { clientId, serviceId, locationId } = req.query;
     if (!clientId || !serviceId || !locationId) return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
-    const sel = await dentalWizard.getSelection({ clientId, serviceId, locationId });
+    const sel = await keywordSelections.getSelection({ clientId, serviceId, locationId });
     if (!sel) return res.json({ exists: false, primary: [], secondary: [], candidates: [] });
     res.json({
       exists: true, primary: sel.primary || [], secondary: sel.secondary || [],
@@ -577,131 +522,16 @@ router.get('/wizard/keywords', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Persist manual step-4 edits. The Neuro PUT /pages/:id/content can't be
-// reused: pageService.saveContent writes page_object.page_data, a shape the
-// dental page_object (sections.hero / educationalBody.blocks[] / faq.items[])
-// does not share.
-router.put('/wizard/pages/:id', async (req, res) => {
-  try {
-    const { page } = req.body;
-    if (!page) return res.status(400).json({ error: 'page is required.' });
-    const saved = await dentalWizard.saveContent({ pageId: req.params.id, page });
-    // Return the recomputed verdict so the UI reflects what was actually stored.
-    res.json({ saved: true, updatedAt: saved.updated_at, qc: saved.page_object?.qc || null });
-  } catch (e) { res.status(400).json({ error: e.message }); }
-});
-
-// Dashboard for the wizard's own saved pages — separate from the Neuro
-// /pages list (which explicitly excludes dental pages, since it's built
-// around a page_object shape this module doesn't share). Without this,
-// generated Gentle Dental pages have NO visible home once you navigate away
-// from the exact location+service combo — they're saved, just invisible.
-router.get('/wizard/pages', async (req, res) => {
-  try {
-    const clientId = req.query.clientId || req.query.client_id;
-    if (!clientId) return res.status(400).json({ error: 'clientId is required.' });
-    const [pages, services, locations] = await Promise.all([
-      store.list('pages', { client_id: clientId }),
-      store.list('services', { client_id: clientId }),
-      store.list('locations', { client_id: clientId }),
-    ]);
-    const S = Object.fromEntries(services.map(s => [s.id, s]));
-    const L = Object.fromEntries(locations.map(l => [l.id, l]));
-    const rows = pages
-      .filter(p => dentalWizard.WIZARD_PAGE_TYPES.has(p.page_type) && p.page_object)
-      .map(p => ({
-        id: p.id,
-        service_id: p.service_id, location_id: p.location_id,
-        service_name: S[p.service_id]?.name || '', location_name: L[p.location_id]?.location_name || '',
-        primary_keyword: p.page_object.primaryKeyword || '',
-        url_path: p.page_object.meta?.urlPath || '',
-        qc_verdict: p.page_object.qc?.verdict || null,
-        updated_at: p.updated_at,
-      }))
-      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.get('/wizard/pages/:id', async (req, res) => {
-  try {
-    const page = await store.get('pages', req.params.id);
-    if (!page || !dentalWizard.WIZARD_PAGE_TYPES.has(page.page_type)) return res.status(404).json({ error: 'Page not found.' });
-    res.json({ pageId: page.id, page: page.page_object, serviceId: page.service_id, locationId: page.location_id });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// The thresholds the QC gates enforce, so the wizard can show each field the
-// target it will actually be judged against instead of carrying its own copy.
-router.get('/wizard/content-limits', (req, res) => res.json(qaEngine.DENTAL_LIMITS));
-
-// Download the wizard's page as a formatted .docx.
-//
-// Takes the GeneratedPage in the REQUEST BODY rather than reading it back from
-// the store by id, which is what /pages/:id/export/docx does. The wizard edits
-// its page client-side and only persists on Save, so an id-based export would
-// hand the reviewer a document missing whatever they just typed. This exports
-// exactly what is on screen, saved or not.
-router.post('/wizard/export/docx', async (req, res) => {
-  try {
-    const { page } = req.body;
-    if (!qaEngine.isDentalScaffold(page)) return res.status(400).json({ error: 'page (GeneratedPage with meta + sections) is required.' });
-    const buffer = await exporter.toDentalDocxBuffer(page);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${exporter.safeFilename(page)}.docx"`);
-    return res.send(buffer);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Re-run QC against a (possibly client-edited) GeneratedPage without regenerating.
-router.post('/wizard/qc', async (req, res) => {
-  try {
-    const { page, pageId } = req.body;
-    if (!qaEngine.isDentalScaffold(page)) return res.status(400).json({ error: 'page (GeneratedPage with meta + sections) is required.' });
-    const qc = qaEngine.runDentalQC(page);
-    // With a pageId the verdict is stored on the page rather than being
-    // recomputed-and-lost on every reload. Non-fatal: still return the verdict
-    // if the write fails.
-    if (pageId) {
-      try { await dentalWizard.saveQc({ pageId, qc }); }
-      catch (e) { console.error('[LPB] Failed to persist QC verdict:', e.message); }
-    }
-    res.json(qc);
-  } catch (e) { res.status(400).json({ error: e.message }); }
-});
-
-// Re-run ONE check. The wizard shows each QC failure next to the field it came
-// from, with a Recheck button — this is that button. `checks` is the client's
-// current result set, so the single fresh check can be spliced back in and the
-// verdict re-derived without re-running the other seventeen.
-router.post('/wizard/qc/check', async (req, res) => {
-  try {
-    const { page, pageId, id, checks } = req.body;
-    if (!qaEngine.isDentalScaffold(page)) return res.status(400).json({ error: 'page (GeneratedPage with meta + sections) is required.' });
-    if (!id) return res.status(400).json({ error: 'id (QC check id) is required.' });
-    const { check, verdict, checks: merged } = qaEngine.recheckDental(page, id, checks);
-    // pageId is sent only when the client has no unsaved edits: a verdict
-    // computed from content the store doesn't have yet must not be written
-    // against the content it does have.
-    if (pageId) {
-      try { await dentalWizard.saveQc({ pageId, qc: { verdict, checks: merged } }); }
-      catch (e) { console.error('[LPB] Failed to persist QC verdict:', e.message); }
-    }
-    res.json({ check, verdict, checks: merged });
-  } catch (e) { res.status(400).json({ error: e.message }); }
-});
-
 // ── Export (Spec §11) ────────────────────────────────────────────────────────
 router.get('/pages/:id/export/:format', wrap(async (req, res) => {
   const page = await store.get('pages', req.params.id);
   if (!page?.page_object) return res.status(400).json({ error: 'No generated content to export.' });
-  // The Neuro exporters read service_data/location_data/page_data; a dental
-  // page shares none of that shape. Exporting one used to throw inside
-  // safeFilename — and because that call sat OUTSIDE the try below, in an
-  // async handler, the rejection went unhandled and took the whole server
-  // process down. Dental pages now get their own exporters, and every
-  // shape-dependent call stays inside the try.
-  const dental = page.page_type === 'dental_location_service';
+  // The Neuro exporters read service_data/location_data/page_data, which no
+  // wizard page has. Exporting one used to throw inside safeFilename — and
+  // because that call sat OUTSIDE the try below, in an async handler, the
+  // rejection went unhandled and took the whole server process down. Every
+  // shape-dependent call stays inside the try, and a wizard page is refused.
+  if (!isNeuroPage(page)) return res.status(400).json({ error: 'Export this page from its wizard.' });
   const fmt = req.params.format;
   try {
     const fname = exporter.safeFilename(page.page_object);
@@ -715,12 +545,10 @@ router.get('/pages/:id/export/:format', wrap(async (req, res) => {
       await pageService.snapshotVersion(req.params.id, ['markdown']);
       res.setHeader('Content-Type', 'text/markdown');
       res.setHeader('Content-Disposition', `attachment; filename="${fname}.md"`);
-      return res.send(dental ? exporter.toDentalMarkdown(page.page_object) : exporter.toMarkdown(page.page_object));
+      return res.send(exporter.toMarkdown(page.page_object));
     }
     if (fmt === 'docx') {
-      const buffer = dental
-        ? await exporter.toDentalDocxBuffer(page.page_object)
-        : await exporter.toDocxBuffer(page.page_object);
+      const buffer = await exporter.toDocxBuffer(page.page_object);
       await pageService.snapshotVersion(req.params.id, ['docx']);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${fname}.docx"`);
@@ -735,10 +563,8 @@ router.get('/pages/:id/preview/:format', wrap(async (req, res) => {
   const page = await store.get('pages', req.params.id);
   if (!page?.page_object) return res.status(400).json({ error: 'No generated content.' });
   if (req.params.format === 'markdown') {
-    const md = page.page_type === 'dental_location_service'
-      ? exporter.toDentalMarkdown(page.page_object)
-      : exporter.toMarkdown(page.page_object);
-    return res.type('text/plain').send(md);
+    if (!isNeuroPage(page)) return res.status(400).json({ error: 'Preview this page from its wizard.' });
+    return res.type('text/plain').send(exporter.toMarkdown(page.page_object));
   }
   res.json(page.page_object);
 }));

@@ -43,119 +43,25 @@ module.exports = {
   llm: {
     classificationModel: process.env.LPB_LLM_MODEL || 'gpt-5.4-mini',
     generationModel: process.env.LPB_GEN_MODEL || 'claude-sonnet-5',
-    // Gentle Dental wizard runs two models: Sonnet PLANS the educational-body
-    // H2 outline (grading the scraped competitor headings against the fallback
-    // ladder), and the cheaper writer model produces every generated string.
-    // Both are resolved through llmProviders.resolveModelId, so an unknown id
-    // silently degrades to that module's default rather than erroring.
-    dentalOutlineModel: process.env.LPB_DENTAL_OUTLINE_MODEL || 'claude-sonnet-5',
-    dentalWriterModel: process.env.LPB_DENTAL_WRITER_MODEL || 'gpt-5.4-mini',
+    // Clear Behavioral Health's brief planner: grades the scraped competitor
+    // headings and plans the educational section stack. Resolved through
+    // llmProviders.resolveModelId, so an unknown id silently degrades to that
+    // module's default rather than erroring. LPB_DENTAL_OUTLINE_MODEL is still
+    // read as a fallback because that is the variable this planner was
+    // configured through before it had a name of its own.
+    cbhPlannerModel: process.env.LPB_CBH_PLANNER_MODEL || process.env.LPB_DENTAL_OUTLINE_MODEL || 'claude-sonnet-5',
     // Clear Behavioral Health's contract stacks ten hard CHARACTER caps on one
     // page (H1 70, hero 175, paragraphs 300, insurance 200, educational intro
     // 500, H3 headings 60, three 85-char lines per H3, UVP 300, service 150,
     // FAQ answers 300). Counting its own output is the one thing a small model
     // is reliably bad at, and every miss costs a correction round-trip or a QC
-    // failure -- so this vertical writes on the stronger model. Gentle Dental,
-    // whose contract has two length gates, stays on the cheaper one.
+    // failure -- so this vertical writes on the stronger model.
     cbhWriterModel: process.env.LPB_CBH_WRITER_MODEL || 'claude-sonnet-5',
     classificationTemperature: 0, // Spec §6 Stage 5: temperature 0
     // Master pool cap fed to the LLM. Must cover the full live pull
     // (TOP_URLS x semrush.keywordsPerUrl = 300) plus keywords.universePoolSize
     // (100), or the selection prompt silently truncates the pool.
     maxKeywordsToClassify: 400,
-  },
-
-  // Gentle Dental educational-body shape + readability budget.
-  //
-  // These numbers are shared by three places that MUST agree: the writer
-  // prompt (contentGenerator), the outline planner's repair logic
-  // (dentalOutline), and the QC gates (qaEngine). They started out duplicated
-  // across those files — the paragraph cap was literally written twice — which
-  // meant editing one silently decoupled what the model is asked to write from
-  // what QC will accept. They live here so the SEO team can retune them in one
-  // place, and so they cannot drift apart.
-  //
-  // They also interlock arithmetically. The page word count QC measures is
-  // hero intro + block bodies + FAQ Q&As, and the body is plannedBlocks plus
-  // the brand closer, so at the extremes:
-  //   floor   ~15 + ((12 + 2) paragraphs x 30 words) + (6 FAQs x ~33) = 633
-  //   ceiling ~18 + ((14 + 2) paragraphs x 40 words) + (8 FAQs x ~48) = 1042
-  // (the hero intro is budgeted in CHARACTERS now — 90-110 is roughly 15-18
-  // words — because that is what the SEO team measures it in.)
-  // Both sit inside pageWords.accept, which is what makes the instructions
-  // satisfiable. Widening paragraphsPerPage, paragraphWords or faqs without
-  // checking that arithmetic is how you get a prompt that cannot pass its own
-  // gate (regression-tested in __tests__/run.js).
-  dental: {
-    // Two block counts, because two different things are being counted.
-    // dentalOutline PLANS plannedBlocks H2s; code then appends one fixed
-    // closing block ("Why Choose {brand} for {service} in {city}, {ST}?"), so
-    // what lands on the page — and what qaEngine's H2-count gate measures — is
-    // always one more. blocks MUST stay plannedBlocks + 1.
-    plannedBlocks: { min: 6, max: 7 },
-    blocks: { min: 7, max: 8 },
-    // The closer's length. It is not part of the planner's paragraph budget
-    // (paragraphsPerPage), so it adds to the page total on top of it.
-    brandBlock: { paragraphs: 2 },
-    paragraphsPerBlock: { min: 1, max: 3 },
-    paragraphsPerPage: { min: 12, max: 14 },
-    paragraphWords: { min: 30, max: 40, hardMax: 45, hardMaxChars: 260 },
-    listItemMaxWords: 25,
-    // The paragraph under the H1, budgeted in CHARACTERS (100 ± 10) because
-    // that is the unit the SEO team reviews it in and the unit the wizard's
-    // counter shows. It is roughly one sentence plus a short next step, which
-    // is deliberately much tighter than body copy: this line is read above the
-    // fold, in about three seconds, by someone deciding whether to book.
-    heroIntro: { minChars: 90, maxChars: 110 },
-    // The SERP snippet window. A two-sided range: too short wastes the slot,
-    // too long gets truncated by Google. Read by the writer prompt, the QC
-    // gate and the wizard's character counts.
-    metaDescription: { min: 150, max: 160 },
-    // Practice name per page. Almost every office trades as Gentle Dental, but
-    // some carry their own local brand and must NEVER be called Gentle Dental
-    // — the name is the practice's identity in the title tag, the body copy,
-    // the schema and the exported document, so it is resolved in one place
-    // (compose.dentalBrandName) and read from the page object everywhere else.
-    //
-    // Keyed by location_page_url so an exception applies to existing rows
-    // without re-seeding — re-seeding locations would wipe the NAP fields the
-    // SEO team populates by hand. A location row's own `brand_name` wins over
-    // this map, so per-office overrides can also be edited as data later.
-    brand: {
-      default: 'Gentle Dental',
-      legalName: 'Gentle Dental of New England',
-      byLocationPageUrl: {
-        '/dental-offices/ma/boston/newbury-st': 'Newbury Dental Associates',
-      },
-    },
-    // A MINIMUM presence, deliberately low. See DENTAL_MIN_KEYWORD_USES in
-    // qaEngine.js: a high number is what forces the writer to paste the search
-    // string into prose.
-    minKeywordUses: 1,
-    faqAnswerMaxWords: 40,
-    // FAQ count. `min` is a CRITICAL QC gate (FAQ schema needs real questions),
-    // so the writer prompt, the regeneration retry guard and the gate itself
-    // all have to read the same number — the prompt used to say "4-6" in prose
-    // while the gate held its own copy of 4, and a regeneration that returned
-    // a single FAQ silently replaced a passing page's whole FAQ block.
-    faqs: {
-      // 7 ± 1. The band is what the writer is asked for AND what the count
-      // gate accepts, so a page cannot be instructed to write something the
-      // gate then rejects.
-      min: 6,
-      max: 8,
-      // How many FAQs must name the location. Three of roughly seven — but
-      // ONLY where the city genuinely changes the answer (availability, which
-      // options this office runs, booking and insurance here), never on a
-      // universal clinical question. Raising this number without the
-      // faq_localization_is_meaningful gate beside it would simply buy city
-      // names bolted onto "does it hurt" — which is the opposite of the point.
-      // See text.findForcedFaqLocalization.
-      minLocalized: 3,
-    },
-    // accept* is the QC gate; target* is what the writer is asked for —
-    // deliberately inside the gate so normal variance still passes.
-    pageWords: { acceptMin: 600, acceptMax: 1100, targetMin: 700, targetMax: 1050 },
   },
 
   keywords: {

@@ -7,10 +7,7 @@ const url = require('../urlBuilder');
 const cat = require('../categoryLogic');
 const approval = require('../approval');
 const qaEngine = require('../qaEngine');
-const text = require('../text');
 const schemaGenerator = require('../schemaGenerator');
-const compose = require('../compose');
-const internalLinks = require('../internalLinks');
 const exporter = require('../exporter');
 
 // ── Opt-in LLM stub ─────────────────────────────────────────────────────────
@@ -46,13 +43,9 @@ function stubLlm({ select, review, synth }) {
 }
 
 const keywordRelevance = require('../keywordRelevance');
-const dentalOutline = require('../dentalOutline');
-const contentGenerator = require('../contentGenerator');
-const config = require('../config');
 const keywordUniverseMap = require('../keywordUniverseMap');
 const seed = require('../seed');
 const keywordAdapter = require('../keywordAdapter');
-const brief = require('../brief');
 const verticals = require('../verticals');
 const cbhContract = require('../cbhContract');
 const cbhQc = require('../cbhQc');
@@ -61,16 +54,6 @@ const cbhWriter = require('../cbhWriter');
 const cbhFixture = require('./cbhFixture');
 const cbhBrief = require('../cbhBrief');
 const cbhSources = require('../cbhFallbackSources');
-const briefWizard = require('../briefWizard');
-
-// The keyword-presence check carries its own threshold in its id, so it is
-// derived from config rather than hardcoded here.
-// Threshold-carrying ids are derived from config, never hardcoded.
-// Stable check id; the threshold rides in the check's `name` (asserted below),
-// so retuning the minimum in config cannot rename the check out from under a
-// saved page's Recheck button.
-const FAQ_LOCALIZATION_CHECK = 'city_in_faq';
-const KEYWORD_PRESENCE_CHECK = `primary_keyword_present_${config.dental.minKeywordUses}x`;
 
 let passed = 0, failed = 0;
 function test(name, fn) {
@@ -212,610 +195,47 @@ test('FAQ schema mismatch caught', () => {
   assert.ok(r.checks.find(c => c.key === 'faq_schema_matches_visible' && !c.passed));
 });
 
-console.log('\nDental (Gentle Dental) — URL builder (Build Brief §2.1)');
-test('dentalPageUrl appends service slug to the location path', () => {
-  assert.strictEqual(url.dentalPageUrl('/dental-offices/ma/quincy', 'teeth-whitening'), '/dental-offices/ma/quincy/teeth-whitening');
-});
-test('dentalPageUrl handles a location path with a sub-area segment', () => {
-  assert.strictEqual(url.dentalPageUrl('/dental-offices/ma/boston/newbury-st', 'veneers'), '/dental-offices/ma/boston/newbury-st/veneers');
-});
-test('canonicalDentalUrl joins origin without double slash', () => {
-  assert.strictEqual(url.canonicalDentalUrl('https://gentledental.com/', '/dental-offices/ma/quincy', 'implants'), 'https://gentledental.com/dental-offices/ma/quincy/implants');
+console.log('\nURL builder — product names');
+test('trademarked names survive slugification', () => {
+  assert.strictEqual(url.slugify('Invisalign® Treatment'), 'invisalign-treatment');
+  assert.strictEqual(url.slugify('Curodont™'), 'curodont');
 });
 
-console.log('\nDental — scaffold composition');
-function dentalLayers() {
-  return {
-    client: { id: 'client_gentle_dental', name: 'Gentle Dental of New England', brand_static: { base_url: 'https://gentledental.com' } },
-    service: { id: 'dsvc_teeth-whitening', name: 'Teeth Whitening', slug: 'teeth-whitening', category: 'Cosmetic' },
-    location: {
-      id: 'dloc_ma-quincy', location_name: 'Quincy', city: 'Quincy', region: 'South Shore',
-      state: 'Massachusetts', state_abbreviation: 'MA', location_page_url: '/dental-offices/ma/quincy',
-      street_address: '', phone_number: '', hours_by_day: {}, directions_url: '',
-      latitude: '', longitude: '', services_available_ids: ['dsvc_teeth-whitening', 'dsvc_veneers'],
-      nap_todo: ['street_address', 'phone_number', 'hours_by_day'],
-    },
-    allServices: [
-      { id: 'dsvc_teeth-whitening', name: 'Teeth Whitening', slug: 'teeth-whitening', category: 'Cosmetic' },
-      { id: 'dsvc_veneers', name: 'Veneers', slug: 'veneers', category: 'Cosmetic' },
-    ],
+console.log('\nSeed - re-seeding keeps what the SEO team entered by hand');
+test('re-seeding preserves hand-entered NAP', () => {
+  // A seeder ships NAP blank on purpose, so a blind replaceAll wiped the
+  // address, phone and hours the SEO team enters by hand. That made re-seeding
+  // to pick up a service change cost the whole NAP effort -- and re-seeding is
+  // the ONLY way a taxonomy change reaches the dropdown.
+  const seeded = {
+    id: 'cbhloc_pasadena', city: 'Pasadena',
+    street_address: '', phone_number: '', hours_by_day: {}, nearby_areas: [],
   };
-}
-test('buildDentalScaffold derives urlPath/title/canonical and a deterministic breadcrumb+menu', () => {
-  const scaffold = compose.buildDentalScaffold(dentalLayers());
-  assert.strictEqual(scaffold.meta.urlPath, '/dental-offices/ma/quincy/teeth-whitening');
-  assert.strictEqual(scaffold.meta.title, 'Teeth Whitening in Quincy, MA | Gentle Dental');
-  assert.strictEqual(scaffold.sections.hero.h1, 'Teeth Whitening in Quincy, MA');
-  assert.strictEqual(scaffold.sections.breadcrumb.items.length, 4);
-  assert.strictEqual(scaffold.sections.servicesInCity.categories[0].items.length, 2);
-  assert.deepStrictEqual(scaffold.sections.officeInfo.nap_todo, ['street_address', 'phone_number', 'hours_by_day']);
+  const stored = {
+    id: 'cbhloc_pasadena', city: 'Pasadena',
+    street_address: '123 Colorado Blvd', phone_number: '626-555-0100',
+    hours_by_day: { mon: '8-5' }, nearby_areas: ['Altadena'],
+  };
+  const merged = seed.mergeLocation(seeded, stored);
+  assert.strictEqual(merged.street_address, '123 Colorado Blvd');
+  assert.strictEqual(merged.phone_number, '626-555-0100');
+  assert.deepStrictEqual(merged.hours_by_day, { mon: '8-5' });
+  assert.deepStrictEqual(merged.nearby_areas, ['Altadena']);
 });
-test('mergeDentalL3 fills in the generated subset (heroIntro/metaDescription/educationalBody/faqs) — no OG tags', () => {
-  const scaffold = compose.buildDentalScaffold(dentalLayers());
-  compose.mergeDentalL3(scaffold, {
-    heroIntro: 'Teeth whitening in Quincy brightens smiles fast.',
-    metaDescription: 'a'.repeat(155),
-    educationalBody: [{ h2: 'What Is Teeth Whitening?', html: '<p>x</p>' }],
-    faqs: [{ q: 'Q1', a: 'A1' }],
-  });
-  assert.strictEqual(scaffold.sections.hero.intro, 'Teeth whitening in Quincy brightens smiles fast.');
-  assert.strictEqual(scaffold.meta.metaDescription.length, 155);
-  assert.strictEqual(scaffold.sections.educationalBody.blocks.length, 1);
-  assert.strictEqual(scaffold.sections.faq.items[0].q, 'Q1');
-  // servicesInCity.intro is NOT generated — stays untouched (manual/optional).
-  assert.strictEqual(scaffold.sections.servicesInCity.intro, '');
-  // No OG tags in the contract at all.
-  assert.ok(!('ogTitle' in scaffold.meta));
-  assert.ok(!('ogDescription' in scaffold.meta));
-  assert.ok(!('ogImageAlt' in scaffold.meta));
+test('re-seeding still applies seeded identity and geography', () => {
+  // The point of re-seeding is to pick up changes, so anything the team has
+  // NOT populated must take the seeded value.
+  const seeded = { id: 'x', city: 'Pasadena', location_name: 'Pasadena', street_address: '' };
+  const merged = seed.mergeLocation(seeded, { id: 'x', city: 'Stale', location_name: 'Stale', street_address: '' });
+  assert.strictEqual(merged.city, 'Pasadena', 'identity/geo always comes from the seed');
+  assert.strictEqual(merged.location_name, 'Pasadena');
+});
+test('a location with nothing stored seeds unchanged', () => {
+  const seeded = { id: 'new', city: 'Van Nuys', street_address: '' };
+  assert.deepStrictEqual(seed.mergeLocation(seeded, null), seeded);
 });
 
-console.log('\nDental — internal links (Appendix C sibling-location cluster)');
-test('buildDentalSiblings caps at maxSiblingLocations and prefers same region', () => {
-  const currentLocation = { id: 'a', region: 'South Shore', city: 'Quincy', location_page_url: '/dental-offices/ma/quincy' };
-  const allLocations = [
-    currentLocation,
-    { id: 'b', region: 'South Shore', city: 'Braintree', location_page_url: '/dental-offices/ma/braintree' },
-    { id: 'c', region: 'South Shore', city: 'Hanover', location_page_url: '/dental-offices/ma/hanover' },
-    { id: 'd', region: 'Worcester', city: 'Worcester', location_page_url: '/dental-offices/ma/worcester' },
-    { id: 'e', region: 'Boston', city: 'Boston', location_page_url: '/dental-offices/ma/boston' },
-  ];
-  const links = internalLinks.buildDentalSiblings({ allLocations, currentLocation, service: { name: 'Teeth Whitening', slug: 'teeth-whitening' } });
-  assert.strictEqual(links.length, 3);
-  assert.ok(links.every(l => l.link_type === 'sibling_location'));
-  assert.strictEqual(links[0].url, '/dental-offices/ma/braintree/teeth-whitening');
-});
-
-console.log('\nDental — schema (5 JSON-LD blocks, Appendix C layering)');
-function dentalScaffoldWithContent() {
-  const scaffold = compose.buildDentalScaffold(dentalLayers());
-  // In range (150-160) AND closing on a call to action, because those are two
-  // separate gates now.
-  const metaDescription = 'Get professional teeth whitening in Quincy, MA, with both in-office and '
-    + 'take-home options and your insurance filed for you. Book a visit with our team today.';
-  compose.mergeDentalL3(scaffold, {
-    // 90-110 characters: one sentence with the outcome and city, then the step.
-    heroIntro: 'Brighten your smile with professional teeth whitening in Quincy, MA. Book a visit with us today.',
-    metaDescription,
-    // Six planned blocks plus the fixed "Why Choose" closer — the 7-8 stack
-    // every page carries (dentalOutline plans the first six or seven).
-    educationalBody: [
-      { h2: 'What Is Teeth Whitening?', html: '<p>Teeth whitening in Quincy is a cosmetic procedure that lightens stains.</p>' },
-      { h2: 'Benefits of Teeth Whitening', html: '<p>A brighter smile boosts confidence for Quincy patients.</p>' },
-      { h2: 'What to Expect During Teeth Whitening', html: '<p>Sessions run about 60 minutes chairside.</p>' },
-      { h2: 'Who Is a Good Candidate for Teeth Whitening?', html: '<p>Healthy gums and enamel make teeth whitening a good fit.</p>' },
-      { h2: 'Types and Options for Teeth Whitening', html: '<p>In-office trays and take-home kits are both available.</p>' },
-      { h2: 'Is Teeth Whitening Safe?', html: '<p>Professional whitening is safe when a dentist supervises it.</p>' },
-      { h2: 'Why Choose Gentle Dental for Teeth Whitening in Quincy, MA?', html: '<p>Our Quincy team walks you through both options and files your insurance for you.</p>' },
-    ],
-    // Seven questions, three of them localized the way the brief asks: the
-    // city rides on what the OFFICE does (options, booking, insurance), never
-    // on the universal ones about pain, safety or how long it takes.
-    faqs: [
-      { q: 'Which whitening options are available at your Quincy office?', a: 'In-office trays and take-home kits.' },
-      { q: 'Can I book teeth whitening in Quincy before a weekend?', a: 'Yes, ask our team for the next open slot.' },
-      { q: 'Does your Quincy office file whitening claims with insurance?', a: 'We file for you where a plan contributes.' },
-      { q: 'How long does teeth whitening take?', a: 'Most patients finish in a single visit.' },
-      { q: 'Is teeth whitening safe?', a: 'Yes, professional whitening is safe under a dentist’s care.' },
-      { q: 'How much does teeth whitening cost?', a: 'Cost varies by case; ask our team for a quote.' },
-      { q: 'Will whitening work on crowns?', a: 'Whitening does not lighten crowns or veneers.' },
-    ],
-  });
-  scaffold.primaryKeyword = 'teeth whitening quincy';
-  scaffold.secondaryKeywords = ['teeth whitening ma'];
-  scaffold.sections.servicesInCity.internalLinks = [
-    { anchor_text: 'Teeth Whitening in Braintree', url: '/dental-offices/ma/braintree/teeth-whitening', link_type: 'sibling_location', placement: 'services_in_city' },
-    { anchor_text: 'Teeth Whitening in Hanover', url: '/dental-offices/ma/hanover/teeth-whitening', link_type: 'sibling_location', placement: 'services_in_city' },
-    { anchor_text: 'Teeth Whitening in Worcester', url: '/dental-offices/ma/worcester/teeth-whitening', link_type: 'sibling_location', placement: 'services_in_city' },
-  ];
-  return scaffold;
-}
-test('generateDentalSchema returns 5 parseable JSON-LD strings, FAQ mirrors visible FAQs', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  const schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  ['breadcrumbList', 'dentist', 'medicalWebPage', 'medicalProcedure', 'faqPage'].forEach(k => {
-    assert.doesNotThrow(() => JSON.parse(schema[k]), `${k} should be valid JSON`);
-  });
-  const faqPage = JSON.parse(schema.faqPage);
-  assert.strictEqual(faqPage.mainEntity.length, scaffold.sections.faq.items.length);
-});
-
-console.log('\nDental — QC (Build Brief §6 QcResult)');
-test('a fully-formed dental page has no Critical failures', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  const criticalFails = qc.checks.filter(c => c.severity === 'Critical' && !c.pass);
-  assert.deepStrictEqual(criticalFails, [], 'unexpected critical failures: ' + JSON.stringify(criticalFails));
-  assert.notStrictEqual(qc.verdict, 'FAIL');
-});
-test('missing primary keyword in H1/title/meta is a Critical failure → FAIL', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.primaryKeyword = 'something totally unrelated';
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  assert.strictEqual(qc.verdict, 'FAIL');
-  // The fixture's related keyword ("teeth whitening ma") IS in the H1 — a
-  // related keyword must never stand in for the primary in an identity gate,
-  // it only earns a more useful message.
-  const h1 = qc.checks.find(c => c.id === 'primary_keyword_in_h1');
-  assert.strictEqual(h1.pass, false);
-  assert.ok(h1.detail.includes('Only the related keyword'), `unexpected detail: ${h1.detail}`);
-});
-test('a close variant of the primary satisfies the H1/title gates', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  // Reordered, singular, and without the "in"/comma the H1 template adds.
-  scaffold.primaryKeyword = 'quincy teeth whitening';
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  ['primary_keyword_in_h1', 'primary_keyword_in_title'].forEach(id => {
-    assert.strictEqual(qc.checks.find(c => c.id === id).pass, true, `${id} should accept a close variant`);
-  });
-});
-test(`fewer than ${config.dental.faqs.min} FAQs is a Critical failure`, () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.faq.items = scaffold.sections.faq.items.slice(0, 2);
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  assert.ok(qc.checks.find(c => c.name === `faq_count_min_${config.dental.faqs.min}` && !c.pass));
-  assert.strictEqual(qc.verdict, 'FAIL');
-});
-test('primary keyword frequency check counts close variants (not just literal substring), no OG check exists', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  const freqCheck = qc.checks.find(c => c.name === KEYWORD_PRESENCE_CHECK);
-  assert.ok(freqCheck, KEYWORD_PRESENCE_CHECK + ' check should exist');
-  assert.strictEqual(freqCheck.severity, 'Major');
-  assert.ok(!qc.checks.find(c => c.name === 'og_fields_present'), 'og_fields_present check should no longer exist');
-});
-test('primary keyword frequency check fails when no approved keyword appears in the body', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.primaryKeyword = 'dental implants worcester'; // never appears anywhere in this fixture's body
-  scaffold.secondaryKeywords = [];
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  const freqCheck = qc.checks.find(c => c.name === KEYWORD_PRESENCE_CHECK);
-  assert.strictEqual(freqCheck.pass, false);
-});
-test('usage frequency counts an approved RELATED keyword, not just the primary', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.primaryKeyword = 'dental implants worcester'; // absent from the body
-  const withoutRelated = qaEngine.runDentalQC({ ...scaffold, secondaryKeywords: [] })
-    .checks.find(c => c.id === KEYWORD_PRESENCE_CHECK);
-  // "teeth whitening ma" is what this fixture's body actually uses.
-  const withRelated = qaEngine.runDentalQC(scaffold)
-    .checks.find(c => c.id === KEYWORD_PRESENCE_CHECK);
-  assert.ok(withRelated.detail.includes('teeth whitening ma'), `related keyword should be reported: ${withRelated.detail}`);
-  assert.ok(withoutRelated.pass === false && withRelated.pass === true,
-    'a body carrying only the related keyword should satisfy the usage gate, not the primary-in-H1 gate');
-});
-test('consecutive sentences that each use the keyword are each counted', () => {
-  // The counter used to skip a whole window after every hit, which swallowed
-  // any further use inside it: five sentences counted four, and a page could
-  // be told to add a sixth use it had already written.
-  const sentence = 'Teeth whitening in Quincy is quick. ';
-  for (const n of [1, 2, 5, 9]) {
-    assert.strictEqual(text.countAnyKeywordOccurrences(sentence.repeat(n), ['teeth whitening quincy']).total, n,
-      `${n} consecutive uses should count ${n} times`);
-  }
-  // Still non-overlapping: one run of words is never counted twice, and words
-  // too far apart to be one phrase are not a use at all.
-  assert.strictEqual(text.countAnyKeywordOccurrences('teeth whitening in Quincy, MA', ['teeth whitening quincy']).total, 1);
-  const scattered = `teeth whitening ${Array.from({ length: 20 }, (_, i) => `w${i}`).join(' ')} quincy`;
-  assert.strictEqual(text.countAnyKeywordOccurrences(scattered, ['teeth whitening quincy']).total, 0);
-  // One window satisfying two approved phrases is one use, not two.
-  assert.strictEqual(
-    text.countAnyKeywordOccurrences('teeth whitening in quincy ma', ['teeth whitening quincy', 'teeth whitening ma']).total, 1);
-});
-test('the usage and density gates cannot contradict each other', () => {
-  // Frequency asks for >= 5 uses; density caps uses per word. They are only
-  // satisfiable together because the word-count gate holds the denominator up
-  // — if that floor ever drops, the writer gets two instructions it cannot
-  // obey at once.
-  const d = config.dental;
-  const worstCaseDensity = 5 / d.pageWords.acceptMin;
-  assert.ok(worstCaseDensity <= 0.025,
-    `the minimum 5 uses at the ${d.pageWords.acceptMin}-word floor is ${(worstCaseDensity * 100).toFixed(1)}% density, over the 2.5% cap`);
-});
-
-console.log('\nDental — QC anchoring + single-check recheck');
-test('every check names the editor control its failure belongs to', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const fields = new Set(['hero.h1', 'hero.intro', 'meta.title', 'meta.metaDescription', 'educationalBody', 'faq', 'schema', 'internalLinks']);
-  qaEngine.runDentalQC(scaffold).checks.forEach(c => {
-    assert.ok(c.id, `check ${c.name} must have a stable id`);
-    assert.ok(fields.has(c.field), `check ${c.id} has an unroutable field: ${c.field}`);
-    assert.ok(c.label, `check ${c.id} must have a label for its inline notice`);
-  });
-});
-test('a readability failure is reported per block, so the notice lands on it', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const wall = Array.from({ length: config.dental.paragraphWords.hardMax + 5 }, (_, i) => `word${i}`).join(' ');
-  scaffold.sections.educationalBody.blocks[1].html = `<p>${wall}</p>`;
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'readability_paragraph_length');
-  assert.deepStrictEqual(Object.keys(check.blocks), ['1'], 'only the offending block should be named');
-  assert.ok(check.blocks[1].includes('longest paragraph'));
-});
-test('a single check can be re-run alone and gives the same answer', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const full = qaEngine.runDentalQC(scaffold);
-  full.checks.forEach(c => {
-    const alone = qaEngine.runDentalCheck(scaffold, c.id);
-    assert.deepStrictEqual(alone, c, `${c.id} must not depend on being run with the others`);
-  });
-  assert.throws(() => qaEngine.runDentalCheck(scaffold, 'no_such_check'), /Unknown QC check/);
-});
-test('re-running one check splices it back in and re-derives the verdict', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.meta.metaDescription = 'Too short.';
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const before = qaEngine.runDentalQC(scaffold);
-  assert.strictEqual(before.verdict, 'FAIL');
-
-  // The reviewer fixes exactly that field and rechecks only it. Both meta
-  // description checks hang off the same control, so both are re-run.
-  scaffold.meta.metaDescription = 'Professional teeth whitening in Quincy, MA at Gentle Dental. Book your visit today and see what a brighter, healthier, more confident smile can do for you.';
-  let merged = { checks: before.checks };
-  ['meta_description_length', 'primary_keyword_in_meta_description'].forEach(id => {
-    const fixed = qaEngine.runDentalCheck(scaffold, id);
-    assert.strictEqual(fixed.pass, true, `${id} should pass after the fix: ${fixed.detail}`);
-    merged = qaEngine.mergeDentalCheck(merged.checks, fixed);
-  });
-  assert.strictEqual(merged.checks.length, before.checks.length, 'the checks are replaced, not appended');
-  assert.notStrictEqual(merged.verdict, 'FAIL', 'the verdict is re-derived from the merged set');
-});
-test('a second recheck must build on the first one\'s result, not on the same snapshot', () => {
-  // The contract the wizard relies on by serializing its rechecks: each one
-  // sends the list the previous one returned. Two fixes rechecked against the
-  // SAME starting list would leave whichever replied last holding a result that
-  // still says the other field is broken.
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.meta.metaDescription = 'Too short.';
-  scaffold.sections.faq.items = scaffold.sections.faq.items.slice(0, 2);
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const stale = qaEngine.runDentalQC(scaffold);
-  assert.strictEqual(stale.verdict, 'FAIL');
-
-  // The reviewer fixes both fields, then rechecks them one after the other.
-  scaffold.meta.metaDescription = 'Professional teeth whitening in Quincy, MA at Gentle Dental. Book your visit today and see what a brighter, healthier, more confident smile can do for you.';
-  scaffold.sections.faq.items = dentalScaffoldWithContent().sections.faq.items;
-
-  const first = qaEngine.recheckDental(scaffold, 'meta_description_length', stale.checks);
-  const chained = qaEngine.recheckDental(scaffold, 'faq_count', first.checks);
-  assert.strictEqual(chained.checks.find(c => c.id === 'meta_description_length').pass, true,
-    'chaining keeps the first fix');
-  assert.strictEqual(chained.checks.find(c => c.id === 'faq_count').pass, true);
-
-  // Against the stale snapshot instead, the first fix is silently dropped —
-  // which is exactly what the client must never do.
-  const raced = qaEngine.recheckDental(scaffold, 'faq_count', stale.checks);
-  assert.strictEqual(raced.checks.find(c => c.id === 'meta_description_length').pass, false,
-    'this is the failure mode the queue exists to prevent');
-});
-test('a recheck with nothing to merge into runs the full pass, never a one-check verdict', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.faq.items = scaffold.sections.faq.items.slice(0, 2); // a real Critical failure
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const full = qaEngine.runDentalQC(scaffold);
-
-  // The caller stores what it gets back, so a single passing check must never
-  // come back as a complete PASS result and overwrite a real one.
-  [[], undefined, null].forEach(prior => {
-    const r = qaEngine.recheckDental(scaffold, 'internal_links_min_3', prior);
-    assert.strictEqual(r.checks.length, full.checks.length, 'the full check set must come back');
-    assert.strictEqual(r.verdict, 'FAIL', 'the verdict must still reflect the FAQ failure');
-    assert.strictEqual(r.check.id, 'internal_links_min_3', 'the requested check is returned alongside');
-  });
-
-  // With a prior set it merges, leaving every other check untouched.
-  const merged = qaEngine.recheckDental(scaffold, 'internal_links_min_3', full.checks);
-  assert.deepStrictEqual(
-    merged.checks.filter(c => c.id !== 'internal_links_min_3'),
-    full.checks.filter(c => c.id !== 'internal_links_min_3'),
-    'a single-check recheck must not disturb the others');
-  assert.throws(() => qaEngine.recheckDental(scaffold, 'no_such_check', full.checks), /Unknown QC check/);
-});
-test('the scaffold guard rejects payloads QC cannot meaningfully read', () => {
-  [null, undefined, 'a string', {}, { meta: {} }, { sections: {} }]
-    .forEach(bad => assert.strictEqual(qaEngine.isDentalScaffold(bad), false, `${JSON.stringify(bad)} is not a GeneratedPage`));
-  assert.strictEqual(qaEngine.isDentalScaffold(dentalScaffoldWithContent()), true);
-});
-test('an H1 that is not "{Service} in {City}, {ST}" says so instead of quoting an empty city', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.hero.h1 = 'Quincy Teeth Whitening'; // no " in {City}, {ST}"
-  const qc = qaEngine.runDentalQC(scaffold);
-  ['city_in_educational_body', FAQ_LOCALIZATION_CHECK].forEach(id => {
-    const c = qc.checks.find(x => x.id === id);
-    assert.strictEqual(c.pass, false);
-    assert.ok(!c.detail.includes('""'), `${id} quoted an empty city: ${c.detail}`);
-    assert.ok(c.detail.includes('Could not read a city from the H1'), `${id} should point at the H1: ${c.detail}`);
-  });
-});
-
-console.log('\nDental — educational-body outline planner (fallback ladder + competitor grading)');
-test('pickLadder returns the clinical ladder for urgent/surgical services', () => {
-  const clinical = dentalOutline.ladderHeadings({ name: 'Root Canals', category: 'Endodontics' });
-  assert.strictEqual(clinical[1], 'Signs You May Need Root Canals');
-  const emergency = dentalOutline.ladderHeadings({ name: 'Emergency Dental Care', category: 'Urgent' });
-  assert.strictEqual(emergency[2], 'The Emergency Dental Care Procedure');
-});
-test('ladder rungs agree in number with plural service names', () => {
-  // Half the Gentle Dental catalogue is plural, so a flat `What Is ${name}?`
-  // used to render "What Is Root Canals?" and "Is Extractions Safe?".
-  const plural = dentalOutline.ladderHeadings({ name: 'Root Canals', category: 'Restorative' });
-  assert.strictEqual(plural[0], 'What Are Root Canals?');
-  assert.strictEqual(plural[6], 'Are Root Canals Safe?');
-  assert.strictEqual(plural[2], 'What Happens During Root Canals', 'avoids "The Root Canals Procedure"');
-
-  const singular = dentalOutline.ladderHeadings({ name: 'Emergency Dental Care', category: 'Specialty' });
-  assert.strictEqual(singular[0], 'What Is Emergency Dental Care?');
-  assert.strictEqual(singular[6], 'Is Emergency Dental Care Safe?');
-  assert.strictEqual(singular[2], 'The Emergency Dental Care Procedure');
-
-  // The LAST word decides, and -ss/-us/-is words stay singular.
-  assert.strictEqual(dentalOutline.isPluralName('Crowns & Bridges'), true);
-  assert.strictEqual(dentalOutline.isPluralName('Diabetes & Oral Health'), false);
-  assert.strictEqual(dentalOutline.isPluralName('Teeth Whitening'), false);
-  assert.strictEqual(dentalOutline.isPluralName('Digital X-rays'), true);
-});
-test('pickLadder returns the general ladder for elective services', () => {
-  const general = dentalOutline.ladderHeadings({ name: 'Teeth Whitening', category: 'Cosmetic' });
-  assert.strictEqual(general[1], 'Benefits of Teeth Whitening');
-  assert.strictEqual(general.length, 7);
-});
-test('scraped nav/CTA/brand headings are filtered out, real topics survive', () => {
-  const kept = dentalOutline.filterCompetitorHeadings([
-    'Meet Our Team', 'Book Your Appointment Today', 'Patient Reviews', 'Our Dentists in Quincy',
-    'How Much Do Veneers Cost?', 'Does Insurance Cover Dental Implants?', 'Recovery Time After An Extraction',
-    'Veneers', // too short to write a section from
-    'How Much Do Veneers Cost?', // duplicate
-  ]);
-  assert.deepStrictEqual(kept, [
-    'How Much Do Veneers Cost?',
-    'Does Insurance Cover Dental Implants?',
-    'Recovery Time After An Extraction',
-  ]);
-});
-
-// Six competitor topics, none of which carries the service terms — the state
-// that makes the keyword-in-an-H2 repair actually run.
-const SIX_KEYWORDLESS_BLOCKS = () => [
-  'Why Stains Form on Enamel', 'Caring for a Brighter Smile', 'Coffee and Tea Habits',
-  'Enamel Health Basics', 'At-Home Kits Compared', 'Aftercare Tips',
-].map(h2 => ({ h2, source: 'competitor', paragraphs: 2 }));
-
-const OUTLINE_CTX = {
-  service: { id: 'svc_teeth_whitening', name: 'Teeth Whitening', category: 'Cosmetic' },
-  location: { id: 'loc_quincy', city: 'Quincy', state_abbreviation: 'MA' },
-  primaryKeyword: 'teeth whitening quincy',
-};
-
-test('an outline with too few blocks is topped up from the ladder to 6', () => {
-  const o = dentalOutline.normalizeOutline({
-    competitorQuality: 'partial',
-    blocks: [
-      { h2: 'What Is Teeth Whitening?', source: 'competitor', paragraphs: 2 },
-      { h2: 'How Much Does Teeth Whitening Cost?', source: 'competitor', paragraphs: 2 },
-    ],
-  }, OUTLINE_CTX);
-  assert.strictEqual(o.blocks.length, 6);
-  assert.strictEqual(o.blocks[0].h2, 'What Is Teeth Whitening?');
-  assert.strictEqual(o.blocks[1].h2, 'How Much Does Teeth Whitening Cost?');
-  assert.ok(o.blocks.slice(2).every(b => b.source === 'fallback'), 'topped-up blocks are tagged fallback');
-});
-test('an over-long outline is truncated to 7 blocks and boilerplate/duplicates are dropped', () => {
-  const o = dentalOutline.normalizeOutline({
-    competitorQuality: 'good',
-    blocks: [
-      ...Array.from({ length: 9 }, (_, i) => ({ h2: `Teeth Whitening Topic ${i}`, source: 'competitor', paragraphs: 2 })),
-      { h2: 'Teeth Whitening Topic 0', source: 'competitor', paragraphs: 2 },
-      { h2: 'Meet Our Team', source: 'competitor', paragraphs: 2 },
-    ],
-  }, OUTLINE_CTX);
-  assert.strictEqual(o.blocks.length, 7);
-  assert.ok(!o.blocks.some(b => b.h2 === 'Meet Our Team'), 'boilerplate must never reach the writer');
-  assert.strictEqual(new Set(o.blocks.map(b => b.h2)).size, 7, 'headings must be unique');
-});
-test('paragraph counts are clamped to 1-3 and the stack stays inside the word budget', () => {
-  const o = dentalOutline.normalizeOutline({
-    blocks: [
-      { h2: 'What Is Teeth Whitening?', paragraphs: 12 },
-      { h2: 'Teeth Whitening Aftercare', paragraphs: 0 },
-      { h2: 'Teeth Whitening Options', paragraphs: 'nonsense' },
-    ],
-  }, OUTLINE_CTX);
-  assert.ok(o.blocks.every(b => b.paragraphs >= 1 && b.paragraphs <= 3), 'every block is 1-3 paragraphs');
-  const total = o.blocks.reduce((n, b) => n + b.paragraphs, 0);
-  assert.ok(total >= 12 && total <= 16, `total paragraphs ${total} should sit in 12-16`);
-});
-test('a full outline with no keyword-bearing H2 gets a ladder rung promoted', () => {
-  // Mirrors qaEngine's keyword-in-an-H2 gate. A short outline is padded from
-  // the ladder first, which already satisfies the gate; this exercises the
-  // repair proper — a full 6-block outline where no heading carries it.
-  const o = dentalOutline.normalizeOutline({ blocks: SIX_KEYWORDLESS_BLOCKS() },
-    { ...OUTLINE_CTX, primaryKeyword: 'teeth whitening quincy' });
-  assert.strictEqual(o.blocks[0].h2, 'What Is Teeth Whitening?');
-  assert.strictEqual(o.blocks.length, 7);
-});
-test('a rung is promoted only when it actually satisfies the gate', () => {
-  // "zoom" appears in no ladder rung, so no rung can satisfy the gate. This
-  // used to hardcode the "What Is X?" rung on the theory that naming the
-  // service is always enough — inserting a block that fixed nothing and
-  // displacing a real competitor topic to do it. Leave the outline alone and
-  // let QC flag the gate, which is what its `fix` hint is for.
-  const o = dentalOutline.normalizeOutline({ blocks: SIX_KEYWORDLESS_BLOCKS() },
-    { ...OUTLINE_CTX, primaryKeyword: 'zoom whitening quincy' });
-  assert.strictEqual(o.blocks[0].h2, 'Why Stains Form on Enamel');
-  assert.strictEqual(o.blocks.length, 6, 'no block slot is spent on a heading that changes nothing');
-  assert.ok(!o.blocks.some(b => b.h2 === 'What Is Teeth Whitening?'));
-});
-test('an approved related keyword can satisfy the H2 gate, as it does in QC', () => {
-  // qaEngine accepts the primary OR any approved related keyword in an H2, so
-  // the repair reads the same phrase list rather than the primary alone.
-  const o = dentalOutline.normalizeOutline({ blocks: SIX_KEYWORDLESS_BLOCKS() }, {
-    ...OUTLINE_CTX,
-    primaryKeyword: 'zoom whitening quincy',
-    keywordPhrases: ['zoom whitening quincy', 'teeth whitening quincy'],
-  });
-  assert.strictEqual(o.blocks[0].h2, 'What Is Teeth Whitening?',
-    'the related keyword is satisfiable by a rung, so it is promoted');
-});
-test('exactly one block is marked for city localization', () => {
-  const o = dentalOutline.normalizeOutline({
-    blocks: [
-      { h2: 'What Is Teeth Whitening?', paragraphs: 2 },
-      { h2: 'Teeth Whitening Options', paragraphs: 2 },
-    ],
-  }, OUTLINE_CTX);
-  assert.strictEqual(o.blocks.filter(b => b.localize).length, 1);
-  assert.strictEqual(o.blocks[1].localize, true);
-});
-test('fallbackOutline yields a full 7-rung ladder tagged unavailable', () => {
-  const o = dentalOutline.fallbackOutline(OUTLINE_CTX);
-  assert.strictEqual(o.competitorQuality, 'unavailable');
-  assert.strictEqual(o.blocks.length, 7);
-  assert.ok(o.blocks.every(b => b.source === 'fallback'));
-  assert.ok(o.rationale.length > 0, 'the reviewer needs to know why the ladder was used');
-});
-
-console.log('\nDental — the fixed "Why Choose" closing block');
-test('the closer names the practice, the service and the city', () => {
-  assert.strictEqual(
-    dentalOutline.brandBlockHeading({
-      brandName: 'Gentle Dental',
-      service: { name: 'Teeth Whitening' },
-      location: { city: 'Boston', state_abbreviation: 'MA' },
-    }),
-    'Why Choose Gentle Dental for Teeth Whitening in Boston, MA?');
-});
-test('an office with its own brand is never called Gentle Dental in the closer', () => {
-  // The Newbury Street office trades as Newbury Dental Associates.
-  assert.strictEqual(
-    dentalOutline.brandBlockHeading({
-      brandName: 'Newbury Dental Associates',
-      service: { name: 'Veneers' },
-      location: { city: 'Boston', state_abbreviation: 'MA' },
-    }),
-    'Why Choose Newbury Dental Associates for Veneers in Boston, MA?');
-});
-test('the closer is appended last, tagged brand, and never appended twice', () => {
-  const planned = dentalOutline.fallbackOutline(OUTLINE_CTX);
-  const ctx = { service: { name: 'Teeth Whitening' }, location: { city: 'Quincy', state_abbreviation: 'MA' }, brandName: 'Gentle Dental' };
-  const withCloser = dentalOutline.withBrandBlock(planned, ctx);
-
-  assert.strictEqual(withCloser.blocks.length, planned.blocks.length + 1);
-  const last = withCloser.blocks[withCloser.blocks.length - 1];
-  assert.strictEqual(last.h2, 'Why Choose Gentle Dental for Teeth Whitening in Quincy, MA?');
-  assert.strictEqual(last.source, 'brand');
-  assert.strictEqual(last.paragraphs, config.dental.brandBlock.paragraphs);
-
-  // A cached outline re-read on a later run must not collect a second closer.
-  assert.strictEqual(dentalOutline.withBrandBlock(withCloser, ctx).blocks.length, withCloser.blocks.length);
-});
-test('the planned count and the page count stay one apart', () => {
-  // qaEngine gates the TOTAL; dentalOutline plans everything except the closer.
-  // Retuning one without the other is what makes a page fail its own gate.
-  assert.strictEqual(config.dental.blocks.min, config.dental.plannedBlocks.min + 1);
-  assert.strictEqual(config.dental.blocks.max, config.dental.plannedBlocks.max + 1);
-});
-test('a scraped "Why Choose Us" heading is still rejected from the planned stack', () => {
-  // The closer is added in code; a competitor's brand furniture must not
-  // become a second one.
-  const o = dentalOutline.normalizeOutline({
-    blocks: [
-      { h2: 'Why Choose Us for Teeth Whitening', paragraphs: 2 },
-      { h2: 'What Is Teeth Whitening?', paragraphs: 2 },
-    ],
-  }, OUTLINE_CTX);
-  assert.ok(!o.blocks.some(b => /^why choose/i.test(b.h2)));
-});
-
-console.log('\nDental — readability + block-count QC gates');
-test('a full stack passes the H2 count gate, a 3-block one fails it', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const pass = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === `educational_h2_count_${config.dental.blocks.min}_${config.dental.blocks.max}`);
-  assert.strictEqual(pass.pass, true);
-  assert.strictEqual(pass.severity, 'Major');
-
-  const thin = dentalScaffoldWithContent();
-  thin.sections.educationalBody.blocks = thin.sections.educationalBody.blocks.slice(0, 3);
-  const fail = qaEngine.runDentalQC(thin).checks.find(c => c.name === `educational_h2_count_${config.dental.blocks.min}_${config.dental.blocks.max}`);
-  assert.strictEqual(fail.pass, false);
-});
-test('a paragraph longer than three phone lines fails the readability gate', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const wall = Array.from({ length: 90 }, (_, i) => `word${i}`).join(' ');
-  scaffold.sections.educationalBody.blocks[2].html = `<p>${wall}</p>`;
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, false);
-  assert.ok(check.detail.includes('What to Expect During Teeth Whitening'), 'the detail names the offending block');
-});
-test('more than three paragraph-level nodes in one block fails the readability gate', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.educationalBody.blocks[1].html =
-    '<p>One short line.</p><p>Two short lines.</p><p>Three short lines.</p><ul><li>And a list</li></ul>';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, false);
-});
-test('a compliant stack of short paragraphs and one small list passes the readability gate', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.educationalBody.blocks[4].html =
-    '<p>Two options are available for teeth whitening in Quincy.</p><ul><li>In-office trays</li><li>Take-home kits</li></ul>';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, true);
-});
-test('secondary keyword coverage is reported as Minor, and an empty list never fails it', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.secondaryKeywords = ['whitening trays quincy'];
-  const miss = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'secondary_keyword_used');
-  assert.strictEqual(miss.severity, 'Minor');
-  assert.strictEqual(miss.pass, false);
-
-  scaffold.sections.educationalBody.blocks[4].html = '<p>Whitening trays for Quincy patients are one option.</p>';
-  const hit = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'secondary_keyword_used');
-  assert.strictEqual(hit.pass, true);
-
-  scaffold.secondaryKeywords = [];
-  assert.strictEqual(qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'secondary_keyword_used').pass, true);
-});
-
-
-// -- Dental keyword selection (Primary/Secondary relevance + review) --------
+// -- Keyword selection (Primary/Secondary relevance + review) ----------------
 // These exercise the deterministic paths only. Both LLM passes are absent in
 // tests (no ANTHROPIC_API_KEY), which is itself the behaviour under test: the
 // module must degrade to the code-side gate rather than throw.
@@ -830,811 +250,8 @@ const KW_ARGS = {
   relevanceTerms: ['invisalign', 'clear aligner'],
 };
 
-console.log('\nDental — the outline contract is enforced in code, not just requested');
-test('a draft matching the outline gets the planned headings restored verbatim', () => {
-  const outline = { blocks: [
-    { h2: 'What Is Teeth Whitening?', paragraphs: 2 },
-    { h2: 'Benefits of Teeth Whitening', paragraphs: 2 },
-  ] };
-  const l3 = { educationalBody: [
-    { h2: 'What is teeth-whitening, exactly?', html: '<p>A.</p>' },
-    { h2: 'Why Patients Love It', html: '<p>B.</p>' },
-  ] };
-  assert.strictEqual(contentGenerator.matchesOutline(l3, outline), true);
-  const aligned = contentGenerator.alignToOutline(l3, outline);
-  assert.deepStrictEqual(aligned.educationalBody.map(b => b.h2), ['What Is Teeth Whitening?', 'Benefits of Teeth Whitening']);
-  assert.deepStrictEqual(aligned.educationalBody.map(b => b.html), ['<p>A.</p>', '<p>B.</p>'], 'bodies stay with their own block');
-});
-test('a draft with the wrong block count is detected and keeps its own headings', () => {
-  // Index-forcing a short response would slide the plan's headings onto the
-  // wrong bodies, so alignToOutline must leave a mismatch alone.
-  const outline = { blocks: [
-    { h2: 'What Is Teeth Whitening?' }, { h2: 'Benefits of Teeth Whitening' }, { h2: 'Is Teeth Whitening Safe?' },
-  ] };
-  const l3 = { educationalBody: [
-    { h2: 'What Is Teeth Whitening?', html: '<p>A.</p>' },
-    { h2: 'Is Teeth Whitening Safe?', html: '<p>C.</p>' },
-  ] };
-  assert.strictEqual(contentGenerator.matchesOutline(l3, outline), false);
-  const aligned = contentGenerator.alignToOutline(l3, outline);
-  assert.deepStrictEqual(aligned.educationalBody.map(b => b.h2), ['What Is Teeth Whitening?', 'Is Teeth Whitening Safe?']);
-});
-test('with no outline, any draft is accepted unchanged', () => {
-  const l3 = { educationalBody: [{ h2: 'X', html: '<p>A.</p>' }] };
-  assert.strictEqual(contentGenerator.matchesOutline(l3, null), true);
-  assert.strictEqual(contentGenerator.alignToOutline(l3, null).educationalBody[0].h2, 'X');
-});
-test('the generated word count measures the same span as the QC gate', () => {
-  const wc = contentGenerator.dentalGeneratedWordCount({
-    heroIntro: 'one two three',
-    metaDescription: 'this must not be counted at all not one word of it',
-    educationalBody: [{ h2: 'H', html: '<p>four five</p><ul><li>six</li></ul>' }],
-    faqs: [{ q: 'seven?', a: 'eight nine' }],
-  });
-  assert.strictEqual(wc, 9, 'hero(3) + body(3) + faq q(1) + faq a(2), meta excluded');
-});
-
-console.log('\nDental — the writer budget has to fit inside the QC word gate');
-test('the instructed budget cannot overrun the QC word gate', () => {
-  // Regression guard for a real defect: the prompt used to ask for 70-95 words
-  // per block AND 12-16 paragraphs, which reached 1,023 words while telling the
-  // model to stay under 860 and while QC failed anything over 900. Widening
-  // config.dental without redoing this arithmetic reintroduces it.
-  const d = config.dental;
-  const totalParas = (blocks, per) => dentalOutline
-    .normalizeOutline({ blocks: Array.from({ length: blocks }, (_, i) => ({ h2: `Teeth Whitening Topic ${i}`, paragraphs: per })) },
-      { service: { name: 'Teeth Whitening' }, location: { city: 'Quincy', state_abbreviation: 'MA' }, primaryKeyword: 'teeth whitening quincy' })
-    .blocks.reduce((n, b) => n + b.paragraphs, 0);
-
-  // A short FAQ answer still carries its question, so ~8 words + the answer.
-  // The fixed closer is written to the same per-paragraph budget as any other
-  // block, and sits on TOP of the planner's paragraph total. The hero intro is
-  // budgeted in characters, so it enters the word arithmetic at ~7 chars/word
-  // — the same conversion the writer prompt quotes.
-  const brandParas = d.brandBlock.paragraphs;
-  const heroWords = (chars) => Math.round(chars / 7);
-  const thinnest = heroWords(d.heroIntro.minChars)
-    + (totalParas(d.plannedBlocks.min, 1) + brandParas) * d.paragraphWords.min
-    + d.faqs.min * (8 + 25);
-  const fattest = heroWords(d.heroIntro.maxChars)
-    + (totalParas(d.plannedBlocks.max, d.paragraphsPerBlock.max) + brandParas) * d.paragraphWords.max
-    + d.faqs.max * (8 + d.faqAnswerMaxWords);
-  assert.ok(thinnest >= d.pageWords.acceptMin, `thinnest instructed page (${thinnest}w) must clear the ${d.pageWords.acceptMin}w floor`);
-  assert.ok(fattest <= d.pageWords.acceptMax, `fattest instructed page (${fattest}w) must stay under the ${d.pageWords.acceptMax}w ceiling`);
-});
-test('the readability gate enforces exactly the cap the writer prompt states', () => {
-  // The cap used to be written twice, once in qaEngine and once in
-  // contentGenerator; both now read config.dental.paragraphWords.hardMax.
-  const scaffold = dentalScaffoldWithContent();
-  const atCap = Array.from({ length: config.dental.paragraphWords.hardMax }, (_, i) => `w${i}`).join(' ');
-  scaffold.sections.educationalBody.blocks[0].html = `<p>${atCap}</p>`;
-  assert.strictEqual(qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length').pass, true,
-    'a paragraph exactly at the stated cap must pass');
-  scaffold.sections.educationalBody.blocks[0].html = `<p>${atCap} oneMore</p>`;
-  assert.strictEqual(qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length').pass, false,
-    'one word over the stated cap must fail');
-});
-
-console.log('\nDental — readability gate sees content the <p> scan would miss');
-test('an unclosed <p> is reported as malformed, not silently passed', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const wall = Array.from({ length: 90 }, (_, i) => `word${i}`).join(' ');
-  scaffold.sections.educationalBody.blocks[0].html = `<p>${wall}`;
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, false);
-  assert.ok(check.detail.includes('outside any <p>'), 'the detail should say the text sits outside any paragraph');
-});
-test('bare text or a stray <div> body is reported as malformed', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.educationalBody.blocks[0].html = 'Just some bare copy with no markup at all.';
-  assert.strictEqual(qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length').pass, false);
-  scaffold.sections.educationalBody.blocks[0].html = '<div>Wrapped in a disallowed tag.</div>';
-  assert.strictEqual(qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length').pass, false);
-});
-test('an overlong list item fails the gate even though the list is one node', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const wall = Array.from({ length: 40 }, (_, i) => `word${i}`).join(' ');
-  scaffold.sections.educationalBody.blocks[0].html = `<p>Short intro line.</p><ul><li>${wall}</li></ul>`;
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, false);
-  assert.ok(check.detail.includes('longest list item'), 'the detail should name the list-item cap');
-});
-test('an empty block body is not reported as malformed', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.educationalBody.blocks[0].html = '';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.name === 'readability_paragraph_length');
-  assert.strictEqual(check.pass, true, 'emptiness is a content gap, caught by the word-count gate, not a markup defect');
-});
-
-console.log('\nDental — boilerplate filter keeps real topics, drops brand furniture');
-test('"Why Choose" is only dropped when it is the brand block', () => {
-  ['Why Choose Us', 'Why Choose Our Quincy Office', 'Why Choose Gentle Dental of New England']
-    .forEach(h => assert.strictEqual(dentalOutline.BOILERPLATE_RE.test(h), true, `${h} should be dropped`));
-  ['Why Choose Professional Teeth Whitening', 'Why Choose an Experienced Dentist for Veneers', 'Why Choose the Right Whitening Option']
-    .forEach(h => assert.strictEqual(dentalOutline.BOILERPLATE_RE.test(h), false, `${h} is a real topic and must survive`));
-});
-
-console.log('\nDental - the service dropdown (seeded taxonomy)');
-// Read the taxonomy out of the seed rather than restating it, so the test
-// covers whatever is actually in the dropdown.
-const SERVICE_DEFS = (() => {
-  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'seed.js'), 'utf8');
-  const block = src.slice(src.indexOf('const GD_SERVICE_DEFS'), src.indexOf('const GD_SERVICES'));
-  return [...block.matchAll(/\['([^']+)', '([^']+)', '([^']+)'\]/g)]
-    .map(m => ({ category: m[1], name: m[2], slug: m[3] }));
-})();
-const WIZARD_CATEGORIES = ['Cosmetic', 'Restorative', 'Oral Surgery', 'Orthodontics', 'Preventive', 'Specialty'];
-
-test('re-seeding preserves hand-entered NAP', () => {
-  // seedGentleDental replaceAll-ed locations, which wiped the address, phone
-  // and hours the SEO team enters by hand (the seed ships those blank on
-  // purpose). That made re-seeding to pick up a service change cost the whole
-  // NAP effort -- and re-seeding is the ONLY way a taxonomy change reaches the
-  // dropdown, so the two were in direct conflict.
-  const seeded = {
-    id: 'dloc_ma-quincy', city: 'Quincy', region: 'South Shore',
-    street_address: '', phone_number: '', hours_by_day: {}, nearby_areas: [],
-    brand_name: null, nap_todo: ['street_address', 'phone_number'],
-  };
-  const stored = {
-    id: 'dloc_ma-quincy', city: 'Quincy', region: 'South Shore',
-    street_address: '123 Hancock St', phone_number: '617-555-0100',
-    hours_by_day: { mon: '8-5' }, nearby_areas: ['Braintree'],
-    brand_name: null, nap_todo: [],
-  };
-  const merged = seed.mergeLocation(seeded, stored);
-  assert.strictEqual(merged.street_address, '123 Hancock St');
-  assert.strictEqual(merged.phone_number, '617-555-0100');
-  assert.deepStrictEqual(merged.hours_by_day, { mon: '8-5' });
-  assert.deepStrictEqual(merged.nearby_areas, ['Braintree']);
-  assert.deepStrictEqual(merged.nap_todo, [], 'a completed NAP checklist must not be reset');
-});
-test('re-seeding still applies seeded identity and brand overrides', () => {
-  // The point of re-seeding is to pick up changes, so anything the team has
-  // NOT populated must take the seeded value.
-  const seeded = { id: 'x', city: 'Boston', brand_name: 'Newbury Dental Associates', street_address: '' };
-  const merged = seed.mergeLocation(seeded, { id: 'x', city: 'Stale', brand_name: null, street_address: '' });
-  assert.strictEqual(merged.brand_name, 'Newbury Dental Associates');
-  assert.strictEqual(merged.city, 'Boston', 'identity/geo always comes from the seed');
-});
-test('a location with nothing stored seeds unchanged', () => {
-  const seeded = { id: 'new', city: 'Methuen', street_address: '' };
-  assert.deepStrictEqual(seed.mergeLocation(seeded, null), seeded);
-});
-test('every service has a unique slug that matches its name', () => {
-  // The slug is both the page URL and the service id, so a mismatch means the
-  // URL does not follow from the name and a collision means two services
-  // share an id.
-  const seen = new Map();
-  SERVICE_DEFS.forEach(d => {
-    assert.strictEqual(url.slugify(d.name), d.slug, `${d.name}: slugify gives "${url.slugify(d.name)}"`);
-    assert.ok(!seen.has(d.slug), `slug "${d.slug}" is used by both "${seen.get(d.slug)}" and "${d.name}"`);
-    seen.set(d.slug, d.name);
-  });
-  assert.ok(SERVICE_DEFS.length >= 38, `expected the full taxonomy, found ${SERVICE_DEFS.length}`);
-});
-test('trademarked names survive slugification', () => {
-  assert.strictEqual(url.slugify('Invisalign® Treatment'), 'invisalign-treatment');
-  assert.strictEqual(url.slugify('Curodont™'), 'curodont');
-});
-test('every service groups under a category the wizard renders', () => {
-  SERVICE_DEFS.forEach(d => assert.ok(WIZARD_CATEGORIES.includes(d.category),
-    `${d.name} is in "${d.category}", which the dropdown does not group by`));
-});
-test('every service has keyword relevance terms', () => {
-  // relevanceTermsFor returning null means the live SERP/SEMrush pool gets no
-  // topical filter at all, which is how "veneers" ended up pulling in
-  // "vanguard dental" and "dentist manchester nh". Renaming a slug silently
-  // drops its entry, so this guards the whole taxonomy.
-  SERVICE_DEFS.forEach(d => {
-    const terms = keywordUniverseMap.relevanceTermsFor(d.slug);
-    assert.ok(terms && terms.length, `${d.name} [${d.slug}] has no relevance terms`);
-  });
-});
-
-console.log('\nDental - ladder grammar across the whole taxonomy');
-test('no ladder heading is ungrammatical for any service', () => {
-  const broken = [];
-  SERVICE_DEFS.forEach(d => {
-    dentalOutline.ladderHeadings(d).forEach(h => {
-      // Agreement: a field or mass noun is never "What Are ...?"
-      if (/^What Are .*(Dentistry|Surgery|Orthodontics|Whitening|Screening)\?$/.test(h)) broken.push(`${d.name}: ${h}`);
-      // A person is never a procedure.
-      if (/(During|Options for) (a|an) .*(ist|Dentist)\b/.test(h)) broken.push(`${d.name}: ${h}`);
-      if (/^(Is|Are) .*(ist|Dentist) Safe\?$/.test(h)) broken.push(`${d.name}: ${h}`);
-      // A countable singular always takes an article in a sentence rung.
-      if (/^(Is) (Dental Exam|Tooth Extraction|Smile Makeover) Safe\?$/.test(h)) broken.push(`${d.name}: ${h}`);
-    });
-  });
-  assert.deepStrictEqual(broken, [], `ungrammatical headings:\n  ${broken.join('\n  ')}`);
-});
-test('-ics names a field, so it is singular', () => {
-  assert.strictEqual(dentalOutline.isPluralName('Orthodontics'), false);
-  const h = dentalOutline.ladderHeadings({ name: 'Orthodontics', category: 'Orthodontics' });
-  assert.strictEqual(h[0], 'What Is Orthodontics?');
-  assert.ok(!h.some(x => /Are Orthodontics/.test(x)), 'never "Are Orthodontics Safe?"');
-});
-test('a countable singular takes an article, a mass noun does not', () => {
-  assert.strictEqual(dentalOutline.withArticle('Dental Exam', false), 'a Dental Exam');
-  assert.strictEqual(dentalOutline.withArticle('Tooth Extraction', false), 'a Tooth Extraction');
-  assert.strictEqual(dentalOutline.withArticle('Oral Surgery', false), 'Oral Surgery');
-  assert.strictEqual(dentalOutline.withArticle('Teeth Whitening', false), 'Teeth Whitening');
-  assert.strictEqual(dentalOutline.withArticle('Cosmetic Dentistry', false), 'Cosmetic Dentistry');
-  assert.strictEqual(dentalOutline.withArticle('Veneers', true), 'Veneers');
-  // A trademarked name is a proper noun.
-  assert.strictEqual(dentalOutline.withArticle('Curodont™', false), 'Curodont™');
-  assert.strictEqual(dentalOutline.ladderHeadings({ name: 'Dental Exam', category: 'Preventive' })[6], 'Is a Dental Exam Safe?');
-});
-test('a practitioner page gets its own ladder, not the procedure one', () => {
-  ['Orthodontist', 'Periodontist', 'Emergency Dentist'].forEach(name => {
-    assert.strictEqual(dentalOutline.isPractitionerName(name), true);
-    const h = dentalOutline.ladderHeadings({ name, category: 'Specialty' });
-    assert.ok(/^What Does an? .* Do\?$/.test(h[0]), `${name}: ${h[0]}`);
-    assert.ok(h.some(x => /^When Should You See/.test(x)), `${name} needs a "when to see one" rung`);
-    assert.ok(!h.some(x => /What to Expect During/.test(x)), `${name}: "During a person" is not English`);
-    assert.ok(!h.some(x => /Safe\?$/.test(x)), `${name}: a person is not "safe"`);
-  });
-});
-test('Periodontist takes the practitioner ladder despite matching the clinical regex', () => {
-  // CLINICAL_RE matches "periodont", so order matters in pickLadder.
-  assert.strictEqual(dentalOutline.pickLadder({ name: 'Periodontist', category: 'Specialty' }),
-    dentalOutline.PRACTITIONER_LADDER);
-});
-test('the clinical ladder still wins for urgent procedures', () => {
-  const h = dentalOutline.ladderHeadings({ name: 'Teeth Extractions', category: 'Oral Surgery' });
-  assert.ok(h.some(x => /^Signs You May Need/.test(x)), 'a symptom-led rung is the point of that ladder');
-});
-
-console.log('\nDental - FAQ localization is meaningful, not decorative');
-// The reviewer's own pairs. Both lists say "in Methuen", so the phrasing is not
-// the signal — what the question ASKS is.
-const FAQ_LOCAL_GOOD = [
-  'What types of sedation dentistry are available at your Methuen location?',
-  'Is oral conscious sedation offered in Methuen?',
-  'Do you offer IV sedation at your Methuen practice?',
-  'Do you use sedation for dental implants at Gentle Dental Methuen?',
-];
-const FAQ_LOCAL_BAD = [
-  'Does sedation dentistry hurt in Methuen?',
-  'How long does sedation dentistry take in Methuen?',
-  'Is sedation dentistry safe for me in Methuen?',
-  'Who should consider sedation dentistry in Methuen?',
-];
-const METHUEN = { city: 'Methuen', brandName: 'Gentle Dental' };
-
-test('questions about what THIS office offers may name the city', () => {
-  assert.deepStrictEqual(text.findForcedFaqLocalization(FAQ_LOCAL_GOOD, METHUEN), [],
-    'availability, options and booking are genuinely local');
-});
-test('universal clinical questions may not name the city', () => {
-  const flagged = text.findForcedFaqLocalization(FAQ_LOCAL_BAD, METHUEN);
-  assert.strictEqual(flagged.length, FAQ_LOCAL_BAD.length,
-    `all four should flag, got ${JSON.stringify(flagged)}`);
-});
-test('the same question is fine once the city comes off', () => {
-  const stripped = FAQ_LOCAL_BAD.map(q => q.replace(/ in Methuen/, ''));
-  assert.deepStrictEqual(text.findForcedFaqLocalization(stripped, METHUEN), [],
-    'pain/duration/safety/candidacy questions are wanted — just not localized');
-});
-test('an availability question survives a clinical word', () => {
-  // "safe" appears, but the question is about what the office provides.
-  assert.deepStrictEqual(
-    text.findForcedFaqLocalization(['Do you offer sedation that is safe for children in Methuen?'], METHUEN), []);
-  assert.deepStrictEqual(
-    text.findForcedFaqLocalization(['Is IV sedation available for nervous patients in Methuen?'], METHUEN), []);
-});
-test('cost is not treated as universal — it varies by office', () => {
-  assert.deepStrictEqual(
-    text.findForcedFaqLocalization(['How much does sedation dentistry cost in Methuen?'], METHUEN), []);
-});
-test('the office name is a proper noun, not a keyword jammed against a city', () => {
-  // "Gentle Dental Methuen" puts a service word right against the city, which
-  // is exactly the force-fit shape — but it is what the office is called.
-  const opts = { keywordPhrases: ['dental sedation methuen'], city: 'Methuen', brandName: 'Gentle Dental' };
-  assert.deepStrictEqual(
-    text.findForcedKeywordPhrases('Do you use sedation for implants at Gentle Dental Methuen?', opts), [],
-    'the practice name must not be reported as a force-fit');
-  assert.deepStrictEqual(
-    text.findForcedKeywordPhrases('Ask about dental sedation Methuen options today.', opts), ['sedation Methuen'],
-    'a real force-fit in the same sentence shape still flags');
-});
-
-console.log('\nDental - the two FAQ gates hold each other honest');
-function faqScaffold(items) {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.faq.items = items;
-  return scaffold;
-}
-const faqCheck = (scaffold, id) => qaEngine.runDentalQC(scaffold).checks.find(c => c.id === id);
-
-test(`fewer than ${config.dental.faqs.minLocalized} localized FAQs fails`, () => {
-  const check = faqCheck(faqScaffold([
-    { q: 'Do you offer in-office whitening in Quincy?', a: 'Yes, most visits take an hour.' },
-    { q: 'Does whitening hurt?', a: 'Some brief sensitivity is normal.' },
-    { q: 'How long do results last?', a: 'Usually a year with good care.' },
-    { q: 'Will insurance cover it?', a: 'Whitening is cosmetic, so usually not.' },
-  ]), FAQ_LOCALIZATION_CHECK);
-  assert.strictEqual(check.pass, false);
-  assert.ok(check.detail.includes(`minimum ${config.dental.faqs.minLocalized}`), check.detail);
-});
-test(`${config.dental.faqs.minLocalized} localized FAQs pass`, () => {
-  const check = faqCheck(faqScaffold([
-    { q: 'Do you offer in-office whitening in Quincy?', a: 'Yes, most visits take an hour.' },
-    { q: 'Which whitening options are available at your Quincy office?', a: 'In-office trays and take-home kits.' },
-    { q: 'Can I book a whitening visit at your Quincy practice on a Saturday?', a: 'Ask our team for the next open slot.' },
-    { q: 'Does whitening hurt?', a: 'Some brief sensitivity is normal.' },
-    { q: 'Will insurance cover it?', a: 'Whitening is cosmetic, so usually not.' },
-  ]), FAQ_LOCALIZATION_CHECK);
-  assert.strictEqual(check.pass, true, check.detail);
-});
-test('hitting the count by localizing universal questions is caught', () => {
-  // Exactly the trade a bare count invites: cities bolted onto questions whose
-  // answers do not change by city.
-  const scaffold = faqScaffold([
-    { q: 'Does teeth whitening hurt in Quincy?', a: 'Some brief sensitivity is normal.' },
-    { q: 'Is teeth whitening safe for me in Quincy?', a: 'Yes, under a dentist.' },
-    { q: 'How long does teeth whitening take in Quincy?', a: 'About an hour.' },
-    { q: 'How long do results last?', a: 'Usually a year with good care.' },
-    { q: 'Will insurance cover it?', a: 'Whitening is cosmetic, so usually not.' },
-  ]);
-  assert.strictEqual(faqCheck(scaffold, FAQ_LOCALIZATION_CHECK).pass, true, 'the count is satisfied');
-  const meaningful = faqCheck(scaffold, 'faq_localization_is_meaningful');
-  assert.strictEqual(meaningful.pass, false, 'but the localization is decoration');
-  assert.strictEqual(meaningful.severity, 'Major');
-  assert.ok(meaningful.detail.includes('hurt in Quincy'), meaningful.detail);
-});
-test('the FAQ localization minimum is published to the wizard', () => {
-  assert.strictEqual(qaEngine.DENTAL_LIMITS.faqs.minLocalized, config.dental.faqs.minLocalized);
-});
-test('every prompt path states the FAQ localization rule', () => {
-  const brief = contentGenerator.DENTAL_SECTION_BRIEFS.faqs('dental');
-  assert.ok(brief.includes('LOCALIZING THE FAQ'), 'the brief must carry the rule');
-  assert.ok(brief.includes('Does sedation dentistry hurt in Methuen?'), 'the BAD pair must be shown, not described');
-  assert.ok(brief.includes('Do you offer IV sedation at your Methuen practice?'), 'the GOOD pair too');
-  assert.ok(!/gentle dental/i.test(brief), 'the worked example must not hardcode one office brand');
-});
-
-console.log('\nDental - the meta description closes on a call to action');
-test('a description that ends on a next step passes; one that trails off does not', () => {
-  const withCta = dentalScaffoldWithContent();
-  const cta = qaEngine.runDentalQC(withCta).checks.find(c => c.id === 'meta_description_ends_with_cta');
-  assert.strictEqual(cta.pass, true, cta.detail);
-
-  const without = dentalScaffoldWithContent();
-  without.meta.metaDescription = 'Professional teeth whitening in Quincy, MA lifts everyday stains from '
-    + 'coffee and tea, using in-office trays or take-home kits fitted to your teeth by our dentists.';
-  const failing = qaEngine.runDentalQC(without).checks.find(c => c.id === 'meta_description_ends_with_cta');
-  assert.strictEqual(failing.pass, false, failing.detail);
-  assert.strictEqual(failing.severity, 'Major');
-});
-test('the ask has to be the CLOSE, not a mention buried mid-description', () => {
-  // "book" appears, but the snippet ends on a clinical fact, so the reader is
-  // left without a next step — which is the whole point of the gate.
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.meta.metaDescription = 'Book teeth whitening in Quincy, MA. Results usually last about a year '
-    + 'with good home care, and sensitivity settles within a day or two for most patients.';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'meta_description_ends_with_cta');
-  assert.strictEqual(check.pass, false, check.detail);
-});
-test('a description that merely describes booking is not an ask', () => {
-  assert.strictEqual(text.endsWithCta('Our team schedules same-day visits for urgent care.'), false);
-  assert.strictEqual(text.endsWithCta('Call our Quincy team to schedule.'), true);
-  assert.strictEqual(text.endsWithCta('Request an appointment online today.'), true);
-});
-test('trimming an over-long description keeps the closing ask', () => {
-  // The failure this guards: the ordinary trim drops whole trailing sentences,
-  // and the ask is now always the last one. This is the shape a real overshoot
-  // takes — a description a little over the window, closing on its CTA.
-  const long = 'Professional teeth whitening in Quincy, MA lifts everyday stains from coffee, tea '
-    + 'and red wine, with in-office and take-home options. Book a visit with our team today.';
-  assert.ok(long.length > config.dental.metaDescription.max, 'the fixture has to be over the window');
-
-  const out = contentGenerator.normalizeMetaDescriptionLength(long);
-  assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars must fit the snippet`);
-  assert.ok(out.length >= config.dental.metaDescription.min, `${out.length} chars is below the floor`);
-  assert.ok(out.endsWith('Book a visit with our team today.'), `the ask must survive the trim, got ${JSON.stringify(out)}`);
-});
-test('a trim never hands back a bare verb as the ask', () => {
-  // A word cut that lands just inside the closing sentence used to leave
-  // "... insurance for you. Book." — which satisfies every CTA test and reads
-  // as a truncation. Here nothing fits 150-160 with the ask attached, so the
-  // net hands back readable copy that is slightly short (the length gate says
-  // by how much, and a reviewer adds a clause) instead of a broken snippet.
-  const long = 'Professional teeth whitening in Quincy, MA lifts stains from coffee and tea. '
-    + 'We fit take-home kits to your own teeth and file your insurance for you. Book a visit today.';
-  const out = contentGenerator.normalizeMetaDescriptionLength(long);
-  assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars must fit the snippet`);
-  assert.ok(/[.!?]$/.test(out), 'it still has to end as a finished sentence');
-  assert.ok(!/\.\s*(Book|Call|Schedule|Visit|Request)\.$/.test(out), `a bare verb is not an ask: ${JSON.stringify(out)}`);
-  assert.ok(out.endsWith('Book a visit today.'), out);
-});
-
-console.log('\nDental - the hero intro is one line, measured in characters');
-test('the hero gate accepts the target window and rejects a paragraph', () => {
-  const scaffold = dentalScaffoldWithContent();
-  const heroCheck = (s) => qaEngine.runDentalQC(s).checks.find(c => c.id === 'hero_intro_length');
-  assert.strictEqual(heroCheck(scaffold).pass, true, heroCheck(scaffold).detail);
-
-  const long = dentalScaffoldWithContent();
-  long.sections.hero.intro = 'Teeth whitening in Quincy can brighten your smile with safe, professional '
-    + 'care close to home, and our team will walk you through the options at your first visit.';
-  assert.strictEqual(heroCheck(long).pass, false, 'a two-idea paragraph is over the window');
-  assert.strictEqual(heroCheck(long).severity, 'Major');
-
-  const short = dentalScaffoldWithContent();
-  short.sections.hero.intro = 'Whiter teeth in Quincy.';
-  assert.strictEqual(heroCheck(short).pass, false, 'a bare label wastes the slot');
-});
-test('the hero window is stated to the writer in the unit the gate measures', () => {
-  // Every vertical, not just the default: each ships its own worked example,
-  // and one written outside the window teaches the writer to miss it.
-  Object.keys(contentGenerator.VERTICALS).forEach((v) => {
-    const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro(v);
-    assert.ok(hero.includes('CHARACTERS'), `the ${v} brief has to name the unit`);
-    // The worked example must itself be inside the window it teaches.
-    const example = /GOOD \(\d+ chars\): "([^"]+)"/.exec(hero.replace(/\n/g, ' '));
-    assert.ok(example, `the ${v} brief must show a worked example`);
-    const len = example[1].replace(/\s+/g, ' ').length;
-    assert.ok(len >= config.dental.heroIntro.minChars && len <= config.dental.heroIntro.maxChars,
-      `the ${v} example is ${len} chars, outside the ${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} window it teaches`);
-    // The label is not decorative — a stale hand-typed count would let an
-    // out-of-window example pass the check above by lying about its length.
-    assert.strictEqual(Number(/GOOD \((\d+) chars\)/.exec(hero)[1]), len,
-      `the ${v} example's stated length must be its real length`);
-  });
-});
-
-console.log('\nDental - the meta description is never handed back truncated');
-test('a short description is left alone, not padded with a clipped CTA', () => {
-  // The reported failure: a 142-char description was padded with
-  // "Ask our Stoughton team about digital x-rays options and book your visit
-  // today." and then clipped to 160, producing "... precise care today. Ask our."
-  const short = 'Digital x-rays in Stoughton, MA help your dentist spot problems fast with less radiation. See how this technology supports precise care today.';
-  const out = contentGenerator.normalizeMetaDescriptionLength(short);
-  assert.strictEqual(out, short, 'a readable-but-short description must survive untouched');
-  assert.ok(!/\bAsk our\.$/.test(out), 'the clipped-CTA fragment must be gone');
-});
-test('an over-long description is trimmed at a sentence boundary', () => {
-  const long = 'Digital x-rays in Stoughton, MA let your dentist find decay early and plan care precisely, with far less radiation than film. Book a visit with our team today, we are ready.';
-  const out = contentGenerator.normalizeMetaDescriptionLength(long);
-  assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars must fit the snippet`);
-  assert.ok(/[.!?]$/.test(out), 'it has to end as a finished sentence');
-  assert.ok(out.endsWith('today.'), `expected a clean sentence trim, got ${JSON.stringify(out)}`);
-});
-test('a sentence trim that would gut the description falls back to a word trim', () => {
-  // First sentence is only 103 chars — trimming there would waste the snippet.
-  const long = 'Digital x-rays in Stoughton, MA help your dentist spot problems fast with far less radiation than film. See how this technology supports precise, comfortable care and book your visit with our team today.';
-  const out = contentGenerator.normalizeMetaDescriptionLength(long);
-  assert.ok(out.length >= config.dental.metaDescription.min, `${out.length} chars is below the ${config.dental.metaDescription.min} floor`);
-  assert.ok(out.length <= config.dental.metaDescription.max);
-});
-test('no trim ever ends on a dangling function word', () => {
-  const dangling = [
-    'Digital x-rays in Stoughton help your dentist find decay early and plan treatment with far less radiation than film, and our team will walk you through every step and',
-    'Digital x-rays in Stoughton help your dentist find decay early and plan treatment with far less radiation than traditional film, which is better for you and your',
-  ];
-  dangling.forEach(v => {
-    const out = contentGenerator.normalizeMetaDescriptionLength(v);
-    assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars`);
-    assert.ok(!/\s(?:a|an|and|our|the|to|your|with|for|every|this|that)\.?$/i.test(out),
-      `ends on a dangling word: ${JSON.stringify(out)}`);
-  });
-});
-test('the meta description range is single-sourced', () => {
-  // The prompt, the QC gate and the wizard's counter all read config.
-  const L = qaEngine.DENTAL_LIMITS.metaDescription;
-  assert.deepStrictEqual(L, { min: config.dental.metaDescription.min, max: config.dental.metaDescription.max });
-});
-
-console.log('\nDental - the practice name is per office, not global');
-test('an office with its own brand is never called Gentle Dental', () => {
-  const newbury = { location_page_url: '/dental-offices/ma/boston/newbury-st' };
-  assert.strictEqual(compose.dentalBrandName(newbury, { name: 'Gentle Dental of New England' }), 'Newbury Dental Associates');
-});
-test('every other office falls back to the group brand', () => {
-  assert.strictEqual(compose.dentalBrandName({ location_page_url: '/dental-offices/ma/quincy' }, {}), config.dental.brand.default);
-  assert.strictEqual(compose.dentalBrandName({}, {}), config.dental.brand.default);
-});
-test("a location row's own brand_name wins over the config map", () => {
-  const row = { location_page_url: '/dental-offices/ma/boston/newbury-st', brand_name: 'Something Else Dental' };
-  assert.strictEqual(compose.dentalBrandName(row, {}), 'Something Else Dental');
-});
-test('the title tag and page object carry the office brand', () => {
-  const client = { id: 'c', name: 'Gentle Dental of New England', brand_static: { base_url: 'https://gentledental.com' } };
-  const service = { id: 's', name: 'Digital X-rays', slug: 'digital-x-rays', category: 'Preventive' };
-  const location = {
-    id: 'l', location_name: 'Boston - Newbury Street', city: 'Boston', region: 'Boston',
-    state: 'Massachusetts', state_abbreviation: 'MA', location_page_url: '/dental-offices/ma/boston/newbury-st',
-  };
-  const scaffold = compose.buildDentalScaffold({ client, service, location, allServices: [service] });
-  assert.strictEqual(scaffold.meta.brandName, 'Newbury Dental Associates');
-  assert.strictEqual(scaffold.meta.title, 'Digital X-rays in Boston, MA | Newbury Dental Associates');
-
-  // Schema reads the resolved name off the page object, not client.name.
-  scaffold.sections.hero.intro = 'x';
-  scaffold.sections.educationalBody.blocks = [{ h2: 'h', html: '<p>x</p>' }];
-  scaffold.sections.faq.items = [{ q: 'q', a: 'a' }];
-  const dentist = JSON.parse(schemaGenerator.generateDentalSchema({ scaffold, client, location, service }).dentist);
-  assert.ok(dentist.name.startsWith('Newbury Dental Associates'), `schema says ${JSON.stringify(dentist.name)}`);
-});
-test('the writer prompt names the office brand and never the wrong one', () => {
-  const service = { id: 's', name: 'Digital X-rays', category: 'Preventive' };
-  const location = {
-    id: 'l', location_name: 'Boston - Newbury Street', city: 'Boston', region: 'Boston',
-    state_abbreviation: 'MA', location_page_url: '/dental-offices/ma/boston/newbury-st',
-  };
-  const outline = dentalOutline.fallbackOutline({ service, location, primaryKeyword: 'digital x-rays boston' });
-  const { system, user } = contentGenerator.buildDentalPrompt({
-    service, location, primaryKeyword: 'digital x-rays boston', secondaryKeywords: [],
-    outline, competitorFaqs: [], brandName: 'Newbury Dental Associates',
-  });
-  assert.ok(system.includes('Newbury Dental Associates'), 'the writer must be told who it is writing for');
-  assert.ok(user.includes('Practice name (use this, never another): Newbury Dental Associates'));
-  assert.ok(!/gentle dental/i.test(system + user),
-    'no prompt for this office may mention Gentle Dental');
-});
-
-console.log('\nDental - keywords must read as English, not as pasted search strings');
-// The pair the rule exists for. Same topic, same city, same coverage; one is
-// a search string pasted into a sentence, the other is English.
-const FORCED_HERO = "Invisalign Boston patients trust offers a discreet way to straighten teeth without metal brackets. At your visit, we'll explain clear aligner treatment, discuss Invisalign cost Boston and help you understand what to expect from start to finish.";
-const NATURAL_HERO = 'Straighten your teeth discreetly with Invisalign clear aligners in Boston. Learn about the treatment process, costs, and what to expect from start to finish.';
-const INVISALIGN_PHRASES = ['invisalign boston', 'invisalign cost boston', 'clear aligners boston'];
-
-test('the force-fitted hero is detected and the natural one is not', () => {
-  const forced = text.findForcedKeywordPhrases(FORCED_HERO, { keywordPhrases: INVISALIGN_PHRASES, city: 'Boston' });
-  assert.deepStrictEqual(forced, ['Invisalign Boston', 'cost Boston'],
-    'both pasted fragments should be reported, verbatim, so QC can quote them');
-  assert.deepStrictEqual(
-    text.findForcedKeywordPhrases(NATURAL_HERO, { keywordPhrases: INVISALIGN_PHRASES, city: 'Boston' }), [],
-    'the rewritten hero says the same thing in English and must pass');
-});
-test('natural phrasings are never flagged', () => {
-  [
-    'We offer clear aligners in Boston and across the South Shore.',
-    'Ask about the cost of Invisalign in Boston before you commit.',
-    'Our Boston office sees teens and adults for Invisalign.',
-    'Many patients travel to Boston. Invisalign is popular with adults.',
-    "Boston's weather has nothing to do with your treatment plan.",
-    'Treatment usually costs less than braces.',
-  ].forEach(s => assert.deepStrictEqual(
-    text.findForcedKeywordPhrases(s, { keywordPhrases: INVISALIGN_PHRASES, city: 'Boston' }), [],
-    `should not flag: ${s}`));
-});
-test('the service/city label is caught in either word order', () => {
-  const opts = { keywordPhrases: ['veneers quincy', 'veneers cost quincy'], city: 'Quincy' };
-  assert.deepStrictEqual(text.findForcedKeywordPhrases('Veneers Quincy residents love are thin.', opts), ['Veneers Quincy']);
-  assert.deepStrictEqual(text.findForcedKeywordPhrases('Our Quincy veneers last for years.', opts), ['Quincy veneers']);
-  assert.deepStrictEqual(text.findForcedKeywordPhrases('Learn about veneers cost Quincy shoppers see.', opts), ['cost Quincy']);
-});
-test('the regex uses real escapes, not a template-literal backspace', () => {
-  // \b inside a template literal is a literal backspace and \w / \s collapse to
-  // bare letters, which silently matches nothing. This caught exactly that.
-  assert.deepStrictEqual(
-    text.findForcedKeywordPhrases('Root Canals Malden patients ask about pain.', { keywordPhrases: ['root canal malden'], city: 'Malden' }),
-    ['Canals Malden'], 'a stemmed keyword term must still match its plural in the copy');
-});
-
-console.log('\nDental - the force-fit gate in QC');
-test('a force-fitted hero fails the gate and routes the reviewer to the hero', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.hero.intro = 'Teeth Whitening Quincy patients trust brightens your smile fast.';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'keyword_reads_naturally');
-  assert.strictEqual(check.pass, false);
-  assert.strictEqual(check.severity, 'Major');
-  assert.strictEqual(check.field, 'hero.intro', 'the failure belongs to the hero control, not the body');
-  assert.ok(check.detail.includes('Whitening Quincy'), 'the offending adjacency is quoted back verbatim');
-});
-test('a force-fitted block names the block so the reviewer can regenerate it', () => {
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.sections.educationalBody.blocks[2].html = '<p>Ask about teeth whitening Quincy options today.</p>';
-  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'keyword_reads_naturally');
-  assert.strictEqual(check.pass, false);
-  assert.strictEqual(check.field, 'educationalBody');
-  assert.ok(check.blocks && check.blocks[2], 'the offending block index is reported');
-});
-test('the keyword floor is a low minimum, not a quota', () => {
-  // A 5-use quota is what produced the force-fitted copy: no writer reaches
-  // five uses of a search string in 700 words without padding.
-  assert.ok(config.dental.minKeywordUses <= 2,
-    'a high keyword floor and "never force-fit" cannot both hold');
-  const scaffold = dentalScaffoldWithContent();
-  const presence = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === KEYWORD_PRESENCE_CHECK);
-  assert.ok(presence, 'the presence check should exist');
-  assert.ok(!/frequency/i.test(presence.fix), 'the fix hint must not ask for more mentions');
-});
-
-console.log('\nDental - every generated section is written to its own brief');
-test('each section brief states where it appears, who reads it and its job', () => {
-  // A brief that names a profession is a FUNCTION of the vertical (a dental
-  // page says "dentist", a behavioral-health one says "clinician"); the rest
-  // are plain strings. Resolve either shape so the contract is checked the
-  // same way regardless.
-  const resolve = (b, vertical) => (typeof b === 'function' ? b(vertical) : b);
-  ['metaDescription', 'heroIntro', 'educationalBody', 'faqs'].forEach(k => {
-    const raw = contentGenerator.DENTAL_SECTION_BRIEFS[k];
-    assert.ok(raw, `${k} needs a brief`);
-    // Every vertical, not just the default — a new profile that drops one of
-    // these sections' structure is exactly what this guards.
-    Object.keys(contentGenerator.VERTICALS).forEach(vertical => {
-      const brief = resolve(raw, vertical);
-      ['Where it appears:', 'Who is reading:', 'Its job:', 'Do NOT:'].forEach(part =>
-        assert.ok(brief.includes(part), `${k} brief (${vertical}) is missing "${part}"`));
-    });
-  });
-});
-test('the page is framed as commercial intent, not a guide', () => {
-  // These are location+service pages whose job is to fill a chair. The hero
-  // used to close by describing what the page covers, which is blog framing.
-  const svc = { id: 's', name: 'Sedation Dentistry', category: 'Specialty' };
-  const loc = { id: 'l', location_name: 'Methuen', city: 'Methuen', region: 'Merrimack Valley', state_abbreviation: 'MA' };
-  const outline = dentalOutline.fallbackOutline({ service: svc, location: loc, primaryKeyword: 'sedation dentistry methuen' });
-  const { system } = contentGenerator.buildDentalPrompt({
-    service: svc, location: loc, primaryKeyword: 'sedation dentistry methuen',
-    secondaryKeywords: [], outline, competitorFaqs: [], brandName: 'Gentle Dental',
-  });
-  assert.ok(system.includes('THIS IS A COMMERCIAL-INTENT PAGE'), 'the page type has to be stated outright');
-  assert.ok(/Commercial does NOT mean hype/.test(system), 'commercial must not be read as license to hype');
-
-  const meta = contentGenerator.DENTAL_SECTION_BRIEFS.metaDescription('dental');
-  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro('dental');
-  [meta, hero].forEach(brief => assert.ok(/COMMERCIAL/.test(brief), 'both top-of-page briefs are commercial'));
-  assert.ok(/next step|book|consultation/i.test(meta), 'the snippet has to move the reader');
-  assert.ok(/next step|consultation/i.test(hero), 'so does the hero');
-
-  // The body stays explanatory — the evidence, not the pitch.
-  assert.ok(/Do NOT: sell/.test(contentGenerator.DENTAL_SECTION_BRIEFS.educationalBody('dental')),
-    'the educational body must still explain rather than sell');
-});
-test('the hero brief carries the worked good/bad example', () => {
-  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro('dental');
-  assert.ok(/GOOD \(\d+ chars\):/.test(hero), 'the target has to be shown, not described — with its length');
-  assert.ok(hero.includes(`${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} CHARACTERS`),
-    'the brief must state the character window the gate enforces');
-  assert.ok(hero.includes('Invisalign Boston patients trust'), 'the force-fit failure is shown verbatim');
-  // Two distinct failure modes, both worked: a force-fitted keyword and an
-  // informational close on a page whose job is commercial.
-  assert.ok(hero.includes('BAD (force-fitted keyword)'), 'the keyword failure must be labelled');
-  assert.ok(hero.includes('BAD (informational'), 'the informational failure must be labelled');
-  assert.ok(hero.includes('Learn about the treatment process'),
-    'the informational close is shown as the thing NOT to write');
-});
-test('no prompt asks for a keyword frequency any more', () => {
-  const svc = { id: 's', name: 'Invisalign', category: 'Cosmetic' };
-  const loc = { id: 'l', location_name: 'Boston', city: 'Boston', region: 'Boston', state_abbreviation: 'MA' };
-  const outline = dentalOutline.fallbackOutline({ service: svc, location: loc, primaryKeyword: 'invisalign boston' });
-  const { system, user } = contentGenerator.buildDentalPrompt({
-    service: svc, location: loc, primaryKeyword: 'invisalign boston',
-    secondaryKeywords: ['invisalign cost boston'], outline, competitorFaqs: [],
-  });
-  [system, user].forEach(p => {
-    assert.ok(!/\d+-\d+ times/i.test(p), 'no "4-5 times" style quota may survive');
-    assert.ok(!/must appear \d/i.test(p), 'no "must appear N" quota may survive');
-  });
-  assert.ok(system.includes('THERE IS NO FREQUENCY TARGET'), 'the rule has to be stated outright');
-  assert.ok(user.includes('"Invisalign Boston"'), 'the wrong form is shown back for this page');
-});
-
 (async () => {
-  console.log('\nDental - the limits the wizard displays are the limits QC enforces');
-  test('DENTAL_LIMITS matches the thresholds the checks actually gate on', () => {
-    // The wizard shows these next to each field. If they drifted from the
-    // gates, the UI would promise a target QC does not enforce.
-    const L = qaEngine.DENTAL_LIMITS;
-    assert.deepStrictEqual(L.blocks, { min: config.dental.blocks.min, max: config.dental.blocks.max });
-    assert.deepStrictEqual(L.pageWords, { min: config.dental.pageWords.acceptMin, max: config.dental.pageWords.acceptMax });
-    assert.strictEqual(L.paragraphWords.max, config.dental.paragraphWords.hardMax);
-    assert.strictEqual(L.paragraphsPerBlock.max, config.dental.paragraphsPerBlock.max);
-    assert.strictEqual(L.listItemMaxWords, config.dental.listItemMaxWords);
-    assert.strictEqual(L.faqAnswerMaxWords, config.dental.faqAnswerMaxWords);
-    assert.strictEqual(L.faqs.min, config.dental.faqs.min);
-    assert.strictEqual(L.faqs.max, config.dental.faqs.max);
-    assert.deepStrictEqual(L.heroIntro, { min: config.dental.heroIntro.minChars, max: config.dental.heroIntro.maxChars });
-
-    // The two character ranges have to agree with the gates that use them —
-    // both are shown against their field in the wizard.
-    const scaffold = dentalScaffoldWithContent();
-    const checks = qaEngine.runDentalQC(scaffold).checks;
-    const mdCheck = checks.find(c => c.id === 'meta_description_length');
-    assert.ok(mdCheck.detail.includes(`${L.metaDescription.min}-${L.metaDescription.max}`),
-      `the length gate reports "${mdCheck.detail}", which must use the same range the UI shows`);
-    const heroCheck = checks.find(c => c.id === 'hero_intro_length');
-    assert.ok(heroCheck.detail.includes(`${L.heroIntro.min}-${L.heroIntro.max}`),
-      `the hero gate reports "${heroCheck.detail}", which must use the same range the UI shows`);
-  });
-
-  console.log('\nDental - DOCX export');
-  await testAsync('the docx is a real Word container carrying every section', async () => {
-    const scaffold = dentalScaffoldWithContent();
-    scaffold.meta.metaDescription = 'META_MARKER';
-    scaffold.sections.hero.intro = 'HERO_MARKER';
-    scaffold.sections.educationalBody.blocks[0] = {
-      h2: 'HEADING_MARKER',
-      html: '<p>BODY_MARKER</p><ul><li>LIST_MARKER</li></ul>',
-    };
-    scaffold.sections.faq.items[0] = { q: 'QUESTION_MARKER', a: 'ANSWER_MARKER' };
-
-    const buffer = await exporter.toDentalDocxBuffer(scaffold);
-    assert.ok(buffer.length > 2000, 'a formatted document should not be near-empty');
-    assert.strictEqual(buffer.slice(0, 2).toString(), 'PK', 'a .docx is a zip container');
-
-    // The markers live in compressed parts, so check the whole buffer for the
-    // ones long enough not to collide, and trust the zip structure otherwise.
-    const zipText = buffer.toString('latin1');
-    assert.ok(zipText.includes('word/document.xml'), 'the main document part must be present');
-  });
-  await testAsync('the docx carries real Word heading styles, not bold text that looks like one', async () => {
-    // The download is worked on in Word and pasted into a CMS. Only styled
-    // headings survive that trip — they drive the navigation pane and a
-    // generated table of contents, and paste as <h1>/<h2>/<h3> rather than
-    // <p><strong>. Bold coloured runs (what this used to emit) do neither.
-    const JSZip = require('jszip');
-    const scaffold = dentalScaffoldWithContent();
-    scaffold.sections.educationalBody.blocks[0].html = '<p>Body.</p><h3>A Subheading</h3><p>More.</p>';
-
-    const zip = await JSZip.loadAsync(await exporter.toDentalDocxBuffer(scaffold));
-    const documentXml = await zip.file('word/document.xml').async('string');
-    const stylesXml = await zip.file('word/styles.xml').async('string');
-
-    const used = [...documentXml.matchAll(/w:pStyle w:val="(Heading\d)"/g)].map(m => m[1]);
-    const count = (id) => used.filter(s => s === id).length;
-
-    // One H1 (the page's own), one H2 per educational block PLUS the FAQ
-    // heading, one H3 per in-block subheading and per FAQ question.
-    assert.strictEqual(count('Heading1'), 1, 'the page H1 must be exported as Heading 1');
-    assert.strictEqual(count('Heading2'), scaffold.sections.educationalBody.blocks.length + 1,
-      'every educational H2, plus the FAQ heading, must be exported as Heading 2');
-    assert.strictEqual(count('Heading3'), scaffold.sections.faq.items.length + 1,
-      'in-block subheadings and FAQ questions must be exported as Heading 3');
-
-    // Word only treats them as headings if the styles are declared with their
-    // built-in names.
-    ['Heading 1', 'Heading 2', 'Heading 3'].forEach(name => {
-      assert.ok(stylesXml.includes(`w:val="${name}"`), `${name} must be defined in styles.xml`);
-    });
-
-    // Document furniture is deliberately NOT a heading: styling "SEO Metadata"
-    // as one would put it in the same outline as the page's own H2s.
-    const furniture = documentXml.indexOf('SEO Metadata');
-    assert.ok(furniture > 0, 'the metadata section is still in the document');
-    assert.ok(!documentXml.slice(Math.max(0, furniture - 200), furniture).includes('w:pStyle w:val="Heading'),
-      'deliverable furniture must not be exported as a page heading');
-  });
-  await testAsync('the docx filename is derived from the page URL path', async () => {
-    const scaffold = dentalScaffoldWithContent();
-    assert.strictEqual(exporter.safeFilename(scaffold), 'ma_quincy_teeth-whitening');
-  });
-  await testAsync('an edited page exports without needing to be saved first', async () => {
-    // The wizard edits client-side, so the route takes the page in the body.
-    // Exporting must therefore work on a scaffold that has no id at all.
-    const scaffold = dentalScaffoldWithContent();
-    delete scaffold.meta.page_id;
-    const buffer = await exporter.toDentalDocxBuffer(scaffold);
-    assert.strictEqual(buffer.slice(0, 2).toString(), 'PK');
-  });
-
-  console.log('\nDental - outline planner with no LLM available');
-  await testAsync('planDentalOutline degrades to the code-side ladder instead of throwing', async () => {
-    const o = await dentalOutline.planDentalOutline({
-      service: { id: 'svc_root_canals', name: 'Root Canals', category: 'Endodontics' },
-      location: { id: 'loc_malden', city: 'Malden', state_abbreviation: 'MA' },
-      primaryKeyword: 'root canal malden',
-      secondaryKeywords: [],
-      competitorHeadings: ['Meet Our Team', 'Book Your Appointment Today'],
-      competitorFaqs: [],
-      brandName: 'Gentle Dental',
-    });
-    assert.strictEqual(o.competitorQuality, 'unavailable');
-    assert.strictEqual(o.blocks.length, config.dental.blocks.max);
-    assert.strictEqual(o.blocks[1].h2, 'Signs You May Need Root Canals');
-    assert.ok(o.blocks.slice(0, -1).every(b => b.source === 'fallback'));
-    // Even with no LLM at all, the page still ends with the fixed closer.
-    assert.deepStrictEqual(
-      { h2: o.blocks[o.blocks.length - 1].h2, source: o.blocks[o.blocks.length - 1].source },
-      { h2: 'Why Choose Gentle Dental for Root Canals in Malden, MA?', source: 'brand' });
-  });
-
-  console.log('\nDental - Primary eligibility gate (service AND location)');
+  console.log('\nKeywords - Primary eligibility gate (service AND location)');
   test('a keyword naming both service and city is eligible', () => {
     assert.strictEqual(keywordRelevance.isPrimaryEligible('invisalign brookline', 'Brookline', ['invisalign'], 'Invisalign'), true);
   });
@@ -1645,7 +262,7 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.strictEqual(keywordRelevance.isPrimaryEligible('dentist brookline', 'Brookline', ['invisalign'], 'Invisalign'), false);
   });
 
-  console.log('\nDental - keyword selection fallback (no LLM available)');
+  console.log('\nKeywords - keyword selection fallback (no LLM available)');
   await testAsync('an empty pool synthesizes the "{service} in {city}" Primary pair at volume 0', async () => {
     const r = await keywordRelevance.selectPrimaryAndSecondary({ ...KW_ARGS, candidates: [] });
     assert.strictEqual(r.primary.length, 2);
@@ -1682,40 +299,38 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(Array.isArray(r.primary) && r.primary.length > 0);
   });
 
-  console.log('\nDental - sub-area office labels resolve to the parent city');
+  console.log('\nKeywords - sub-area office labels resolve to the parent city');
   test('a "City - Street" office label resolves to the city', () => {
-    assert.strictEqual(keywordAdapter.baseCity('Boston - Newbury Street', 'Boston'), 'Boston');
-    assert.strictEqual(keywordAdapter.baseCity('Worcester - Shrewsbury Street', 'Worcester'), 'Worcester');
-    assert.strictEqual(keywordAdapter.baseCity('Nashua - Main Street', 'Nashua'), 'Nashua');
+    assert.strictEqual(keywordAdapter.baseCity('Springfield - Main Street', 'Springfield'), 'Springfield');
+    assert.strictEqual(keywordAdapter.baseCity('Redondo Beach – Outpatient'), 'Redondo Beach');
+    assert.strictEqual(keywordAdapter.baseCity('Los Angeles — Mid Wilshire'), 'Los Angeles');
   });
   test('a label leading with its own region resolves to that region city', () => {
     // No " - " separator, so only the region signal catches these.
-    assert.strictEqual(keywordAdapter.baseCity('Worcester at The Trolley Yard', 'Worcester'), 'Worcester');
-    assert.strictEqual(keywordAdapter.baseCity('Manchester Elm Street', 'Manchester'), 'Manchester');
-    assert.strictEqual(keywordAdapter.baseCity('Manchester South Willow', 'Manchester'), 'Manchester');
+    assert.strictEqual(keywordAdapter.baseCity('Springfield Downtown', 'Springfield'), 'Springfield');
+    assert.strictEqual(keywordAdapter.baseCity('Springfield at The Mill', 'Springfield'), 'Springfield');
   });
   test('a real multi-word city is left intact', () => {
     // These are genuine place names people search for -- resolving them would
     // be worse than the bug it fixes.
-    assert.strictEqual(keywordAdapter.baseCity('Jamaica Plain', 'Boston'), 'Jamaica Plain');
-    assert.strictEqual(keywordAdapter.baseCity('South Boston', 'Boston'), 'South Boston');
-    assert.strictEqual(keywordAdapter.baseCity('West Roxbury', 'Boston'), 'West Roxbury');
-    assert.strictEqual(keywordAdapter.baseCity('North Andover', 'Merrimack Valley'), 'North Andover');
-    assert.strictEqual(keywordAdapter.baseCity('New Bedford', 'South Coast'), 'New Bedford');
-    assert.strictEqual(keywordAdapter.baseCity('South Nashua', 'Nashua'), 'South Nashua');
+    assert.strictEqual(keywordAdapter.baseCity('South Pasadena', 'Pasadena'), 'South Pasadena');
+    assert.strictEqual(keywordAdapter.baseCity('Manhattan Beach', 'South Bay'), 'Manhattan Beach');
+    assert.strictEqual(keywordAdapter.baseCity('Santa Clarita'), 'Santa Clarita');
+    assert.strictEqual(keywordAdapter.baseCity('North Hollywood', 'Los Angeles'), 'North Hollywood');
   });
   test('a city identical to its region is unchanged', () => {
-    assert.strictEqual(keywordAdapter.baseCity('Boston', 'Boston'), 'Boston');
+    assert.strictEqual(keywordAdapter.baseCity('Pasadena', 'Pasadena'), 'Pasadena');
     assert.strictEqual(keywordAdapter.baseCity('Brookline', 'Greater Boston'), 'Brookline');
   });
   test('the parent city satisfies the Primary gate for a sub-area office', () => {
-    const city = keywordAdapter.baseCity('Manchester Elm Street', 'Manchester');
-    assert.strictEqual(keywordRelevance.isPrimaryEligible('invisalign manchester', city, ['invisalign'], 'Invisalign'), true);
+    const city = keywordAdapter.baseCity('Springfield Downtown', 'Springfield');
+    assert.strictEqual(keywordRelevance.isPrimaryEligible('invisalign springfield', city, ['invisalign'], 'Invisalign'), true);
     // The raw label never matches, which is the bug this resolves.
-    assert.strictEqual(keywordRelevance.isPrimaryEligible('invisalign manchester', 'Manchester Elm Street', ['invisalign'], 'Invisalign'), false);
+    assert.strictEqual(keywordRelevance.isPrimaryEligible('invisalign springfield', 'Springfield Downtown', ['invisalign'], 'Invisalign'), false);
   });
 
-  console.log('\nDental - rival-city filter and the broader-region exception');
+
+  console.log('\nKeywords - rival-city filter and the broader-region exception');
   const OFFICE_CITIES = ['Boston', 'South Boston', 'West Roxbury', 'Cambridge', 'Brookline', 'Nashua', 'South Nashua', 'Manchester'];
   // Mirrors how keywordAdapter assembles the filter from its two pure halves.
   function isBlocked(keyword, { targetCity, allowTerms }) {
@@ -1759,7 +374,7 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(isBlocked('invisalign cambridge', BROOKLINE), 'the filter must actually match');
   });
 
-  console.log('\nDental - synthesized keywords are search-shaped');
+  console.log('\nKeywords - synthesized keywords are search-shaped');
   test('service-name punctuation never reaches a synthesized keyword', () => {
     const k = keywordRelevance.keywordizeService;
     assert.strictEqual(k('Crowns & Bridges'), 'crowns and bridges');
@@ -1813,7 +428,7 @@ test('no prompt asks for a keyword frequency any more', () => {
       ['anxiety treatment in anaheim hills', 'anxiety treatment in anaheim hills, ca']);
   });
 
-  console.log('\nDental - review pass (step 3) and its verdict (step 4)');
+  console.log('\nKeywords - review pass (step 3) and its verdict (step 4)');
   const SELECTED = {
     primary: ['invisalign brookline', 'clear aligners brookline'],
     secondary: ['invisalign greater boston', 'invisalign price'],
@@ -1880,143 +495,8 @@ test('no prompt asks for a keyword frequency any more', () => {
     LLM_STUB = null;
   });
 
-  console.log('\nBrief - a hand-edited brief cannot instruct the writer to fail QC');
-  test('normalizeBrief clamps, filters and de-junks whatever the client sends', () => {
-    const b = brief.normalizeBrief({
-      primaryKeyword: '  anxiety treatment in anaheim hills ',
-      outline: { competitorQuality: 'bogus', blocks: [
-        { h2: ' Kept ', paragraphs: 99, source: 'competitor', localize: 'yes' },
-        { h2: '   ', paragraphs: 2 },
-        { h2: 'Typed by hand', paragraphs: 0, source: 'nonsense' },
-      ] },
-      faqs: ['A plain string question?', { q: 'From a rival?', source: 'competitor' }, { q: '  ' }],
-      wordTarget: { min: 99999, max: 1 },
-    });
-    assert.strictEqual(b.primaryKeyword, 'anxiety treatment in anaheim hills', 'whitespace is collapsed');
-    assert.deepStrictEqual(b.outline.blocks.map(x => x.h2), ['Kept', 'Typed by hand'],
-      'a block with no heading is dropped, not written as an empty H2');
-    assert.strictEqual(b.outline.blocks[0].paragraphs, config.dental.paragraphsPerBlock.max,
-      'a paragraph count above the band is clamped to it');
-    assert.strictEqual(b.outline.blocks[1].paragraphs, config.dental.paragraphsPerBlock.min,
-      'and one below it is clamped up');
-    assert.strictEqual(b.outline.blocks[0].localize, true, 'localize is coerced to a boolean');
-    assert.strictEqual(b.outline.blocks[1].source, null,
-      'an unrecognised provenance tag becomes none, never a fabricated one');
-    assert.strictEqual(b.outline.competitorQuality, 'unavailable', 'an unknown grade falls back');
-    assert.deepStrictEqual(b.faqs.map(f => f.q), ['A plain string question?', 'From a rival?'],
-      'a bare string is accepted as a question; an empty one is dropped');
-    assert.strictEqual(b.faqs[0].source, 'drafted');
-    assert.strictEqual(b.faqs[1].source, 'competitor');
-  });
-  test('the word target cannot be set outside what QC accepts', () => {
-    const b = brief.normalizeBrief({ wordTarget: { min: 99999, max: 1 } });
-    assert.ok(b.wordTarget.min <= b.wordTarget.max, 'an inverted range is put back in order');
-    assert.ok(b.wordTarget.min >= config.dental.pageWords.acceptMin
-      && b.wordTarget.max <= config.dental.pageWords.acceptMax,
-      'the target must sit inside the range body_word_count will accept');
-  });
-  test('only real questions reach the reviewer', () => {
-    ['How soon can I be seen?', 'What is anxiety treatment?', 'Does insurance cover this?']
-      .forEach(q => assert.ok(brief.usableQuestion(q), `"${q}" is a question`));
-    // Scraped nav/CTA furniture, which is most of what a competitor page yields.
-    ['Our Team', 'Contact us today', 'Insurance We Accept', 'Book', '?', '']
-      .forEach(q => assert.ok(!brief.usableQuestion(q), `"${q}" is not a question`));
-  });
-  test('drafted FAQs lead with what competitors answer, then top up to the QC floor', () => {
-    const drafted = brief.draftFaqs({
-      competitorFaqs: ['How long does treatment take?', 'Our Team', 'Is it confidential?'],
-      service: { name: 'Anxiety Treatment' },
-      city: 'Anaheim Hills',
-    });
-    assert.deepStrictEqual(drafted.slice(0, 2).map(f => f.q),
-      ['How long does treatment take?', 'Is it confidential?'],
-      'real competitor questions come first, in order, with the furniture filtered out');
-    assert.ok(drafted.every(f => f.source === 'competitor' || f.source === 'drafted'));
-    assert.strictEqual(drafted.length, config.dental.faqs.min,
-      'topped up to the MINIMUM only - padding to the maximum buries the real ones');
-    assert.strictEqual(new Set(drafted.map(f => f.q.toLowerCase())).size, drafted.length, 'no duplicates');
-  });
-
-  console.log('\nBrief - the writer is bound by the brief, and un-briefed pages are unchanged');
-  test('a brief fixes the FAQ questions verbatim and carries its own word target', () => {
-    const base = {
-      service: { name: 'Anxiety Treatment', category: 'condition' },
-      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
-      primaryKeyword: 'anxiety treatment in anaheim hills',
-      secondaryKeywords: [],
-      outline: { blocks: [{ h2: 'What Is It?', paragraphs: 2 }] },
-      competitorFaqs: ['A competitor topic?'],
-      brandName: 'Clear Behavioral Health',
-    };
-    const briefed = contentGenerator.buildDentalPrompt({
-      ...base,
-      brief: { faqs: [{ q: 'How soon can I be seen?' }, { q: 'Does insurance cover it?' }], wordTarget: { min: 800, max: 900 } },
-    }).user;
-    assert.ok(/THE FAQ QUESTIONS ARE FIXED/.test(briefed), 'the questions are a contract, not a suggestion');
-    assert.ok(/1\. How soon can I be seen\?/.test(briefed) && /2\. Does insurance cover it\?/.test(briefed),
-      'each approved question is listed, in order');
-    assert.ok(!/A competitor topic\?/.test(briefed),
-      'a second, looser list of topics must not sit beside the fixed one');
-    assert.ok(/land between 800 and 900 words/.test(briefed), "the brief's word target is what the writer is given");
-  });
-  test('a brief with fewer FAQs than the localization floor cannot ask for the impossible', () => {
-    const p = contentGenerator.buildDentalPrompt({
-      service: { name: 'Anxiety Treatment', category: 'condition' },
-      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
-      primaryKeyword: 'anxiety treatment in anaheim hills', secondaryKeywords: [],
-      outline: { blocks: [{ h2: 'X', paragraphs: 2 }] }, competitorFaqs: [], brandName: 'CBH',
-      brief: { faqs: [{ q: 'Only one?' }], wordTarget: { min: 700, max: 1050 } },
-    }).user;
-    const asked = Number(/At least\s+(\d+) of your ANSWERS/.exec(p.replace(/\s+/g, ' '))[1]);
-    assert.ok(asked <= 1, `cannot require ${asked} localized answers from 1 question`);
-  });
-  test('no brief means the writer is instructed exactly as it was before briefs existed', () => {
-    const p = contentGenerator.buildDentalPrompt({
-      service: { name: 'Invisalign', category: 'Cosmetic' },
-      location: { city: 'Brookline', state_abbreviation: 'MA', location_name: 'Brookline' },
-      primaryKeyword: 'invisalign brookline', secondaryKeywords: [],
-      outline: { blocks: [{ h2: 'X', paragraphs: 2 }] },
-      competitorFaqs: ['A competitor topic?'], brandName: 'Gentle Dental',
-    }).user;
-    assert.ok(new RegExp(`Write ${config.dental.faqs.min}-${config.dental.faqs.max} Q&As`).test(p),
-      'the writer still chooses its own questions');
-    assert.ok(/COMPETITOR FAQ TOPICS/.test(p), 'competitor questions are still topic inspiration');
-    assert.ok(!/THE FAQ QUESTIONS ARE FIXED/.test(p), 'and are not a contract');
-    assert.ok(new RegExp(`land between ${config.dental.pageWords.targetMin} and ${config.dental.pageWords.targetMax} words`).test(p),
-      'the config word target still applies');
-  });
-  test('a page is written in its own vertical, not always in dental', () => {
-    const args = {
-      service: { name: 'Anxiety Treatment', category: 'condition' },
-      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
-      primaryKeyword: 'anxiety treatment in anaheim hills', secondaryKeywords: [],
-      outline: { blocks: [{ h2: 'X', paragraphs: 2, source: 'brand' }] },
-      competitorFaqs: [], brandName: 'Clear Behavioral Health',
-    };
-    const bh = contentGenerator.buildDentalPrompt({ ...args, vertical: 'behavioralHealth' });
-    assert.ok(/a behavioral health provider in California/.test(bh.system),
-      'a behavioral-health page must not be told it writes for a dental practice');
-    assert.ok(/clinician/.test(bh.system + bh.user), 'and must name the right profession');
-
-    // The default is unchanged, so Gentle Dental reads exactly as before.
-    const dental = contentGenerator.buildDentalPrompt(args);
-    assert.ok(/a dental practice in Massachusetts and New Hampshire/.test(dental.system));
-    assert.strictEqual(dental.system, contentGenerator.buildDentalPrompt({ ...args, vertical: 'dental' }).system,
-      'omitting the vertical must be identical to naming the default');
-  });
-
-
   console.log('\nVerticals - research must not be run in the wrong industry');
-  test('a dental seed is still qualified, exactly as before', () => {
-    const GD = 'client_gentle_dental';
-    // These names are why the qualifier exists: bare, they return construction
-    // and orthopedic results instead of dental competitors.
-    assert.strictEqual(keywordAdapter.disambiguate('Sealants Quincy MA', GD), 'Dental Sealants Quincy MA');
-    assert.strictEqual(keywordAdapter.disambiguate('Braces Derry NH', GD), 'Dental Braces Derry NH');
-    // Already qualified, so it is left alone rather than doubled.
-    assert.strictEqual(keywordAdapter.disambiguate('Dental Crowns Malden MA', GD), 'Dental Crowns Malden MA');
-  });
-  test('a behavioral-health seed is never prefixed with a dental word', () => {
+  test('a behavioral-health seed is never prefixed with an industry word', () => {
     const CBH = 'client_clear_behavioral_health';
     // The regression this guards: "Dental Anxiety Anaheim Hills" researched the
     // wrong industry entirely and returned dental keywords for a psychiatry page.
@@ -2026,25 +506,28 @@ test('no prompt asks for a keyword frequency any more', () => {
   });
   test('an unregistered client gets no qualifier rather than a guessed one', () => {
     // Injecting the wrong industry word silently researches the wrong industry,
-    // so "unknown" has to mean "add nothing", never "assume dental".
+    // so "unknown" has to mean "add nothing", never "assume" an industry.
     assert.strictEqual(keywordAdapter.disambiguate('Anxiety Anaheim Hills CA', 'client_nope'),
       'Anxiety Anaheim Hills CA');
     assert.strictEqual(keywordAdapter.disambiguate('Anxiety Anaheim Hills CA', undefined),
       'Anxiety Anaheim Hills CA');
     assert.strictEqual(verticals.verticalFor('client_nope'), null);
+    assert.strictEqual(verticals.competitorQualifierFor('client_nope'), null);
   });
-  test('the research vertical and the writing vertical cannot disagree', () => {
-    // One client, two consumers: the SERP seed and the writer prompt. Were
-    // these to come from separate tables, a client could be researched as
-    // dental and written as behavioral health.
+  test('every registered vertical states both of its qualifiers', () => {
+    // A vertical missing from either table would silently fall back to "no
+    // qualifier", which for competitor research means modelling the wrong
+    // industry's pages (see COMPETITOR_QUALIFIER).
     Object.entries(verticals.VERTICAL_BY_CLIENT).forEach(([clientId, vertical]) => {
-      assert.strictEqual(briefWizard.verticalFor(clientId), vertical,
-        `${clientId} must be written in the vertical it is researched in`);
       assert.ok(Object.prototype.hasOwnProperty.call(verticals.SEED_QUALIFIER, vertical),
         `${vertical} needs a seed-qualifier entry (null is a valid answer)`);
-      assert.ok(contentGenerator.VERTICALS[vertical], `${vertical} needs a writer profile`);
+      assert.ok(Object.prototype.hasOwnProperty.call(verticals.COMPETITOR_QUALIFIER, vertical),
+        `${vertical} needs a competitor-qualifier entry (null is a valid answer)`);
+      assert.strictEqual(verticals.verticalFor(clientId), vertical);
     });
+    assert.strictEqual(verticals.competitorQualifierFor('client_clear_behavioral_health'), 'mental health');
   });
+
 
 
   console.log('\nRelevance terms - a client with no curated map still gets a topical filter');
@@ -2065,10 +548,17 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(Array.isArray(terms) && terms.length, 'must never fall back to null');
   });
   test('a curated entry always wins over the derived one', () => {
-    // Derivation cannot know that whitening keywords also say "bleach".
-    assert.deepStrictEqual(
-      keywordUniverseMap.relevanceTermsForService('teeth-whitening', 'Teeth Whitening'),
-      ['whiten', 'bleach']);
+    // Derivation cannot know that whitening keywords also say "bleach". No
+    // client ships a curated map today, so one is registered for this test.
+    keywordUniverseMap.SERVICE_UNIVERSE_MAP['test-teeth-whitening'] = { clusters: ['Teeth Whitening'], terms: ['whiten', 'bleach'] };
+    try {
+      assert.deepStrictEqual(
+        keywordUniverseMap.relevanceTermsForService('test-teeth-whitening', 'Teeth Whitening'),
+        ['whiten', 'bleach']);
+      assert.deepStrictEqual(keywordUniverseMap.universeFilterFor('test-teeth-whitening').clusters, ['Teeth Whitening']);
+    } finally {
+      delete keywordUniverseMap.SERVICE_UNIVERSE_MAP['test-teeth-whitening'];
+    }
   });
   test('the derived filter removes the pool that was reported as irrelevant', () => {
     // Verbatim from the report: an "Anxiety in Anaheim Hills" pool made almost
@@ -2634,11 +1124,11 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(j.seo.title.endsWith(cbhContract.TITLE_SUFFIX), 'the shipping title carries the brand suffix');
   });
 
-  test('the dental gates are not applied to a CBH page, or the reverse', () => {
+  test('the CBH gates recognise a CBH page and nothing else', () => {
     const page = cbhPage();
     assert.ok(cbhQc.isCbhPage(page), 'a CBH page is recognisable by its own sections');
     assert.ok(!cbhQc.isCbhPage({ meta: {}, sections: { hero: {}, educationalBody: { blocks: [] } } }),
-      'a dental page is not mistaken for one');
+      'a page of another shape is not mistaken for one');
   });
 
 

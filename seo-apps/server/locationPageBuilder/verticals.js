@@ -1,43 +1,36 @@
 // ── Which vertical a client's pages belong to ───────────────────────────────
-// One place that answers "what kind of business is this?", because several
-// parts of the pipeline were written for the first client and quietly assume
-// every client is a dental group:
+// One place that answers "what kind of business is this?", so the parts of the
+// pipeline that steer a search by industry ask here instead of assuming:
 //
-//   - the SERP seed was prefixed "Dental " unconditionally, so a behavioral
-//     health page researched "Dental Anxiety Anaheim Hills" and came back with
-//     dental keywords and dental competitors;
-//   - the writer prompt describes the practice and names a profession.
-//
-// Both now ask here instead of assuming.
+//   - the SERP seed must not be prefixed with an industry word the client is
+//     not in, or a behavioral health page researches another industry's
+//     keywords and competitors;
+//   - competitor research may steer its query toward the client's industry.
 
 const VERTICAL_BY_CLIENT = {
-  client_gentle_dental: 'dental',
   client_clear_behavioral_health: 'behavioralHealth',
   client_neuro_wellness_spa: 'behavioralHealth',
 };
 
-// Deliberately NOT 'dental'. An unregistered client is a client we know
-// nothing about, and the safe answer to "should I inject a industry word into
-// their search query?" is no — injecting the wrong one silently researches
-// the wrong industry, which is exactly the bug this module exists to stop.
-// Every caller that needs a concrete vertical (the writer) applies its own
-// default; this returns null so "unknown" stays distinguishable from "dental".
+// An unregistered client is a client we know nothing about, and the safe
+// answer to "should I inject an industry word into their search query?" is no
+// -- injecting the wrong one silently researches the wrong industry, which is
+// exactly the bug this module exists to stop. So this returns null for
+// "unknown" rather than guessing.
 function verticalFor(clientId) {
   return VERTICAL_BY_CLIENT[clientId] || null;
 }
 
-// Some Gentle Dental service names are ambiguous outside a dental context:
-// "Sealants" and "Crowns & Bridges" read as construction terms, "Braces" as
-// orthopedic, "Implants" as cosmetic surgery. A bare "{service} {city} {state}"
-// SERP query for those returns building departments and civic pages instead of
-// dental competitors, so the query is qualified with the industry word.
+// Some service names are ambiguous outside their industry ("Sealants" reads
+// as a construction term), and a bare "{service} {city} {state}" SERP query
+// for those returns civic pages instead of competitors, so the query is
+// qualified with the industry word.
 //
 // That qualifier is a property of the VERTICAL, not of searching in general.
-// Behavioral health needs none — "Anxiety Anaheim Hills" is already
+// Behavioral health needs none -- "Anxiety Anaheim Hills" is already
 // unambiguous, and prefixing anything to it would research a different
 // industry.
 const SEED_QUALIFIER = {
-  dental: 'Dental',
   behavioralHealth: null,
 };
 
@@ -53,7 +46,6 @@ const SEED_QUALIFIER = {
 // psychiatry page was being offered dental pages to model and correctly
 // rejected every one of them -- leaving it with no competitor basis at all.
 const COMPETITOR_QUALIFIER = {
-  dental: 'Dental',
   behavioralHealth: 'mental health',
 };
 

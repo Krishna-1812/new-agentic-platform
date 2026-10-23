@@ -182,7 +182,7 @@ Base content length: ${baseChars} characters
 ## Style Rules (apply only within the structure above)
 
 ### Brand Name
-- Use the exact brand name format from the guidelines (e.g. "Gentle Dental in [Location]")
+- Use the exact brand name format from the guidelines (e.g. "[Brand] in [Location]")
 - Substitute the correct location name everywhere the placeholder appears
 - Do not shorten or alter the brand name
 

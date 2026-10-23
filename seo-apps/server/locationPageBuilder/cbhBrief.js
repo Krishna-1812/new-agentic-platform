@@ -100,9 +100,9 @@ function withinRange(text, { min, max }) {
 }
 
 // ── Persistence ─────────────────────────────────────────────────────────────
-// Same table and the same deterministic id as the dental brief: one row per
-// (client, service, location), so the two flows never collide and a client
-// only ever has one brief per page.
+// The briefs table, addressed by the deterministic id brief.js derives: one
+// row per (client, service, location), so a client only ever has one brief
+// per page and concurrent writers converge on it.
 // The names a heading may not lower-case, for one service+location. Looked up
 // rather than stored on the brief, so a renamed location reaches briefs written
 // before the rename.
@@ -286,7 +286,7 @@ async function plan({ serviceName, conditionName, city, primaryKeyword, competit
   const { system, user } = planPrompt({ serviceName, conditionName, city, primaryKeyword, competitorHeadings, competitorFaqs });
   let parsed = null;
   try {
-    const llm = createLlmClient(config.llm.dentalOutlineModel);
+    const llm = createLlmClient(config.llm.cbhPlannerModel);
     for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
       const completion = await llm.chat.completions.create({
         model: llm.model,

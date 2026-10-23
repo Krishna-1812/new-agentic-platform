@@ -3,10 +3,9 @@
 // FIXED heading already filled in and every generated field left empty for the
 // writer.
 //
-// Separate from compose.buildDentalScaffold because the two contracts share no
-// section. The dental body is a flat list of H2 blocks whose bodies are HTML
-// with headings forbidden inside; this one has ten named sections, one of
-// which nests 4-5 H3s under a single H2 and budgets each of them in LINES.
+// Separate from compose.buildScaffold because the two contracts share no
+// section: this one has ten named sections, one of which nests 4-5 H3s under
+// a single H2 and budgets each of them in LINES.
 //
 // The fixed headings are never sent to the writer to produce. The guidelines
 // say "use this H2 exactly as written", and the surest way to honour that is
@@ -175,8 +174,8 @@ function buildCbhSchema({ scaffold, client, location }) {
     })),
   } : null;
 
-  // Stored as strings, matching how the dental pages store theirs, so the
-  // exporters and the wizard render both without branching.
+  // Stored as strings, so the exporters and the wizard can render them
+  // verbatim inside a <script type="application/ld+json"> block.
   return {
     medicalBusiness: JSON.stringify(org, null, 2),
     medicalWebPage: JSON.stringify(webPage, null, 2),

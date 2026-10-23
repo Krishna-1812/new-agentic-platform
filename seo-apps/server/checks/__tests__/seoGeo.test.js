@@ -24,16 +24,18 @@ function test(name, fn) {
   catch (e) { console.log(`  FAIL  ${name}\n        ${e.message}`); failed++; }
 }
 
-const FIXTURE = path.join(__dirname, 'fixtures', 'arlington-live.html');
-const ARLINGTON_URL = 'https://www.gentledental.com/dental-offices/ma/arlington';
+// A scraped live dental location page, anonymised: the practice's brand, domains and social handles
+// are replaced with a fictional practice (Brightside Dental, brightsidedental.example).
+const FIXTURE = path.join(__dirname, 'fixtures', 'dental-location-live.html');
+const ARLINGTON_URL = 'https://www.brightsidedental.example/dental-offices/ma/arlington';
 const html = fs.readFileSync(FIXTURE, 'utf8');
 const META = { gap: 3, metadata: true };
 
 // Real strings from the fixture — the page the reported audit was run against.
-const TITLE = 'Arlington Dentist, MA | Gentle Dental of New England';
+const TITLE = 'Arlington Dentist, MA | Brightside Dental of New England';
 const H1 = 'Your Experienced Arlington, MA Dentist for Family Dental Care';
 const METADESC = 'Our Arlington dentists provide high-quality dental care for all ages. Flexible scheduling, most insurance accepted, and personalized treatments. Visit today!';
-const OGTITLE = 'Gentle Dental of Arlington – Comprehensive Family Dentistry';
+const OGTITLE = 'Brightside Dental of Arlington – Comprehensive Family Dentistry';
 
 const tierOf = (kw, hay, opts = META) => KWM.matchKeyword(kw, hay, opts).tier;
 
@@ -161,7 +163,7 @@ test('stem() is idempotent and unifies singular/plural', () => {
 group('helpers — the crash and validation fixes');
 
 test('toSameAsArray handles a comma-joined string (reading .length gave a char count; .some() threw)', () => {
-  const s = 'https://www.youtube.com/user/GentleDental1, https://twitter.com/gentledentalne, https://www.facebook.com/GentleDental';
+  const s = 'https://www.youtube.com/user/BrightsideDental1, https://twitter.com/brightsidedentalne, https://www.facebook.com/BrightsideDental';
   const out = toSameAsArray(s);
   assert.strictEqual(out.length, 3);
   assert.ok(out.every(u => u.startsWith('http')));

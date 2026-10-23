@@ -31,12 +31,9 @@ function classifyIntent(keyword) {
   return 'commercial';
 }
 
-// Several Gentle Dental service names are ambiguous outside a dental context
-// ("Sealants" and "Crowns & Bridges" read as construction/civil-engineering
-// terms, "Braces" as orthopedic, "Implants" as medical/cosmetic-surgery) — a
-// bare "{service} {city} {state}" SERP query for these returns building
-// departments, civic pages, etc. instead of dental competitors, so the query
-// is qualified with the industry word.
+// Some service names are ambiguous outside their industry -- a bare
+// "{service} {city} {state}" SERP query for those returns civic pages instead
+// of competitors, so the query can be qualified with the industry word.
 //
 // The qualifier comes from the CLIENT, and a client with none gets its seed
 // back untouched. This used to be an unconditional "Dental " prefix, which
@@ -132,9 +129,9 @@ async function getKeywordCandidates({ service, city, state, stateName, region, s
   // answers a different question: "Anxiety Anaheim Hills CA" returned pet
   // clinics and "do cats help with anxiety", because a bare condition next to
   // a city is not what anyone searches. Two ways to fix that and a vertical
-  // needs exactly one -- dental prefixes its industry word (disambiguate
-  // below), everyone else adds the head noun that makes the condition a
-  // service ("anxiety" -> "anxiety treatment").
+  // needs exactly one -- a vertical with a seed qualifier prefixes its
+  // industry word (disambiguate below), everyone else adds the head noun that
+  // makes the condition a service ("anxiety" -> "anxiety treatment").
   const searchableService = seedQualifierFor(clientId) ? service : servicePhrase(service);
   const rawSeed = (seedQuery || `${searchableService} ${city} ${state}`).trim();
   if (!rawSeed) throw new Error('A service+city+state or seedQuery is required.');
