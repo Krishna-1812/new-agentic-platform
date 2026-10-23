@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Syncs Job Change Alert events from Slack's #job_change_alert_apollo channel
 into data/job_change_alerts.db (+ the data/job_change_alerts_manual.json ledger,
-this feature's source of truth -- same role as data/northstar_signals_manual.json).
+this feature's source of truth).
 
 Two ways to feed it messages:
   --from-file PATH   Offline backfill: reads a pre-fetched channel dump, either the

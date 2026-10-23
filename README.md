@@ -1,7 +1,7 @@
 # Intelligence by Position²
 
 A Flask platform of 30+ GTM/revenue-intelligence agents (account de-anonymization, contact
-finding, social/ad/event intelligence, job-change alerts, SEO tooling, per-client portals, and
+finding, social/ad/event intelligence, job-change alerts, SEO tooling, and
 more) for Position², a B2B digital-marketing agency, live at `intelligence.position2.com`.
 
 This repo also carries the **ABM Signal Tracker**, a standalone weekly CLI job that started this
@@ -14,7 +14,6 @@ project and still runs on its own schedule (see [below](#abm-signal-tracker-cli)
   - [Strategic Agents](#strategic-agents-p2strategic-agents-staff-only)
   - [Signal and visitor intelligence](#signal-and-visitor-intelligence)
   - [SEO / GEO Suite](#seo--geo-suite-p2seo-staff-only)
-  - [Client portals](#client-portals)
   - [Admin analytics](#admin-analytics-all-admin_required)
 - [Layout](#layout)
 - [Running locally](#running-the-flask-app-locally)
@@ -34,9 +33,8 @@ into four surfaces:
 | # | Surface | Who | Auth | Namespace |
 |---|---|---|---|---|
 | 1 | Public marketing site | Logged-out visitors | none | `/`, `/agents`, `/platform`, ... |
-| 2 | Member workspace | Any signed-in Google user | `@login_required` | `/app/*` |
+| 2 | Member workspace (closed) | Nobody: sign-in is staff only (`STAFF_ONLY`) and `/app/*` redirects to `/hub` | | `/app/*` |
 | 3 | Internal staff app | `@markifydigital.com` accounts, plus the admins in `ADMIN_EMAILS` on any domain | `@position2_required` | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/abm-signal-tracker/*`, `/playbook/*`, `/admin/*` (under `/p2/*` until 2026-09-24; old `/p2` links redirect) |
-| 4 | Client portals | Any signed-in Google account, gated per client | `_client_gate()` | `/<client-slug>/*` |
 
 `ADMIN_EMAILS` (checked in `app.py`) is the single source of truth for admin rights; `admin_required`
 gates every `/admin/*` route off it. Most of the agent catalog below lives on surface 3
@@ -84,8 +82,8 @@ tab and an on-demand Claude "AI Insights" synthesis. Backed by the **Arena** ven
 Not to be confused with **LinkedIn Social Researcher** below, an unrelated, older, external tool
 that briefly held the same name.
 
-#### 42 North Dental Slot Checker
-`/strategic-agents/42-north-dental-slot-checker` · `tracker/slot_checker.py`
+#### Slot Checker Agent
+`/strategic-agents/slot-checker` · `tracker/slot_checker.py`
 
 A read/visualize layer over a separate weekly scrape of a multi-brand dental chain's real booking
 widgets (82 locations): what a new patient would actually be offered if they tried to book right
@@ -139,7 +137,7 @@ any combination.
 `/strategic-agents/linkedin-intelligence` · `static/js/linkedin.js`
 
 Your own LinkedIn engagement data (people × post engagement) read from a Google Sheet and rendered
-client-side, one sheet per surface (internal, and independently per client portal). Distinct from
+client-side, from one sheet. Distinct from
 every other LinkedIn-named agent in this repo (see the naming note in the sidebar of the codebase
 docs) - this one is *your own* engagement, not a competitive read.
 
@@ -168,8 +166,8 @@ The always-on view of the same account-intent-monitoring product described in th
 change, M&A, IPO, product launches, hiring surges, and more), each scored as
 `type_weight × severity × recency` with a bonus when signals stack, refreshed weekly. It has one
 account, Healthcare, holding the 50 companies with the most distinct signals (cut down from 1,251
-on 2026-09-24 by `tools/prune_abm_to_top50.py`, which records the rule). The CSG and NorthStar
-accounts, and NorthStar's client-portal copy of the tracker, were removed at the same time.
+on 2026-09-24 by `tools/prune_abm_to_top50.py`, which records the rule). The other two
+accounts were removed at the same time.
 
 ---
 
@@ -214,15 +212,6 @@ agents. Location + Service Pages keeps its data in the project's Postgres, in it
 
 ---
 
-### Client portals
-
-`/<client-slug>/*`, gated per client via `_client_gate()`. A co-branded front door for a named
-client (currently `northstaranesthesia`), assembled from a `CLIENTS` registry entry: branding,
-which agents that client can see, which dashboards, and any purely-external embedded tools. Three
-agent connection types: SERP-connected, dashboard-backed, and external-tool (iframe).
-
----
-
 ### Admin panel (all `@admin_required`)
 
 `/admin` is the one admin page. It replaced eight tabs (Internal Usage, External Usage, Client Usage,
@@ -246,8 +235,8 @@ the agents' own pages call them, and they are unchanged.
 ## Layout
 
 ```
-app.py                  Flask app, 224 routes: auth, the agent roster, admin dashboards,
-                        per-client portals. The main entry point; see its own module
+app.py                  Flask app, 224 routes: auth, the agent roster, admin dashboards.
+                        The main entry point; see its own module
                         docstring and section-comment banners for a map of the file.
 tracker/                Signal ingestion + per-agent business logic (76 modules) imported by
                         app.py and by the ABM Signal Tracker CLI.
@@ -303,10 +292,10 @@ each agent's section above for what specifically goes inert.
 |---|---|
 | `SECRET_KEY` / `FLASK_SECRET_KEY` | Session signing, **set this even locally** |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google SSO |
-| `GOOGLE_SA_JSON` | Sheets reads: internal analytics, 42 North Dental Slot Checker |
+| `GOOGLE_SA_JSON` | Sheets reads: internal analytics, Slot Checker Agent |
 | `DATABASE_URL` | Postgres, agent run history, Contact Finder caches, LinkedIn Strategy Researcher, Social Media Intelligence, Event & Conference Intelligence |
 | `APOLLO_API_KEY` | Contact Finder, de-anonymization, person enrichment, Social Media Intelligence's own company search, one shared key/pool |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Contact Finder's cross-check, LinkedIn Strategy Researcher's AI Insights, 42 North's AI Insights, all of Social Media Intelligence's identify/vision/synthesis calls, Event & Conference Intelligence |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Contact Finder's cross-check, LinkedIn Strategy Researcher's AI Insights, the Slot Checker's AI Insights, all of Social Media Intelligence's identify/vision/synthesis calls, Event & Conference Intelligence |
 | `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_INSIGHTS_MODEL` | Vimi, Contact Finder's chat chain, Social Media Intelligence's Whisper transcription |
 | `ARENA_API_KEY` | LinkedIn Strategy Researcher's entire vendor backend |
 | `UNIPILE_API_KEY`, `UNIPILE_DSN` | Social Media Intelligence's LinkedIn/Instagram collection (LinkedIn is live) |

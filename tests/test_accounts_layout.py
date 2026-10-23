@@ -1,7 +1,6 @@
 """ABM Signal Tracker's account picker (/abm-signal-tracker/accounts, templates/accounts.html).
 
-Reported live via screenshot: with exactly three accounts (Healthcare, CSG,
-NorthStar Anesthesia), the card grid showed two cards on the first row and the
+Reported live via screenshot: with exactly three accounts, the card grid showed two cards on the first row and the
 third orphaned alone on a second row with a large empty gap beside it. Root
 causes, both fixed the same session:
 
@@ -30,13 +29,13 @@ causes, both fixed the same session:
    `width:100%` on `.main` pins it to its real containing block.
 
 3. `_build_account_card`'s `thumb_map` (app.py) only had gradient entries for
-   the Healthcare and CSG accent colors; NorthStar's accent fell through to
+   the Healthcare and CSG accent colors; the third account's accent fell through to
    the flat grey placeholder gradient meant for a not-yet-configured account,
    which is also why its card looked visually duller than its siblings in the
    reported screenshot.
 
-CSG and NorthStar were removed on 2026-09-24 and Healthcare is the only
-account left, so the NorthStar-specific gradient test went with them. The
+The other two accounts were removed on 2026-09-24 and Healthcare is the only
+account left, so the third account's gradient test went with them. The
 grid tests stay: they guard the layout for whatever number of cards ships.
 
 These are source/logic-level regression tests: no headless browser here, so

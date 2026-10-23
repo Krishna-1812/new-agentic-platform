@@ -1,4 +1,4 @@
-"""Performance audit: _rows_from_live_sheet (42 North Dental Slot Checker) read
+"""Performance audit: _rows_from_live_sheet (Slot Checker Agent) read
 the "LPs" and "Locations" tabs one after another on the same shared service
 object. The two reads are independent, so they now run concurrently, each
 with its own service instance (httplib2 is not thread-safe to share).

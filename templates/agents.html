@@ -101,7 +101,7 @@
   <div class="nv-cta">
     {% if page != 'login' %}
     <a class="nv-signin" href="/login">Log in</a>
-    <button class="btn btn-1" data-signup>Sign up</button>
+    <button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>
     <button class="nv-burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="sheet"><i></i><i></i></button>
     {% endif %}
   </div>
@@ -120,7 +120,7 @@
   <a href="/industries"><span class="idx">06</span>Industries</a>
   <div class="nv-sheet-foot">
     <a class="btn btn-1" href="/login" style="background:#F6F4F0;color:#121213">Log in</a>
-    <button class="btn btn-2" data-signup style="box-shadow:inset 0 0 0 1px #3A3A3D;color:#F6F4F0">Sign up</button>
+    <button class="btn btn-2" data-demo data-interest="Book a demo" style="box-shadow:inset 0 0 0 1px #3A3A3D;color:#F6F4F0">Book a demo</button>
   </div>
 </div>
 {% endif %}
@@ -153,7 +153,7 @@
       <span class="idx rv fade">01 / Overview</span>
       <p class="lead rv fade">A funding round. A new CRO. A third quiet look at your pricing page. {{ brand.name }} reads those signals across the web, your site and social, and turns them into one ranked list: who to call, why now, and what to say first.</p>
       <div class="btns rv fade">
-        <button class="btn btn-1" data-signup>Sign up</button>
+        <button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>
         <button class="btn btn-2" type="button" data-video>Take the two-minute tour</button>
       </div>
     </div>
@@ -315,7 +315,7 @@
       <span class="idx rv fade">{{ '%02d'|format(agents|length) }} live</span>
       <p class="lead rv fade">Specialist {{ brand.agents_plural|lower }} for intent, SEO, AI search, content and paid. Each does one job unusually well: spot the moment, name the account, hand over the next move. Take one off the shelf, or have us build the one you&rsquo;re missing.</p>
       <div class="btns rv fade">
-        <button class="btn btn-1" data-signup>Sign up</button>
+        <button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>
         <a class="btn btn-2" href="#dir">Browse the line-up</a>
       </div>
     </div>
@@ -461,7 +461,7 @@
         <div class="side-cta">
           <b>Put it to work</b>
           <p>Run it on the accounts you care about, or have us tune it to your stack.</p>
-          <button class="btn btn-1" data-signup>Sign up</button>
+          <button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>
           <button class="btn btn-2" data-demo data-interest="Build a custom agent" data-prefill="I'd like a version of {{ agent.name }} customised for us.">Build a custom version</button>
         </div>
       </aside>
@@ -486,7 +486,7 @@
   {% endif %}
 
   {% set cta_h = agent.name ~ ', on your own accounts.' %}
-  {% set cta_p = (industry.cta_p if page == 'iagent' and industry.cta_p else 'Sign up and point it at real companies. Demo data was never the point.') %}
+  {% set cta_p = (industry.cta_p if page == 'iagent' and industry.cta_p else "Book a demo and we'll point it at real companies. Demo data was never the point.") %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ PLATFORM ════════════════════════════ #}
@@ -502,7 +502,7 @@
       <span class="idx rv fade">01 / Platform</span>
       <p class="lead rv fade">{{ brand.product }} reads your market continuously, separates momentum from noise, explains every account it ranks in plain language, and points your team at the conversations most likely to become pipeline.</p>
       <div class="btns rv fade">
-        <button class="btn btn-1" data-signup>Sign up</button>
+        <button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>
         <button class="btn btn-2" type="button" data-video>Take the two-minute tour</button>
       </div>
     </div>
@@ -577,7 +577,7 @@
     <div class="hero-foot">
       <span class="idx rv fade">{{ signals_list|length }} types</span>
       <p class="lead rv fade">These are the moves companies make just before they buy: changes at the top, money coming in, quiet research on your site, a competitor shifting position. One is a reason to reach out. Several together is a reason to reach out today.</p>
-      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button></div>
+      <div class="btns rv fade"><button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button></div>
     </div>
   </header>
 
@@ -638,7 +638,7 @@
     <div class="hero-foot">
       <span class="idx rv fade">01 / Solutions</span>
       <p class="lead rv fade">{{ brand.name }} is a B2B growth practice as well as a platform. The platform tells you who&rsquo;s ready; our team runs the plays that turn that readiness into meetings, pipeline and revenue.</p>
-      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button><button class="btn btn-2" type="button" data-demo>Talk to us</button></div>
+      <div class="btns rv fade"><button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button></div>
     </div>
   </header>
 
@@ -914,7 +914,7 @@
     <div class="hero-foot">
       <span class="idx rv fade">01 / Integrations</span>
       <p class="lead rv fade">{{ brand.name }} plugs into your CRM, analytics, ad platforms and search tools, so signals, scores and next moves show up where your team already spends its day.</p>
-      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button></div>
+      <div class="btns rv fade"><button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button></div>
     </div>
   </header>
 
@@ -1054,7 +1054,7 @@
     <div class="hero-foot">
       <span class="idx rv fade">01 / {{ industry.short }}</span>
       <p class="lead rv fade">{{ industry.lead }}</p>
-      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button><button class="btn btn-2" type="button" data-video>Take the two-minute tour</button></div>
+      <div class="btns rv fade"><button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button><button class="btn btn-2" type="button" data-video>Take the two-minute tour</button></div>
     </div>
   </header>
 
@@ -1130,7 +1130,7 @@
   {% endif %}
 
   {% set cta_h = industry.cta_h or ('Run it on your ' ~ industry.short|lower ~ ' accounts.') %}
-  {% set cta_p = industry.cta_p or 'Sign up and watch the signals light up on organisations you already know.' %}
+  {% set cta_p = industry.cta_p or 'Book a demo and watch the signals light up on organisations you already know.' %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ LOGIN ═══════════════════════════════ #}
@@ -1198,7 +1198,7 @@
   <div class="wrap foot-in">
     <div>
       <p class="foot-tag">{{ brand.tagline }}</p>
-      {% if page != 'login' %}<button class="btn btn-1" data-signup>Sign up</button>{% endif %}
+      {% if page != 'login' %}<button class="btn btn-1" data-demo data-interest="Book a demo">Book a demo</button>{% endif %}
     </div>
     {% if page != 'login' %}
     <div class="foot-cols">
@@ -1240,7 +1240,7 @@
       </div>
       <form id="leadForm" autocomplete="on" novalidate>
         <div class="f-pills">
-          <button type="button" class="f-pill on" data-interest="Talk to us">Talk to us</button>
+          <button type="button" class="f-pill on" data-interest="Book a demo">Book a demo</button>
           <button type="button" class="f-pill" data-interest="Build a custom agent">Custom agent</button>
         </div>
         <div class="f-row">
@@ -1260,26 +1260,6 @@
       <p id="leadDoneMsg">Thanks. Someone from our team will be in touch shortly.</p>
       <button type="button" class="btn btn-2" id="leadDoneClose">Done</button>
     </div>
-  </div>
-</div>
-
-{#- Sign-up pop-up: one-click account creation with Google. Same OAuth flow
-    as /login (first-time Google users get an account, returning users log
-    in), but framed for sign-up. GSI loads lazily on first open. -#}
-<div class="ov" id="suOv" role="dialog" aria-modal="true" aria-label="Sign up">
-  <div class="ov-bg" data-suclose></div>
-  <div class="ov-mid ov-sm">
-    <button class="ov-x" id="suClose" aria-label="Close"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="ov-h">
-      <span class="lbl">{{ brand.name }}</span>
-      <h3>Start in one click</h3>
-      <p>Sign up with your Google account. No forms, no waiting, no sales call required.</p>
-    </div>
-    <div class="g-err" id="suErr" style="display:none"></div>
-    <div class="gbtn"><div id="suGsiBtn" data-cid="{{ google_client_id }}"></div></div>
-    <a class="btn btn-2 g-alt" id="suFallback" href="/login" style="width:100%;justify-content:center">Continue with Google</a>
-    <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Signed up securely through Google</div>
-    <div class="login-foot" style="text-align:center">Already have an account? <a class="lk" href="/login">Log in</a></div>
   </div>
 </div>
 
@@ -1493,7 +1473,7 @@
   /* ── lead form ──────────────────────────────────────────────────── */
   var leadOv = document.getElementById('leadOv');
   if (leadOv){
-    var interest = 'Talk to us';
+    var interest = 'Book a demo';
     function setPill(v){
       if (v) interest = v;
       document.querySelectorAll('.f-pill').forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-interest') === interest); });
@@ -1507,7 +1487,7 @@
         document.getElementById('leadBody').style.display = '';
         document.getElementById('leadDone').classList.remove('on');
         ['f-name','f-email'].forEach(function(id){ var x = document.getElementById(id); if (x) x.classList.remove('ok','bad'); });
-        setPill(b.getAttribute('data-interest') || 'Talk to us');
+        setPill(b.getAttribute('data-interest') || 'Book a demo');
         var pre = b.getAttribute('data-prefill'), m = document.getElementById('nvM');
         if (pre && m && !m.value) m.value = pre;
         ovOpen(leadOv);
@@ -1557,68 +1537,6 @@
         err.textContent = 'Network error. Please try again.';
       });
     });
-  }
-
-  /* ── sign-up pop-up ─────────────────────────────────────────────────
-     Google Identity Services is fetched the first time the pop-up opens, so
-     a marketing page does not ship the Google script until it is needed. If
-     GSI cannot load or render (blocked script, unauthorised origin) a plain
-     link to /login is revealed, so the button never dead-ends. */
-  var suOv = document.getElementById('suOv');
-  if (suOv){
-    var host = document.getElementById('suGsiBtn');
-    var fallback = document.getElementById('suFallback');
-    var suErr = document.getElementById('suErr');
-    var cid = host ? (host.getAttribute('data-cid') || '') : '';
-    var gsiReady = false, gsiTried = false, polls = 0;
-
-    function showErr(m){ if (suErr){ suErr.textContent = m; suErr.style.display = 'flex'; } }
-    function showFallback(){
-      /* inline-flex, not block: .btn is a flex row, and setting display:block
-         here silently drops its centring and its 50px height. */
-      if (fallback) fallback.style.display = 'inline-flex';
-      var g = suOv.querySelector('.gbtn'); if (g) g.style.display = 'none';
-    }
-    function onCredential(resp){
-      /* Ignore silent/auto credential selection; only proceed on a click. */
-      if (resp && resp.select_by === 'auto'){ try { google.accounts.id.disableAutoSelect(); } catch(_){} return; }
-      fetch('/auth/google', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({credential: resp.credential})})
-        .then(function(r){ return r.json(); })
-        .then(function(d){ if (d.success){ window.location.href = d.redirect || '/app'; } else { showErr(d.error || 'Sign-up failed.'); } })
-        .catch(function(){ showErr('Network error. Please try again.'); });
-    }
-    function renderGsi(){
-      if (gsiReady) return;
-      if (!cid){ showFallback(); return; }
-      /* The GSI global can lag a tick behind the script's load event, so
-         poll for it (bounded ~2.4s) exactly as /login does. */
-      if (!(window.google && google.accounts && google.accounts.id)){
-        if (polls++ < 20) setTimeout(renderGsi, 120); else showFallback();
-        return;
-      }
-      try {
-        google.accounts.id.initialize({client_id: cid, callback: onCredential, auto_select: false, itp_support: true, cancel_on_tap_outside: true});
-        try { google.accounts.id.disableAutoSelect(); } catch(_){}
-        google.accounts.id.renderButton(host, {type:'standard', shape:'rectangular', theme:'outline', text:'signup_with', size:'large', logo_alignment:'left', width:300});
-        gsiReady = true;
-        setTimeout(function(){ if (host && !host.querySelector('iframe, div')) showFallback(); }, 1600);
-      } catch(_){ showFallback(); }
-    }
-    function loadGsi(){
-      if (gsiTried){ renderGsi(); return; }
-      gsiTried = true;
-      if (window.google && google.accounts && google.accounts.id){ renderGsi(); return; }
-      var s = document.createElement('script');
-      s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true;
-      s.onload = renderGsi; s.onerror = showFallback;
-      document.head.appendChild(s);
-      setTimeout(function(){ if (!gsiReady) showFallback(); }, 2600);
-    }
-    document.querySelectorAll('[data-signup]').forEach(function(b){
-      b.addEventListener('click', function(e){ e.preventDefault(); if (suErr) suErr.style.display = 'none'; ovOpen(suOv); loadGsi(); });
-    });
-    document.getElementById('suClose').addEventListener('click', function(){ ovClose(suOv); });
-    suOv.querySelectorAll('[data-suclose]').forEach(function(b){ b.addEventListener('click', function(){ ovClose(suOv); }); });
   }
 
   /* ── walkthrough video ──────────────────────────────────────────── */
@@ -1686,9 +1604,8 @@
   track('page_view', {path: location.pathname});
   document.addEventListener('click', function(e){
     if (e.target.closest('[data-video]'))  { track('cta_watch_demo',  {path: location.pathname}); return; }
-    if (e.target.closest('[data-signup]')) { track('cta_signup_open', {path: location.pathname}); return; }
     var a = e.target.closest('[data-demo]');
-    if (a) { track('lead_form_open', {interest: a.getAttribute('data-interest') || 'Talk to us', path: location.pathname}); return; }
+    if (a) { track('lead_form_open', {interest: a.getAttribute('data-interest') || 'Book a demo', path: location.pathname}); return; }
     var nav = e.target.closest('nav a');
     if (nav) { track('nav_click', {to: nav.getAttribute('href') || ''}); }
   }, true);
@@ -1712,8 +1629,8 @@
     the signal path, the shape morphs and the deck's springs. press-play.js
     works without it; those three simply fall back or stay still. -#}
 <script src="{{ url_for('static', filename='vendor/anime/anime.nx.min.js') }}?v=4.5.0" defer></script>
-<script src="{{ url_for('static', filename='js/press-play.js') }}?v=4" defer></script>
-<script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/press-play.js') }}?v=5" defer></script>
+<script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=6"></script>
 {% endif %}
 </body>
 </html>

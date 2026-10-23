@@ -91,7 +91,7 @@ An account with no profile shows this block on its home, filled in with what is 
   its tab's name. An account that gains Google Ads keeps its row (and so its URL).
 - When an account's URL name changes, the old one is retired to it and redirects (301; 308 for a
   POST). **A slug is never given to a different client**, even after the first one is gone.
-- An account can never take a first path segment the app uses (every route, the client portals,
+- An account can never take a first path segment the app uses (every route
   and words such as `api`, `admin`, `login`); such a name gets `-account` added. A name another
   account holds gets `-2`, `-3`... for a new account.
 - Tables: `client_accounts` (key, slug, name) and `client_account_old_slugs` (slug → key), on

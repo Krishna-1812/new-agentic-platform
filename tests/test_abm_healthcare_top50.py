@@ -1,6 +1,6 @@
 """The ABM Signal Tracker is one account, Healthcare, cut to its top 50 companies.
 
-On 2026-09-24 the CSG and NorthStar Anesthesia accounts were removed and the
+On 2026-09-24 the other two accounts were removed and the
 Healthcare universe (1,251 companies) was cut to the 50 with the most distinct
 signals, by tools/prune_abm_to_top50.py. The same pass found the weekly job had
 been storing one signal again on every run -- 2,585 rows held 671 real signals --
@@ -62,10 +62,7 @@ def test_healthcare_is_the_only_account():
 
 
 @pytest.mark.parametrize("path", [
-    "reports/dashboard_csg.html", "reports/dashboard_northstar.html",
-    "reports/dashboard_northstar_client.html", "reports/opportunities_csg.csv",
-    "data/tracker_csg_v2.db", "data/tracker_northstar.db",
-    "data/northstar_signals_manual.json",
+    "reports/dashboard_csg.html", "reports/opportunities_csg.csv", "data/tracker_csg_v2.db",
 ])
 def test_the_removed_accounts_files_are_gone(path):
     assert not (_ROOT / path).exists()
@@ -77,15 +74,8 @@ def test_the_removed_accounts_files_are_gone(path):
 ])
 def test_nothing_still_points_at_the_removed_accounts(path):
     text = (_ROOT / path).read_text(encoding="utf-8")
-    for needle in ("tracker_csg_v2", "dashboard_csg", "tracker_northstar",
-                   "dashboard_northstar", "fetch_csg", '"csg"'):
+    for needle in ("tracker_csg_v2", "dashboard_csg", "fetch_csg", '"csg"'):
         assert needle not in text, "%s still mentions %s" % (path, needle)
-
-
-def test_the_northstar_portal_no_longer_offers_the_signal_tracker():
-    client = appmod.CLIENTS["northstaranesthesia"]
-    assert "signal-tracker" not in client["agents"]
-    assert "signal-tracker" not in (client.get("dashboards") or {})
 
 
 # ── Fifty companies, in agreement everywhere ─────────────────────────────────

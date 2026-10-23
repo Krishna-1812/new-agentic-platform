@@ -29,7 +29,7 @@ CSS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 PAGES = [
     ("linkedin.css", ".shell"),                     # LinkedIn Intelligence
     ("job_change_alert.css", ".main"),
-    ("42_north_dental_slot_checker.css", ".main"),
+    ("slot_checker.css", ".main"),
     ("linkedin_playbook_studio.css", ".main"),
     ("event_conference_intelligence.css", ".main"),
 ]

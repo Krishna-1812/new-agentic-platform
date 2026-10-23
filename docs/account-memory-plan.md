@@ -250,8 +250,8 @@ docs/buyer-radar-plan.md.
 
 Still to adapt, so not yet in the accounts: ABM Signal Tracker, Anonymous Visitors, Job Change Alert,
 LinkedIn Intelligence, LinkedIn Strategy Researcher, LinkedIn Social Researcher, Ad Intelligence and
-Sentiment Pulse. Their runs are not saved per account yet. The 42 North Dental Slot Checker is made for
-one client.
+Sentiment Pulse. Their runs are not saved per account yet. The Slot Checker Agent reads one fixed set of dental
+practices, not a client account.
 
 **Sharing every tool reaches the client** (2026-10-12). `tests/test_client_tools.py` proves it for every tool
 in the Share panel:

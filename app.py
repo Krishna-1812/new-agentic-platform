@@ -1236,7 +1236,7 @@ def auth_google():
 
 # Search engines may index the public marketing site and nothing else. An
 # allow-list rather than a block-list: signed-in areas, the internal staff app,
-# the API and every client portal (each lives at its own /<slug>, see CLIENTS)
+# the API and every client workspace (each lives at its own /<slug>)
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/agents", "/industries", "/platform", "/signals",
@@ -3263,133 +3263,6 @@ def logout():
     return resp
 
 
-# ── Client workspaces (private, co-branded portals) ──────────────────────────────
-# A per-client front door at /<client-slug> (e.g. /northstaranesthesia). Each client
-# gets a curated subset of agents, gated so only that client's own email domain(s)
-# plus @markifydigital.com staff can sign in. Agents reuse the APP_AGENTS registry: the
-# three with a "seo_slug" are live (their "Use Agent" embeds the real SERP tool, same
-# as /app/<slug>/use); the rest render an "in setup" dashboard shell until wired.
-#
-# One exception: "slot-checker" (see _SLOT_CHECKER_CLIENT_AGENT below) is
-# deliberately NOT an APP_AGENTS entry. APP_AGENTS backs /app, the public
-# catalog shown to every signed-in Google user (see app_home's own
-# docstring), and Slot Checker is a bespoke Position2-staff dashboard
-# (already live at /strategic-agents/42-north-dental-slot-checker) that
-# should stay off that catalog -- 42 North Dental should see it only inside
-# their own gated portal. _client_agent_view resolves it from this standalone
-# dict instead, so the rest of the client-portal machinery (which only ever
-# reads _client_agent_view's return shape, never APP_AGENTS directly) treats
-# it exactly like a normal catalog agent.
-#
-# Routes are registered explicitly per known client slug (see the loop below), so an
-# unknown top-level path never resolves here -- there is no catch-all "/<anything>".
-_SLOT_CHECKER_CLIENT_AGENT = {
-    "slug": "slot-checker",
-    "name": "42 North Dental Slot Checker",
-    "tagline": "Appointment availability",
-    "ac": "#4ade80", "ac2": "#14b8a6",
-    "icon": _asvg("<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3.5 2\"/>"),
-    "pill1": "Appointment availability", "pill2": "82 practices · checked daily",
-    "lead": ("What a new patient would actually be offered if they tried to book "
-             "right now, across every location the agent checks: which services "
-             "are open, on which days, and where the calendar is full."),
-    "trips": [
-        {"t": "What it does", "d": "See exactly what a new patient would be offered "
-                                    "if they tried to book right now, across every "
-                                    "42 North Dental location: which services are "
-                                    "open, which days have room, and where the "
-                                    "calendar is already full."},
-        {"t": "How it works", "d": "A daily crawl checks live booking availability "
-                                    "across every practice, groups it by service and "
-                                    "location, and flags the ones that are fully "
-                                    "booked or have gone quiet."},
-        {"t": "Best for", "d": "Practice operations and marketing teams tracking "
-                                "booking friction across the portfolio."},
-    ],
-    "tags": ["Daily crawl", "Booking availability", "AI Insights"],
-}
-
-CLIENTS = {
-    "northstaranesthesia": {
-        "slug":     "northstaranesthesia",
-        "name":     "NorthStar Anesthesia",
-        "short":    "NorthStar",
-        "website":  "https://northstaranesthesia.com/",
-        # Client's own logo (their white wordmark, for the dark dashboard). Served
-        # locally from /static rather than hotlinked, and rendered via <img> so the
-        # SVG can't execute script. Sourced from northstaranesthesia.com.
-        "logo":     "/static/clients/northstaranesthesia/logo-white.svg",
-        # Email domains allowed in addition to @markifydigital.com (always allowed).
-        "domains":  ["northstaranesthesia.com"],
-        # Any signed-in Google account can enter this portal -- the domain
-        # gate above is bypassed entirely for this client (see _client_allowed).
-        "open_to_all": True,
-        "accent":   "#5b9dff",
-        "accent2":  "#8b5cf6",
-        "tagline":  "Your agents, all in one place.",
-        "blurb":    "",
-        # Ordered exactly as the portal should list them (slugs index APP_AGENTS_BY_SLUG).
-        "agents":   ["linkedin-intelligence", "linkedin-social-researcher",
-                     "keyword-finder", "content-brief-generator",
-                     "content-enhancer"],
-        # LinkedIn Intelligence is a *live* co-branded dashboard (same UI as the internal app),
-        # rendered from this client's own engagement sheet. Presence of this key
-        # makes the linkedin-intelligence agent render its live dashboard in-portal.
-        "linkedin_sheet": "13V-W-yG5O-OoLJHjxsPKLjrpRyRdk647GgkIGw823oE",
-        # Agents whose "Use" surface embeds an external, Position2-hosted tool
-        # (its own host masked behind this portal's path). The tool loads inside the
-        # portal's embed shell via an iframe, so the address bar stays on
-        # intelligence.position2.com/<slug>/agents/<agent>/use — the external host is
-        # never shown. Treated like a live dashboard (shows Live, not run-metered).
-        "external_tools": {
-            "linkedin-social-researcher": "https://watchtower-by-position2.vercel.app/linkedin.html",
-        },
-    },
-    "42northdental": {
-        "slug":     "42northdental",
-        "name":     "42 North Dental",
-        "short":    "42 North Dental",
-        # Client's own logo (their white wordmark, for the dark dashboard), same
-        # treatment as northstaranesthesia's above: served locally rather than
-        # hotlinked so this portal never depends on 42northdental.com's uptime,
-        # sourced from that site's own footer (the header lockup is dark text,
-        # unreadable on this dark background; the footer one is already the
-        # white-on-dark variant).
-        "logo":     "/static/clients/42northdental/logo-white.png",
-        # Email domains allowed in addition to @markifydigital.com (always allowed).
-        "domains":  ["42northdental.com"],
-        "accent":   "#4ade80",
-        "accent2":  "#14b8a6",
-        "tagline":  "Your agent, ready to go.",
-        "blurb":    "",
-        "agents":   ["slot-checker"],
-        # No per-client sheet to point at (unlike linkedin_sheet above): 42 North
-        # Dental is the one practice group Slot Checker covers, so this flag just
-        # tells _client_live_dashboard/_client_agent_dashboard to render the same
-        # portfolio-wide dashboard Position2 staff see internally, through the
-        # client-gated data/insights routes instead of @position2_required ones.
-        "slot_checker_live": True,
-        # A dashboard agent is never run-metered (see _client_agent_log_run), so
-        # History would only ever show empty for this client -- hide the sidebar
-        # link rather than ship a workspace tab that can never have anything in
-        # it. The /history route itself still resolves (same "hidden means
-        # unlisted, not gone" principle as HIDDEN_AGENT_SLUGS) in case anyone
-        # bookmarks it before or after this changes.
-        "hide_history": True,
-    },
-}
-
-@app.template_filter("nodash")
-def _nodash(s):
-    """Strip em/en dashes from copy rendered on the client portals. The shared
-    APP_AGENTS product blurbs use em dashes, but client-facing Position2 copy
-    never does (house style), so we normalise at render time without touching the
-    shared source strings that the internal /app pages also use."""
-    if not isinstance(s, str):
-        return s
-    return (s.replace(" — ", ", ").replace("—", ", ")
-             .replace(" – ", ", ").replace("–", "-"))
-
 # Brand tokens in the pre-built dashboard files under reports/. They are static
 # HTML, generated weeks apart or -- for two of them -- never regenerated at all,
 # so a name baked into them at build time goes stale the day brand.py changes.
@@ -3418,375 +3291,6 @@ def _send_dashboard_file(path):
     resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
                          "Pragma": "no-cache", "Expires": "0"})
     return resp
-
-
-def _client_dashboard_path(client, agent_slug):
-    """Path to this client's wired dashboard for an agent, or None. Returns None if
-    the file hasn't been generated yet so the agent falls back to the setup shell."""
-    p = (client.get("dashboards") or {}).get(agent_slug)
-    if not p:
-        return None
-    p = Path(p)
-    return p if p.exists() else None
-
-def _client_live_dashboard(client, agent_slug):
-    """True if this agent renders a *live* (Flask-rendered) co-branded dashboard for
-    the client, rather than a pre-built static HTML file: LinkedIn Intelligence, when
-    the client has its own engagement sheet configured (same UI as the internal app
-    dashboard, just pointed at the client's sheet), or 42 North Dental's Slot Checker,
-    when this client is flagged as reading the one shared portfolio-wide sheet (see
-    "slot_checker_live" on CLIENTS["42northdental"])."""
-    if not client:
-        return False
-    if agent_slug == "linkedin-intelligence":
-        return bool(client.get("linkedin_sheet"))
-    if agent_slug == "slot-checker":
-        return bool(client.get("slot_checker_live"))
-    return False
-
-def _client_external_tool(client, agent_slug):
-    """External, Position2-hosted tool URL for an agent in this client's portal, or
-    None. An external-tool agent embeds a third-party-hosted tool (its own host masked
-    behind the portal path) in the embed shell, rather than a SERP tool or a
-    Flask-rendered dashboard. Shown as Live and IS run-metered, capped at
-    AGENT_RUN_CAP per user: the tool reports a real run via the same postMessage
-    contract as a SERP tool (source 'p2-agent'), handled in client_embed.html."""
-    return (client.get("external_tools") or {}).get(agent_slug) if client else None
-
-def _client_agent_view(slug, client=None):
-    """APP_AGENTS entry for a slug (or _SLOT_CHECKER_CLIENT_AGENT for "slot-checker",
-    which is deliberately kept out of the public APP_AGENTS catalog -- see that dict's
-    own comment), enriched with `connected` (has a live surface), `is_dashboard`
-    (backed by a co-branded dashboard — static file or live route — for this client,
-    so it renders a dashboard in the embed shell and is NOT run-metered) and
-    `is_external` (the embed is a Position2-hosted external tool: it renders in the
-    embed shell but IS run-metered like a SERP tool, capped at AGENT_RUN_CAP per user).
-    Returns None for unknown slugs."""
-    a = _SLOT_CHECKER_CLIENT_AGENT if slug == "slot-checker" else APP_AGENTS_BY_SLUG.get(slug)
-    if not a:
-        return None
-    has_dash = bool(client and (_client_dashboard_path(client, slug)
-                                or _client_live_dashboard(client, slug)))
-    is_ext = bool(_client_external_tool(client, slug))
-    return dict(a, connected=bool(a.get("seo_slug")) or has_dash or is_ext,
-                is_dashboard=has_dash, is_external=is_ext)
-
-def _client_agents(client):
-    """The portal's agent roster. Skips HIDDEN_AGENT_SLUGS so a withdrawn agent
-    disappears from the portal home, the sidebar and the "related" strip without
-    the client's own CLIENTS entry being edited -- the ordered "agents" list is
-    the client's curation and stays intact for when the agent comes back."""
-    return [v for v in (_client_agent_view(s, client) for s in client.get("agents", []))
-            if v and v["slug"] not in HIDDEN_AGENT_SLUGS]
-
-def _client_allowed(client, email):
-    # Opt-in per client: "open_to_all" drops the domain gate entirely, so any
-    # signed-in Google account can enter this client's portal. Set explicitly
-    # on a client's CLIENTS entry, not a global default -- every other client
-    # portal stays restricted to its own domain(s) plus @markifydigital.com.
-    if client.get("open_to_all"):
-        return True
-    email = (email or "").lower()
-    if _is_staff(email):
-        return True
-    return any(email.endswith("@" + d.lower()) for d in client.get("domains", []))
-
-def _client_gate(client):
-    """Return a response to short-circuit with (login redirect or 403 denial), or
-    None when the current user is allowed into this client's workspace."""
-    user = _get_user()
-    if not user:
-        return _login_redirect()
-    if not _client_allowed(client, user.get("email", "")):
-        return render_template("client_denied.html", client=client, user=user), 403
-    return None
-
-def _client_home(client_slug):
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    agents = _client_agents(client)
-    user = _get_user()
-    email = (user or {}).get("email", "")
-    run_counts = _agent_run_counts(email)
-    return render_template("client_portal.html", client=client,
-                           agents=agents, nav_agents=agents, user=user,
-                           run_counts=run_counts, run_cap=_agent_run_cap(email))
-
-def _client_agent_detail(client_slug, agent_slug):
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    if agent_slug not in client.get("agents", []):
-        return redirect("/" + client_slug)
-    agent = _client_agent_view(agent_slug, client)
-    if not agent:
-        return redirect("/" + client_slug)
-    agents = _client_agents(client)
-    related = [v for v in agents if v["slug"] != agent_slug][:3]
-    user = _get_user()
-    email = (user or {}).get("email", "")
-    runs_used = _agent_run_counts(email).get(agent_slug, 0)
-    return render_template("client_agent.html", client=client, agent=agent,
-                           related=related, nav_agents=agents, user=user,
-                           runs_used=runs_used, run_cap=_agent_run_cap(email))
-
-def _client_agent_use(client_slug, agent_slug):
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    if agent_slug not in client.get("agents", []):
-        return redirect("/" + client_slug)
-    agent = _client_agent_view(agent_slug, client)
-    if not agent:
-        return redirect("/" + client_slug)
-    user = _get_user()
-    email = (user or {}).get("email", "")
-    cap = _agent_run_cap(email)
-    # Dashboard-backed agent: serve the co-branded dashboard in the portal shell.
-    # These are not run-metered (a dashboard has no "runs"), so no cap logic applies.
-    if agent.get("is_dashboard"):
-        return render_template("client_embed.html", client=client, agent=agent,
-                               embed_url="", serp_origin=_SERP_BASE, user=user,
-                               is_dashboard=True,
-                               dashboard_url="/%s/agents/%s/dashboard" % (client_slug, agent_slug),
-                               runs_used=0, run_cap=cap, limit_reached=False)
-    # External-tool agent: iframes the hosted tool (its host masked behind this portal
-    # path). Run-metered like a SERP tool and capped at _agent_run_cap(email) per user
-    # (higher for @markifydigital.com staff than external users). The tool now emits the
-    # same postMessage run contract as a SERP tool (source 'p2-agent' instead of
-    # 'p2-seo-tool', no per-tool slug since one external tool = one embed), so a run
-    # counts only when client_embed.html's listener sees a real 'agent-run-started'
-    # message, not on page load — see log-run/finish-run below.
-    ext = _client_external_tool(client, agent_slug)
-    if ext:
-        runs_used = _agent_run_counts(email).get(agent_slug, 0)
-        limit_reached = runs_used >= cap
-        ext_origin = "{0.scheme}://{0.netloc}".format(urlsplit(ext))
-        return render_template("client_embed.html", client=client, agent=agent,
-                               embed_url=("" if limit_reached else ext),
-                               serp_origin=_SERP_BASE, ext_origin=ext_origin,
-                               user=user, is_dashboard=False,
-                               is_external=True,
-                               runs_used=runs_used, run_cap=cap,
-                               limit_reached=limit_reached)
-    # Same per-agent, per-account run cap as /app (Agent Runs sheet is shared, so a
-    # user's runs count identically no matter which surface they ran the agent on).
-    runs_used = _agent_run_counts(email).get(agent_slug, 0)
-    limit_reached = bool(agent.get("connected")) and runs_used >= cap
-    embed_url = "" if limit_reached else (_app_embed_url(agent) if agent.get("connected") else "")
-    return render_template("client_embed.html", client=client, agent=agent,
-                           embed_url=embed_url, serp_origin=_SERP_BASE, user=user,
-                           is_dashboard=False,
-                           runs_used=runs_used, run_cap=cap, limit_reached=limit_reached)
-
-def _client_agent_dashboard(client_slug, agent_slug):
-    """Serve this client's co-branded dashboard HTML for a dashboard-backed agent.
-    Gated by the same access rules as the rest of the portal. The file is the
-    client variant (internal-ops chrome hidden), generated by the per-client build
-    script. Rendered inside the portal's embed shell via an iframe."""
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    if agent_slug not in client.get("agents", []):
-        abort(404)
-    # External-tool agents have no dashboard route (they iframe the hosted tool from
-    # the run-metered Use page); a direct hit here is a 404, not a metering bypass.
-    if _client_external_tool(client, agent_slug):
-        abort(404)
-    # Live LinkedIn Intelligence: render the exact internal dashboard template in client
-    # mode (internal chrome hidden), pointed at this client's gated data endpoint.
-    if _client_live_dashboard(client, agent_slug) and agent_slug == "linkedin-intelligence":
-        data_url = "/%s/agents/%s/dashboard/data" % (client_slug, agent_slug)
-        # The dashboard's target company is this client, so "Employee" (relative to
-        # target) must be labelled as the client, not Position². Token feeds the
-        # employee-detection fallback (see linkedin.js isEmployee).
-        emp = client.get("short") or client.get("name") or "Client"
-        li_cfg = {"employer": emp, "employerShort": emp,
-                  "employerTokens": [emp.lower()]}
-        resp = make_response(render_template(
-            "linkedin_scraper.html", user=_get_user(),
-            data_url=data_url, client_mode=True, client=client, li_cfg=li_cfg))
-        resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
-                             "Pragma": "no-cache", "Expires": "0"})
-        return resp
-    # Live Slot Checker: render the exact internal dashboard template in client mode
-    # (internal-ops topbar, admin menu and cross-tool ⌘K nav all hidden -- see
-    # 42_north_dental_slot_checker.html's own `client_mode` guards), pointed at
-    # this client's gated data/insights endpoints instead of the
-    # @position2_required ones.
-    if _client_live_dashboard(client, agent_slug) and agent_slug == "slot-checker":
-        resp = make_response(render_template(
-            "42_north_dental_slot_checker.html", user=_get_user(), client_mode=True,
-            client=client,
-            data_url="/%s/agents/%s/dashboard/data" % (client_slug, agent_slug),
-            insights_url="/%s/agents/%s/dashboard/insights" % (client_slug, agent_slug)))
-        resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
-                             "Pragma": "no-cache", "Expires": "0"})
-        return resp
-    path = _client_dashboard_path(client, agent_slug)
-    if not path:
-        abort(404)
-    return _send_dashboard_file(path)
-
-def _client_dashboard_data(client_slug, agent_slug):
-    """Gated JSON data endpoint for a client's live dashboard-backed agent. Dispatches
-    on agent_slug since each live dashboard reads a different underlying source:
-    LinkedIn Intelligence reads this client's own engagement sheet, Slot Checker reads
-    the one shared 42 North Dental portfolio sheet (same as the internal dashboard).
-    ?fresh=1 forces a live re-pull (the dashboard's Refresh button)."""
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    if not _client_live_dashboard(client, agent_slug):
-        abort(404)
-    force = request.args.get("fresh") in ("1", "true", "yes")
-    if agent_slug == "linkedin-intelligence":
-        return _linkedin_data_response(client["linkedin_sheet"], force)
-    if agent_slug == "slot-checker":
-        return _slot_checker_data_json(force)
-    abort(404)
-
-def _client_dashboard_insights(client_slug, agent_slug):
-    """Gated JSON endpoint for a live dashboard's AI-insights companion route. Only
-    Slot Checker has one today -- LinkedIn Intelligence's live dashboard has no
-    equivalent -- so any other agent_slug 404s the same as an unknown one."""
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    if agent_slug != "slot-checker" or not _client_live_dashboard(client, agent_slug):
-        abort(404)
-    force = request.args.get("fresh") in ("1", "true", "yes")
-    return _slot_checker_insights_json(force)
-
-def _client_agent_log_run(client_slug, agent_slug):
-    """Logs one real run of a client-portal agent, cap-enforced. Called client-side
-    only after the embedded tool reports a genuine run start (same postMessage
-    contract as /app). Feeds the shared 'Agent Runs' sheet, so these show up on the
-    internal 'Public Agent Usage' admin dashboard alongside /app runs."""
-    client = CLIENTS.get(client_slug)
-    if not client:
-        return jsonify({"logged": False, "error": "unknown client"}), 404
-    gate = _client_gate(client)
-    if gate is not None:
-        return jsonify({"logged": False, "error": "forbidden"}), 403
-    if agent_slug not in client.get("agents", []):
-        return jsonify({"logged": False, "error": "unknown agent"}), 404
-    # client=client matters here: an external-tool-only agent (no seo_slug, e.g.
-    # LinkedIn Social Researcher) only shows connected=True when _client_agent_view
-    # knows the client, since that's what resolves is_external. Omitting it silently
-    # marks the agent "not connected" and 400s every log-run call.
-    agent = _client_agent_view(agent_slug, client)
-    if not agent or not agent.get("connected"):
-        return jsonify({"logged": False, "error": "agent not connected"}), 400
-    user = _get_user()
-    email = (user or {}).get("email", "")
-    cap = _agent_run_cap(email)
-    runs_used = _agent_run_counts(email).get(agent_slug, 0)
-    if runs_used >= cap:
-        return jsonify({"logged": False, "runs_used": runs_used, "runs_cap": cap, "at_cap": True})
-    _log_agent_run(user, agent)
-    runs_used += 1
-    return jsonify({"logged": True, "runs_used": runs_used, "runs_cap": cap,
-                    "at_cap": runs_used >= cap})
-
-def _client_agent_finish_run(client_slug, agent_slug):
-    """Saves one finished run's full output to the shared Postgres history, so it
-    appears both in this client's History page and the internal 'Agent Runs'
-    admin dashboard. Same contract as /app's finish-run."""
-    client = CLIENTS.get(client_slug)
-    if not client:
-        return jsonify({"saved": False, "error": "unknown client"}), 404
-    gate = _client_gate(client)
-    if gate is not None:
-        return jsonify({"saved": False, "error": "forbidden"}), 403
-    if agent_slug not in client.get("agents", []):
-        return jsonify({"saved": False, "error": "unknown agent"}), 404
-    agent = _client_agent_view(agent_slug, client)
-    if not agent:
-        return jsonify({"saved": False, "error": "unknown agent"}), 404
-    data = request.get_json(silent=True) or {}
-    output = data.get("output")
-    if not isinstance(output, dict):
-        return jsonify({"saved": False, "error": "missing output"}), 400
-    run_id = _save_agent_run(_get_user(), agent, output)
-    return jsonify({"saved": run_id is not None, "id": run_id})
-
-def _client_history(client_slug):
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    user = _get_user()
-    slugs = set(client.get("agents", []))
-    runs = [r for r in _list_agent_runs((user or {}).get("email", "")) if r["slug"] in slugs]
-    for r in runs:
-        meta = APP_AGENTS_BY_SLUG.get(r["slug"], {})
-        r["ac"] = meta.get("ac", "#5b9dff")
-        r["ac2"] = meta.get("ac2", "#8b5cf6")
-        r["icon"] = meta.get("icon", "")
-        r["display_ts"] = _fmt_run_ts(r["created_at"])
-    return render_template("client_history.html", client=client, runs=runs,
-                           nav_agents=_client_agents(client), user=user)
-
-def _client_history_detail(client_slug, run_id):
-    client = CLIENTS.get(client_slug)
-    if not client:
-        abort(404)
-    gate = _client_gate(client)
-    if gate is not None:
-        return gate
-    user = _get_user()
-    run = _get_agent_run((user or {}).get("email", ""), run_id)
-    if not run or run["slug"] not in set(client.get("agents", [])):
-        return redirect("/" + client_slug + "/history")
-    run["display_ts"] = _fmt_run_ts(run["created_at"])
-    agent = APP_AGENTS_BY_SLUG.get(run["slug"], {})
-    return render_template("client_history_detail.html", client=client, run=run,
-                           agent=agent, nav_agents=_client_agents(client), user=user)
-
-# Register explicit routes for each known client slug (no top-level catch-all).
-for _cslug in CLIENTS:
-    app.add_url_rule("/" + _cslug, "client_home__" + _cslug,
-                     (lambda cs=_cslug: _client_home(cs)))
-    app.add_url_rule("/" + _cslug + "/history", "client_history__" + _cslug,
-                     (lambda cs=_cslug: _client_history(cs)))
-    app.add_url_rule("/" + _cslug + "/history/<int:run_id>", "client_history_detail__" + _cslug,
-                     (lambda run_id, cs=_cslug: _client_history_detail(cs, run_id)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>", "client_agent__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_agent_detail(cs, agent_slug)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/use", "client_use__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_agent_use(cs, agent_slug)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/dashboard", "client_dashboard__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_agent_dashboard(cs, agent_slug)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/dashboard/data", "client_dashboard_data__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_dashboard_data(cs, agent_slug)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/dashboard/insights", "client_dashboard_insights__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_dashboard_insights(cs, agent_slug)))
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/use/log-run", "client_logrun__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_agent_log_run(cs, agent_slug)), methods=["POST"])
-    app.add_url_rule("/" + _cslug + "/agents/<agent_slug>/use/finish-run", "client_finishrun__" + _cslug,
-                     (lambda agent_slug, cs=_cslug: _client_agent_finish_run(cs, agent_slug)), methods=["POST"])
 
 
 # ── Old /p2 addresses ───────────────────────────────────────────────────────────
@@ -4367,7 +3871,7 @@ def job_change_alert_tracked():
     return resp
 
 
-# ── 42 North Dental Slot Checker ────────────────────────────────────────────────
+# ── Slot Checker Agent ──────────────────────────────────────────────────────────
 # Appointment availability across the dental practice portfolio the Slot Checker
 # agent crawls weekly. tracker/slot_checker.py owns the reading, parsing and
 # derivation; this app only calls fetch().
@@ -4377,42 +3881,31 @@ def job_change_alert_tracked():
 # (tabs "LPs" + "Locations") on every cache miss. A committed fallback
 # snapshot (data/slot_checker_snapshot.json) is still read if that live read
 # ever fails -- see tracker.slot_checker._snapshot's docstring.
+#
+# The page has had two earlier addresses; both redirect here rather than 404,
+# because this is a staff dashboard people have bookmarked.
+SLOT_CHECKER = "/strategic-agents/slot-checker"
+_SLOT_CHECKER_OLD = ("/strategic-agents/gentle-dental-slot-checker", "/strategic-agents/42-north-dental-slot-checker")
 
 
-# Renamed 2026-09-02: "Gentle Dental Slot Checker" -> "42 North Dental Slot
-# Checker". Only 46 of the 82 practices are Gentle Dental; the rest are ~31
-# other brands under the same parent, which the Jarvis booking URLs already
-# call 42-north-dental, so the new name is the accurate one. The old paths
-# redirect rather than 404: this is a staff dashboard people have bookmarked,
-# and a dead link reads as "the tool was taken away".
+def _slot_checker_old_address(tail):
+    return lambda: redirect(SLOT_CHECKER + tail, code=301)
 
 
-@app.route("/strategic-agents/gentle-dental-slot-checker")
-def gentle_dental_slot_checker_legacy():
-    return redirect("/strategic-agents/42-north-dental-slot-checker", code=301)
+for _n, _old in enumerate(_SLOT_CHECKER_OLD):
+    for _tail in ("", "/data", "/insights"):
+        app.add_url_rule(_old + _tail, "slot_checker_old_%d%s" % (_n, _tail.replace("/", "_")),
+                         _slot_checker_old_address(_tail))
 
 
-@app.route("/strategic-agents/gentle-dental-slot-checker/data")
-def gentle_dental_slot_checker_data_legacy():
-    return redirect("/strategic-agents/42-north-dental-slot-checker/data", code=301)
-
-
-@app.route("/strategic-agents/gentle-dental-slot-checker/insights")
-def gentle_dental_slot_checker_insights_legacy():
-    return redirect("/strategic-agents/42-north-dental-slot-checker/insights", code=301)
-
-
-@app.route("/strategic-agents/42-north-dental-slot-checker")
+@app.route(SLOT_CHECKER)
 @position2_required
 def slot_checker_page():
-    return render_template("42_north_dental_slot_checker.html", user=_get_user())
+    return render_template("slot_checker.html", user=_get_user())
 
 
 def _slot_checker_data_json(force):
-    """JSON payload for the Slot Checker dashboard, shared by the internal
-    Position2 route and the gated 42 North Dental client-portal copy (see
-    CLIENTS["42northdental"]) -- both read the same portfolio-wide sheet, so
-    there's no per-caller variance to branch on here.
+    """JSON payload for the Slot Checker dashboard.
 
     No hand-rolled gzip here, unlike the three older data routes above: the
     _compress_response after_request hook already gzips any JSON response over
@@ -4427,7 +3920,7 @@ def _slot_checker_data_json(force):
     return resp
 
 
-@app.route("/strategic-agents/42-north-dental-slot-checker/data")
+@app.route(SLOT_CHECKER + "/data")
 @position2_required
 def slot_checker_data():
     force = request.args.get("fresh") in ("1", "true", "yes")
@@ -4436,8 +3929,6 @@ def slot_checker_data():
 
 def _slot_checker_insights_json(force):
     """AI-synthesized weekly briefing over the current dashboard numbers.
-    Shared by the internal route and the 42 North Dental client portal, same
-    reasoning as _slot_checker_data_json above.
 
     tracker/slot_checker_insights.py degrades to (None, None) when
     ANTHROPIC_API_KEY isn't configured -- that is a deployment state, not a
@@ -4474,7 +3965,7 @@ def _slot_checker_insights_json(force):
     return resp
 
 
-@app.route("/strategic-agents/42-north-dental-slot-checker/insights")
+@app.route(SLOT_CHECKER + "/insights")
 @position2_required
 def slot_checker_insights_route():
     force = request.args.get("fresh") in ("1", "true", "yes")
@@ -8072,7 +7563,7 @@ ACCT_AGENTS = (
 ACCT_AGENTS_EXEMPT = {
     "/strategic-agents/page-watch": "has its own page in every account (ACCT_PAGES)",
     "/strategic-agents/video-studio": "has its own page in every account (ACCT_PAGES)",
-    "/strategic-agents/42-north-dental-slot-checker": "made for one client, 42 North Dental",
+    "/strategic-agents/slot-checker": "reads one fixed set of dental practices, not a client account",
     # Older agents that do not yet save their runs to an account's space: opened inside an account they
     # would show the person's own runs to everyone in it. Each comes off this list once it does.
     "/abm-signal-tracker/healthcare": "older agent: runs not yet saved to accounts",
@@ -8099,10 +7590,10 @@ _ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
 
 
 def _acct_reserved():
-    """First path segments no account may take: every route's, the client portals', and a few more."""
+    """First path segments no account may take: every route's, and a few more."""
     r = _ACCT["reserved"]
     if r is None:
-        r = set(client_accounts.RESERVED_WORDS) | {c.lower() for c in CLIENTS}
+        r = set(client_accounts.RESERVED_WORDS)
         for rule in app.url_map.iter_rules():
             first = rule.rule.split("/")[1] if rule.rule.startswith("/") else ""
             if first and not first.startswith("<"):
@@ -10562,13 +10053,16 @@ _PAGE_LABEL_ALIASES = (
     # slug/title are both retired, not reused.
     ("/p2/b2b-agents/linkedin-playbook-studio", "/p2/b2b-agents/linkedin-strategy-researcher"),
     ("LinkedIn Playbook Studio", "LinkedIn Strategy Researcher"),
-    # gentle-dental-slot-checker -> 42-north-dental-slot-checker, 2026-09-02.
-    # Safe to fold forward on both axes: neither the old slug nor the old title
-    # is being reused by anything else, so every historical row under them
-    # means this one dashboard. Without these, every page view recorded before
-    # the rename would drop out of this page's totals on the day it shipped.
-    ("/p2/b2b-agents/gentle-dental-slot-checker", "/p2/b2b-agents/42-north-dental-slot-checker"),
-    ("Gentle Dental Slot Checker", "42 North Dental Slot Checker"),
+    # The Slot Checker's two earlier names (2026-09-02 and 2026-10-23) -> slot-checker / "Slot Checker Agent".
+    # Safe to fold forward on both axes: neither old slug nor old title is
+    # reused by anything else, so every historical row under them means this
+    # one dashboard. Without these, every page view recorded before a rename
+    # would drop out of this page's totals on the day it shipped.
+    ("/p2/b2b-agents/gentle-dental-slot-checker", "/p2/b2b-agents/slot-checker"),
+    ("/p2/b2b-agents/42-north-dental-slot-checker", "/p2/b2b-agents/slot-checker"),
+    ("/strategic-agents/42-north-dental-slot-checker", SLOT_CHECKER),
+    ("Gentle Dental Slot Checker", "Slot Checker Agent"),
+    ("42 North Dental Slot Checker", "Slot Checker Agent"),
     # "Social Creative Intelligence Analyst" -> "Social Media Intelligence",
     # 2026-09-08, on the grounds that the agent had grown well past creative
     # analysis, with the slug moved to match. Both axes are aliased, because
@@ -10766,9 +10260,9 @@ def _fetch_visitor_analytics_uncached() -> dict:
     cta_top = cta_counts.most_common(15)
 
     # ---- CTA breakdown, aligned to the live public-page CTAs ----------------
-    # After the auth rework the primary CTA is "Sign up" (one-click Google), the
-    # contextual "data-demo" CTAs open the contact/lead form, and the secondary
-    # auth link is "Log in". Legacy labels from before the rework
+    # Since sign-in became staff only (2026-10-23) the primary CTA is "Book a demo",
+    # which opens the contact/lead form like every "data-demo" CTA; "Sign up" (one-click
+    # Google) counts only historical rows. The auth link is "Log in". Legacy labels from before the rework
     # (request_access:*, sign_in) are folded in so historical rows still count.
     signup_clicks = cta_counts.get("signup", 0)
     login_clicks  = cta_counts.get("log_in", 0) + cta_counts.get("sign_in", 0)
@@ -10777,11 +10271,12 @@ def _fetch_visitor_analytics_uncached() -> dict:
     agentcard_clicks = 0
     outbound_clicks = 0
     for lbl, n in cta_counts.items():
-        if lbl.startswith("lead:"):
-            lead_interest_counts[lbl.split(":", 1)[1] or "Talk to us"] += n
+        if lbl.startswith("lead:"):                       # "Talk to us" became "Book a demo" on 2026-10-23
+            it = lbl.split(":", 1)[1]
+            lead_interest_counts["Book a demo" if it in ("", "Talk to us") else it] += n
         elif lbl.startswith("request_access:"):            # legacy → lead
-            it = lbl.split(":", 1)[1] or "Talk to us"
-            lead_interest_counts["Talk to us" if it == "Request access" else it] += n
+            it = lbl.split(":", 1)[1]
+            lead_interest_counts["Book a demo" if it in ("", "Request access", "Talk to us") else it] += n
         elif lbl.startswith("agent_card:"):
             agentcard_clicks += n
         elif lbl.startswith("outbound:"):
@@ -12502,378 +11997,6 @@ def admin_external_usage_export():
     resp.headers["Cache-Control"] = "no-store"
     return resp
 
-# ── Client Usage (per-client-portal analytics) ───────────────────────────────
-# For each client we run a co-branded portal at /<slug>. This aggregates every
-# tracked page view on that portal (Page Views tab, filtered by URL path) and
-# splits it into TWO audiences by email domain: Position² staff (@markifydigital.com)
-# vs the client's own people (the client's configured domains). Everything else
-# (rare) is bucketed as "Other". Names/pictures are enriched from the two sign-in
-# tabs (internal Login Log + Member Signins), both of which carry email @5, name @6.
-_CU_CACHE = {}          # slug -> {"data": dict, "ts": float}
-_CU_ALL_CACHE = {"data": None, "ts": 0.0}
-_CU_TTL = 300
-
-
-def _fmt_secs(s):
-    """Seconds -> compact human duration: 45s, 12m 3s, 2h 14m."""
-    s = int(s or 0)
-    if s < 60:
-        return "%ds" % s
-    m, sec = divmod(s, 60)
-    if m < 60:
-        return "%dm %ds" % (m, sec) if sec else "%dm" % m
-    h, m = divmod(m, 60)
-    return "%dh %dm" % (h, m) if m else "%dh" % h
-
-
-def _cu_read_tab(tab_range):
-    """One Sheets read from the login-log spreadsheet; [] on any failure."""
-    try:
-        import json as _j
-        from google.oauth2 import service_account
-        from googleapiclient.discovery import build
-        sa_str = os.environ.get("GOOGLE_SA_JSON", "")
-        if not sa_str or not LOGIN_LOG_SHEET_ID:
-            return []
-        sa_info = _j.loads(sa_str)
-        creds = service_account.Credentials.from_service_account_info(
-            sa_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-        svc = build("sheets", "v4", credentials=creds, cache_discovery=False, static_discovery=True)
-        r = svc.spreadsheets().values().get(
-            spreadsheetId=LOGIN_LOG_SHEET_ID, range=tab_range).execute()
-        return r.get("values", [])
-    except Exception as e:
-        log.warning("client-usage sheet read failed (%s): %s", tab_range, e)
-        return []
-
-
-_CU_SIGNIN_TABS = ("A:U", "%s!A:T" % _MEMBER_TAB)
-_CU_SIGNIN_PIC_COL = (None, 8)  # picture column index per tab above, if any
-
-def _cu_name_map_from_rows(signin_row_sets):
-    """email(lower) -> {'name':.., 'picture':..} from both sign-in tabs' rows.
-
-    Pure (no Sheets I/O) so the caller can fetch the two tabs once and reuse
-    the same rows for both this and the login-count pass below, instead of
-    each reading the same two tabs independently."""
-    m = {}
-    for (rng, pic_i), rows in zip(zip(_CU_SIGNIN_TABS, _CU_SIGNIN_PIC_COL), signin_row_sets):
-        for r in rows[1:] if len(rows) > 1 else []:
-            email = (r[5].strip().lower() if len(r) > 5 else "")
-            if not email:
-                continue
-            name = (r[6].strip() if len(r) > 6 else "")
-            pic = (r[pic_i].strip() if pic_i is not None and len(r) > pic_i else "")
-            cur = m.setdefault(email, {"name": "", "picture": ""})
-            if name and not cur["name"]:
-                cur["name"] = name
-            if pic and not cur["picture"]:
-                cur["picture"] = pic
-    return m
-
-
-def _cu_pretty_name(email, name_map):
-    info = name_map.get((email or "").lower(), {})
-    if info.get("name"):
-        return info["name"]
-    local = (email or "").split("@")[0]
-    return " ".join(w.capitalize() for w in re.split(r"[.\-_]+", local) if w) or email
-
-
-def _cu_url_belongs(url, slug):
-    """True if a Page-Views URL path is inside this client's portal (/<slug>...)."""
-    u = (url or "").split("?")[0].rstrip("/").lower()
-    s = "/" + slug.lower()
-    return u == s or u.startswith(s + "/")
-
-
-def _cu_client_of_url(url):
-    """First path segment of a URL if it maps to a known client slug, else None."""
-    seg = (url or "").split("?")[0].strip("/").split("/")[0].lower()
-    return seg if seg in CLIENTS else None
-
-
-def _fetch_client_usage(slug, force=False):
-    """Per-client portal analytics, split Position² team vs client team."""
-    client = CLIENTS.get(slug)
-    if not client:
-        return None
-    now = time.time()
-    cached = _CU_CACHE.get(slug)
-    if not force and cached and (now - cached["ts"]) < _CU_TTL:
-        return cached["data"]
-
-    # This used to read the two sign-in tabs for the name/picture map, then
-    # separately re-read those SAME two tabs again later (for the login-count
-    # pass below) and read Page Views and Agent Runs on top of that, mostly one
-    # after another -- up to 6 sequential Sheets reads (2 of them pure
-    # duplicates) for what is only 4 distinct tabs. Fetch each tab exactly
-    # once, all four concurrently, and reuse the rows everywhere they're needed.
-    from concurrent.futures import ThreadPoolExecutor
-    ar_range = "%s!A:F" % _AR_TAB
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        signin_futs = [ex.submit(_cu_read_tab, rng) for rng in _CU_SIGNIN_TABS]
-        pv_fut = ex.submit(_cu_read_tab, "Page Views!A:N")
-        ar_fut = ex.submit(_cu_read_tab, ar_range)
-        signin_row_sets = [f.result() for f in signin_futs]
-        pv = pv_fut.result()
-        ar_rows = ar_fut.result()
-    name_map = _cu_name_map_from_rows(signin_row_sets)
-    rows = pv[1:] if len(pv) > 1 else []
-
-    def col(r, i, d=""):
-        return r[i] if len(r) > i else d
-
-    cli_doms = ["@" + d.lower() for d in client.get("domains", [])]
-
-    def seg_of(email):
-        e = (email or "").lower()
-        if _was_staff(e):
-            return "p2"
-        if any(e.endswith(d) for d in cli_doms):
-            return "client"
-        return "other"
-
-    people = {}         # email -> person record
-    seg_stats = {k: {"views": 0, "seconds": 0} for k in ("p2", "client", "other")}
-    timeline = {}       # date -> {"p2":n,"client":n,"other":n}
-    pages = {}          # url -> {"title","views","seconds"}
-    browsers, devices = Counter(), Counter()
-    first_activity, last_activity = "", ""
-
-    for r in rows:
-        url = col(r, 6)
-        if not _cu_url_belongs(url, slug):
-            continue
-        email = (col(r, 4) or "").strip()
-        if not email:
-            continue
-        seg = seg_of(email)
-        ts = col(r, 0); date = col(r, 1); title = col(r, 5) or url
-        try:
-            secs = int(float(col(r, 7) or 0))
-        except (TypeError, ValueError):
-            secs = 0
-        browser = col(r, 10); device = col(r, 12)
-
-        seg_stats[seg]["views"] += 1
-        seg_stats[seg]["seconds"] += secs
-        if browser:
-            browsers[browser] += 1
-        if device:
-            devices[device] += 1
-        if date:
-            t = timeline.setdefault(date, {"p2": 0, "client": 0, "other": 0})
-            t[seg] += 1
-        pg = pages.setdefault(url, {"title": title, "url": url, "views": 0, "seconds": 0})
-        pg["views"] += 1
-        pg["seconds"] += secs
-        if ts:
-            first_activity = min(first_activity, ts) if first_activity else ts
-            last_activity = max(last_activity, ts)
-
-        p = people.get(email.lower())
-        if p is None:
-            p = {"email": email, "name": _cu_pretty_name(email, name_map),
-                 "picture": name_map.get(email.lower(), {}).get("picture", ""),
-                 "segment": seg, "views": 0, "seconds": 0,
-                 "pages": {}, "first_seen": ts, "last_seen": ts,
-                 "browser": browser, "device": device, "_events": []}
-            people[email.lower()] = p
-        p["views"] += 1
-        p["seconds"] += secs
-        p["pages"][url] = p["pages"].get(url, 0) + 1
-        p["_events"].append({"kind": "view", "ts": ts, "title": title, "url": url,
-                             "seconds": secs, "duration": _fmt_secs(secs)})
-        if ts:
-            p["first_seen"] = min(p["first_seen"], ts) if p["first_seen"] else ts
-            p["last_seen"] = max(p["last_seen"], ts)
-        if browser and not p["browser"]:
-            p["browser"] = browser
-
-    # Login events: who signed in and when. Sign-ins are a global auth event, not
-    # scoped to a portal -- a Position² staffer signs in once and that same
-    # session covers the internal app, /app and every client portal. Counting every one of
-    # their sign-ins here would overstate THIS portal's usage with unrelated
-    # internal-tool activity (both tabs carry timestamp @0, email @5). So a login
-    # only counts here if it falls on a calendar day the same person also viewed
-    # a page on THIS portal -- their page-view events above are already scoped
-    # to /<slug>, so this reuses that scoping rather than re-deriving it.
-    portal_days_by_email = {e: {ev["ts"][:10] for ev in p["_events"] if ev.get("ts")}
-                             for e, p in people.items()}
-    login_map = {}   # email(lower) -> [ts, ...]
-    for rows_ in signin_row_sets:  # same rows the name map was built from above, not re-fetched
-        for r in rows_[1:] if len(rows_) > 1 else []:
-            e = (r[5].strip().lower() if len(r) > 5 else "")
-            t = (r[0].strip() if len(r) > 0 else "")
-            if e and t and t[:10] in portal_days_by_email.get(e, ()):
-                login_map.setdefault(e, []).append(t)
-
-    # Agent runs by this portal's users. The 'Agent Runs' tab is global (email +
-    # agent slug, no client column), so we scope to the agents configured for THIS
-    # client: accurate for client-team members (they only reach this one portal) and
-    # a sensible best-effort for Position² staff.
-    client_run_slugs = {_canonical_agent_slug(s) for s in client.get("agents", [])}
-    runs_by_email = {}   # email(lower) -> {total, by_agent{name:n}, last, events[]}
-    _ARIDX = {n: i for i, n in enumerate(_AR_HEADER)}
-    def _arv(r, n, d=""):
-        i = _ARIDX.get(n, -1)
-        return r[i] if 0 <= i < len(r) else d
-    for r in ar_rows[1:] if len(ar_rows) > 1 else []:  # fetched once, above
-        e = (_arv(r, "Email") or "").strip().lower()
-        if not e:
-            continue
-        slug = _canonical_agent_slug(_arv(r, "Agent Slug") or "")
-        if client_run_slugs and slug not in client_run_slugs:
-            continue
-        ts = _arv(r, "Timestamp (IST)")
-        aname = _arv(r, "Agent Name") or APP_AGENTS_BY_SLUG.get(slug, {}).get("name", slug)
-        rec = runs_by_email.setdefault(e, {"total": 0, "by_agent": {}, "last": "", "events": []})
-        rec["total"] += 1
-        rec["by_agent"][aname] = rec["by_agent"].get(aname, 0) + 1
-        rec["events"].append({"ts": ts, "name": aname})
-        if ts and ts > rec["last"]:
-            rec["last"] = ts
-
-    # Deliberately NOT folding in people who only appear in runs_by_email with no
-    # tracked page view here: client_run_slugs is often a handful of the shared
-    # /app agents (Keyword Finder, Content Brief Generator, Content Enhancer),
-    # which every client's roster can include -- so "ran an agent this client
-    # also happens to offer" does not mean "used THIS client's portal." Without
-    # a page view (or, per the login scoping above, a matching login) on
-    # /<slug>, a person has no actual footprint on this portal and shouldn't
-    # appear in its people list, even if their agent-run total looks nonzero.
-
-    def finalize(p):
-        top = sorted(p["pages"].items(), key=lambda kv: -kv[1])
-        p["pages_count"] = len(p["pages"])
-        p["top_pages"] = [{"url": u, "views": n} for u, n in top[:6]]
-        del p["pages"]
-        p["duration"] = _fmt_secs(p["seconds"])
-        logins = login_map.get(p["email"].lower(), [])
-        p["logins"] = len(logins)
-        rr = runs_by_email.get(p["email"].lower(), {})
-        p["agent_runs"] = rr.get("total", 0)
-        p["agent_breakdown"] = sorted(
-            [{"name": k, "count": v} for k, v in rr.get("by_agent", {}).items()],
-            key=lambda x: -x["count"])
-        ev = p.pop("_events")
-        for t in logins:
-            ev.append({"kind": "login", "ts": t, "title": "Signed in", "url": "", "duration": ""})
-        for rv in rr.get("events", []):
-            ev.append({"kind": "run", "ts": rv["ts"], "title": "Ran " + rv["name"], "url": "", "duration": ""})
-        ev.sort(key=lambda x: x["ts"] or "", reverse=True)
-        p["events"] = ev[:80]
-        if logins:
-            p["last_login"] = max(logins)
-        if rr.get("last"):
-            p["last_run"] = rr["last"]
-        return p
-
-    ppl = [finalize(p) for p in people.values()]
-    ppl.sort(key=lambda x: (-x["views"], -x.get("agent_runs", 0), x["name"]))
-    seg_people = {k: [p for p in ppl if p["segment"] == k] for k in ("p2", "client", "other")}
-
-    def _seg_sum(seg, key):
-        return sum(p.get(key, 0) for p in seg_people[seg])
-
-    # Global recent-activity feed: every event across everyone, newest first, tagged
-    # with the person. Powers the "all activity" view and per-page viewer drilldowns.
-    recent = []
-    for p in ppl:
-        for e in p["events"]:
-            recent.append({"name": p["name"], "email": p["email"], "segment": p["segment"],
-                           "picture": p["picture"], "kind": e["kind"], "ts": e["ts"],
-                           "title": e["title"], "url": e["url"], "duration": e.get("duration", "")})
-    recent.sort(key=lambda x: x["ts"] or "", reverse=True)
-    recent = recent[:400]
-
-    top_pages = sorted(pages.values(), key=lambda x: -x["views"])[:12]
-    for pg in top_pages:
-        pg["duration"] = _fmt_secs(pg["seconds"])
-        pg["viewers"] = len({e["email"] for e in recent if e["kind"] == "view" and e["url"] == pg["url"]})
-    tl = [{"date": d, "p2": v["p2"], "client": v["client"], "other": v["other"]}
-          for d, v in sorted(timeline.items())]
-
-    total_views = sum(s["views"] for s in seg_stats.values())
-    total_secs = sum(s["seconds"] for s in seg_stats.values())
-    data = {
-        "client": {"slug": slug, "name": client["name"], "short": client.get("short", client["name"]),
-                   "logo": client.get("logo", ""), "website": client.get("website", ""),
-                   "domains": client.get("domains", []),
-                   "accent": client.get("accent", "#5b9dff"), "accent2": client.get("accent2", "#8b5cf6")},
-        "kpis": {
-            "total_views": total_views, "total_people": len(ppl),
-            "total_seconds": total_secs, "total_time": _fmt_secs(total_secs),
-            "total_logins": sum(p["logins"] for p in ppl),
-            "total_runs": sum(p["agent_runs"] for p in ppl),
-            "p2_people": len(seg_people["p2"]), "client_people": len(seg_people["client"]),
-            "other_people": len(seg_people["other"]),
-            "p2_views": seg_stats["p2"]["views"], "client_views": seg_stats["client"]["views"],
-            "p2_time": _fmt_secs(seg_stats["p2"]["seconds"]),
-            "client_time": _fmt_secs(seg_stats["client"]["seconds"]),
-            "first_activity": first_activity[:10], "last_activity": last_activity[:10],
-        },
-        "segments": {
-            "p2": {"label": "%s team" % BRAND["name"], "people": seg_people["p2"],
-                   "views": seg_stats["p2"]["views"], "time": _fmt_secs(seg_stats["p2"]["seconds"]),
-                   "logins": _seg_sum("p2", "logins"), "runs": _seg_sum("p2", "agent_runs")},
-            "client": {"label": "%s team" % client.get("short", client["name"]),
-                       "people": seg_people["client"], "views": seg_stats["client"]["views"],
-                       "time": _fmt_secs(seg_stats["client"]["seconds"]),
-                       "logins": _seg_sum("client", "logins"), "runs": _seg_sum("client", "agent_runs")},
-            "other": {"label": "Other", "people": seg_people["other"],
-                      "views": seg_stats["other"]["views"], "time": _fmt_secs(seg_stats["other"]["seconds"]),
-                      "logins": _seg_sum("other", "logins"), "runs": _seg_sum("other", "agent_runs")},
-        },
-        "timeline": tl,
-        "top_pages": top_pages,
-        "recent": recent,
-        "browsers": dict(browsers.most_common(6)),
-        "devices": dict(devices.most_common()),
-        "fetched_at": now,
-    }
-    _CU_CACHE[slug] = {"data": data, "ts": now}
-    return data
-
-
-def _fetch_all_client_summaries(force=False):
-    """Lightweight per-client rollup for the Client Usage landing cards."""
-    now = time.time()
-    if not force and _CU_ALL_CACHE["data"] is not None and (now - _CU_ALL_CACHE["ts"]) < _CU_TTL:
-        return _CU_ALL_CACHE["data"]
-    pv = _cu_read_tab("Page Views!A:N")
-    rows = pv[1:] if len(pv) > 1 else []
-    summ = {s: {"views": 0, "people": set(), "last": ""} for s in CLIENTS}
-    for r in rows:
-        url = r[6] if len(r) > 6 else ""
-        cslug = _cu_client_of_url(url)
-        if not cslug:
-            continue
-        email = (r[4].strip().lower() if len(r) > 4 else "")
-        if not email:
-            continue
-        summ[cslug]["views"] += 1
-        summ[cslug]["people"].add(email)
-        ts = r[0] if len(r) > 0 else ""
-        if ts:
-            summ[cslug]["last"] = max(summ[cslug]["last"], ts)
-    out = []
-    for slug, c in CLIENTS.items():
-        s = summ[slug]
-        out.append({
-            "slug": slug, "name": c["name"], "short": c.get("short", c["name"]),
-            "logo": c.get("logo", ""), "website": c.get("website", ""),
-            "accent": c.get("accent", "#5b9dff"), "accent2": c.get("accent2", "#8b5cf6"),
-            "domains": c.get("domains", []),
-            "views": s["views"], "people": len(s["people"]), "last_active": s["last"][:10],
-        })
-    out.sort(key=lambda x: -x["views"])
-    _CU_ALL_CACHE["data"] = out
-    _CU_ALL_CACHE["ts"] = now
-    return out
-
-
 # ── Client Usage: the client accounts shared with their clients ─────────────
 # Every account an admin has invited someone to, or changed what it shares, gets a card here on its own
 # (client_accounts_store.shared_keys): who it is shared with, which pages and tools, how much its people
@@ -12955,7 +12078,7 @@ def _cu_shared_accounts():
 @app.route("/admin/client-usage")
 @admin_required
 def admin_client_usage():
-    """Moved into the admin panel (/admin): each shared client account, and each portal we run."""
+    """Moved into the admin panel (/admin): each shared client account."""
     return redirect("/admin#clients")
 
 
@@ -12966,25 +12089,6 @@ def admin_client_account(slug):
     if _acct_listing()["by_slug"].get(slug) is None:
         abort(404)
     return redirect("/admin#client-%s" % slug)
-
-
-@app.route("/admin/client-usage/<client_slug>")
-@admin_required
-def admin_client_detail(client_slug):
-    """Client portal analytics are not in the admin panel; this address now opens its Clients section."""
-    if client_slug not in CLIENTS:
-        abort(404)
-    return redirect("/admin#clients")
-
-
-@app.route("/admin/client-usage/<client_slug>/data")
-@admin_required
-def admin_client_detail_data(client_slug):
-    if client_slug not in CLIENTS:
-        abort(404)
-    force = request.args.get("fresh") in ("1", "true", "yes")
-    data = _fetch_client_usage(client_slug, force=force)
-    return jsonify(data or {})
 
 
 @app.route("/admin/access-requests")
@@ -13537,7 +12641,7 @@ def _li_yes(s):
 def _li_company_key(name):
     """Identity key for grouping company rows. We key on the normalised company
     *name*, not the sheet's 'Current Company ID', because the same company often
-    appears with the ID on some rows and blank on others (e.g. NorthStar Anesthesia:
+    appears with the ID on some rows and blank on others (one company had
     44 rows with an ID, 7 blank) — keying on ID would split it into two cards."""
     return re.sub(r"\s+", " ", (name or "").strip()).lower() or "(unknown)"
 

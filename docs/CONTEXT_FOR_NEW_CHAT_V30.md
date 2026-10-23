@@ -28,7 +28,7 @@ User's explicit ask: "a senior developer would access and audit the entire repo,
 - Removed `pandas`: zero imports anywhere in the actual application, confirmed by the AST scan above. Only reference anywhere in the repo was a doc file's prose and a completely separate benchmark harness's own pinned `requirements-constraints.txt`. Pure install-time dead weight.
 - Added `google-search-results>=2.4.2` (declared with a comment explaining why): `tracker/news_client.py` imports `serpapi.GoogleSearch` for the ABM Signal Tracker's optional paid-news fallback, but the package itself was never listed. It degraded gracefully before this fix (`try/except ImportError`, falls back to the free Google News RSS feed), so nothing in production was actually broken, it was just an undeclared dependency waiting to surprise a fresh `pip install`.
 
-**README.md rewritten** with a full agent catalog: every one of the ten `/p2/b2b-agents/*` agents (route, what it does, vendor/data notes), the SEO Suite's 16 tools named individually, visitor de-anonymization, Vimi, client portals, and admin analytics. Also added an environment-variable reference table and a "Known gaps" section. Cross-checked the agent roster directly against the live `APP_AGENTS`/`AGENTS` registries in `app.py` rather than trusting older docs, since this same doc's own "Agent roster hazard" note (further down) warns the roster drifts across independent lists. **Treat the README itself as the current, canonical short version of the agent catalog** going forward; this doc's agent-by-agent sections below remain the deeper technical/historical reference and the two should stay roughly in sync.
+**README.md rewritten** with a full agent catalog: every one of the ten `/p2/b2b-agents/*` agents (route, what it does, vendor/data notes), the SEO Suite's 16 tools named individually, visitor de-anonymization, Vimi, and admin analytics. Also added an environment-variable reference table and a "Known gaps" section. Cross-checked the agent roster directly against the live `APP_AGENTS`/`AGENTS` registries in `app.py` rather than trusting older docs, since this same doc's own "Agent roster hazard" note (further down) warns the roster drifts across independent lists. **Treat the README itself as the current, canonical short version of the agent catalog** going forward; this doc's agent-by-agent sections below remain the deeper technical/historical reference and the two should stay roughly in sync.
 
 **Security findings, reported but deliberately NOT fixed** (production-behavior-affecting for a live app with real client data; needs explicit go-ahead before implementing, not silent edits):
 - No CSRF token anywhere, and no explicit `SESSION_COOKIE_SECURE`/`SESSION_COOKIE_SAMESITE` (relies on Flask/browser defaults).
@@ -91,7 +91,7 @@ Plus this context-file refresh itself (v27 -> v28), on explicit user request.
 
 ## WHAT THIS IS
 
-**Intelligence by Position2** is a B2B revenue-/sales-intelligence web app for the Position2 agency (Position2 = a B2B digital-marketing agency: SEO/organic, performance/paid media, paid social, content, brand/website, RevOps/HubSpot). It surfaces buying signals (funding, leadership change, M&A, IPO, product launches, partnerships, anesthesiologist/creative hiring, news, new-job-detected alerts on tracked people), de-anonymizes website visitors to company and (where a signal exists) person, **finds and enriches contacts at target companies via Apollo**, scrapes LinkedIn engagement, runs a native competitive-strategy analysis agent, tracks appointment-slot availability for a healthcare client, analyzes competitors' organic social creative across 6 platforms with real Claude-vision analysis, tracks competitor ads, tracks brand visibility in AI answer engines (GEO), ranks prospects by intent, runs a suite of SEO/GEO tools (SEO Studio), helps reps act via an embedded AI assistant (**Vimi**, visible label **GTM**), and serves **co-branded client portals** that can also embed **agents built entirely on other platforms.**
+**Intelligence by Position2** is a B2B revenue-/sales-intelligence web app for the Position2 agency (Position2 = a B2B digital-marketing agency: SEO/organic, performance/paid media, paid social, content, brand/website, RevOps/HubSpot). It surfaces buying signals (funding, leadership change, M&A, IPO, product launches, partnerships, anesthesiologist/creative hiring, news, new-job-detected alerts on tracked people), de-anonymizes website visitors to company and (where a signal exists) person, **finds and enriches contacts at target companies via Apollo**, scrapes LinkedIn engagement, runs a native competitive-strategy analysis agent, tracks appointment-slot availability for a healthcare client, analyzes competitors' organic social creative across 6 platforms with real Claude-vision analysis, tracks competitor ads, tracks brand visibility in AI answer engines (GEO), ranks prospects by intent, runs a suite of SEO/GEO tools (SEO Studio) and helps reps act via an embedded AI assistant (**Vimi**, visible label **GTM**).
 
 - **Live URL:** `https://intelligence.position2.com`
 - **GitHub (main app, Flask):** `https://github.com/ai-positon2/intelligence-platform`
@@ -109,18 +109,17 @@ Google SSO is open to **any** Google account. That forces surface separation wit
 | **1. Public marketing site** | Logged-out prospects | none | top-level (`/`, `/agents`, `/platform`, `/why-intelligence`, ...) | always dark |
 | **2. Member workspace `/app`** | ANY signed-in Google user | `@login_required` | `/app/*` | dark |
 | **3. Internal staff app `/p2/*`** | `@markifydigital.com`, plus the admins on any domain | `@position2_required` | `/p2/*` (hub, b2b-agents, seo, abm-signal-tracker, admin, playbook, ...) | light/dark toggle |
-| **4. Client portals `/<slug>`** | any signed-in Google account | `_client_gate()` | `/<client-slug>/*` (e.g. `/northstaranesthesia`) | dark, co-branded |
 
 - After login: `@markifydigital.com` and the admins -> `/p2/hub`; any other signed-in user -> `/app`.
 - Old top-level internal paths (`/hub`, `/gtm/...`, `/admin/...`) 301-redirect to `/p2/...`, `/p2/gtm/*` 301-redirects to `/p2/b2b-agents/*`, and `/p2/accounts` + `/p2/signal-tracker/<account>` 301-redirect to `/p2/abm-signal-tracker/*` in exactly one hop.
 - **Standing rename rule:** when a persisted URL/slug is renamed, the old one keeps 301-redirecting AND every read path keyed off the old slug is aliased to the new one. A past bug dropped historical runs because only routing was fixed, not the read side. See `[[feedback-persisted-identifier-renames]]`.
-- Auth decorators in `app.py`: `login_required`, `admin_required` (= position2 + admin email), `position2_required`. Client gating is `_client_gate(client)` (not a decorator).
+- Auth decorators in `app.py`: `login_required`, `admin_required` (= position2 + admin email), `position2_required`.
 
 ---
 
 ## ABM SIGNAL TRACKER (unchanged since v25)
 
-**This is the general Healthcare/CSG/NorthStar account-based signal product** - not to be confused with the NorthStar-specific instance described further down, which independently happens to carry the same "ABM Signal Tracker" display name.
+**This is the general account-based signal product** (Healthcare and CSG accounts at the time).
 
 Renamed from "Company/Signal Tracker" a cycle ago: display text first (`280bb6c`), then real URLs (`12c90cb`, redirects preserved in one hop for all three prior generations of the URL), plus a card-grid layout bug fix on the account picker (`f45edf1` - a `minmax()` grid sizing bug plus a latent `.main` width bug it surfaced). See `tests/test_abm_signal_tracker_url_rename.py` and `tests/test_accounts_layout.py`.
 
@@ -397,17 +396,17 @@ Two hard-won points that generalise: **validate response shape, not just HTTP st
 
 ---
 
-## GENTLE DENTAL SLOT CHECKER (built in the v26 cycle)
+## SLOT CHECKER AGENT (built in the v26 cycle)
 
-**What it is / audience:** "Gentle Dental" is a multi-brand dental-practice-chain client (82 locations across MA/NH/CT and others). This staff-only dashboard (`/p2/b2b-agents/42-north-dental-slot-checker`, `@position2_required`, not exposed to the client) answers, in the page's own words: *"What a new patient would actually be offered if they tried to book right now, across every location the agent checks."* A separate scraping agent crawls each location's real booking widget weekly and writes results into a Google Sheet; this feature is purely the read/visualize layer over that data. **Not listed in the `AGENTS`/`APP_AGENTS` registries at all** - it's a direct standalone route with its own hand-written card in `b2b_agents.html`, outside the usual roster mechanism.
+**What it is / audience:** a dashboard over a multi-brand dental-practice chain (82 locations across MA/NH/CT and others). This staff-only dashboard (now `/strategic-agents/slot-checker`) answers, in the page's own words: *"What a new patient would actually be offered if they tried to book right now, across every location the agent checks."* A separate scraping agent crawls each location's real booking widget weekly and writes results into a Google Sheet; this feature is purely the read/visualize layer over that data. **Not listed in the `AGENTS`/`APP_AGENTS` registries at all** - it's a direct standalone route with its own hand-written card in `b2b_agents.html`, outside the usual roster mechanism.
 
-**Routes:** `GET /p2/b2b-agents/42-north-dental-slot-checker` (page), `GET .../data` (JSON payload via `tracker.slot_checker.fetch()`, `?fresh=1` bypasses cache, relies on the platform's generic gzip hook), `GET .../insights` (AI briefing, `?fresh=1` forces regen). All `@position2_required`.
+**Routes:** `GET /strategic-agents/slot-checker` (page), `GET .../data` (JSON payload via `tracker.slot_checker.fetch()`, `?fresh=1` bypasses cache, relies on the platform's generic gzip hook), `GET .../insights` (AI briefing, `?fresh=1` forces regen). All `@position2_required`.
 
 **Data model/source** (`tracker/slot_checker.py`): live source is a Google Sheet (`SLOT_CHECKER_SHEET_ID`), read via `GOOGLE_SA_JSON`, from two tabs (`LPs` = location registry, `Locations` = one row per office+service per date), reshaped to match the legacy `.xlsx` parser's expected input. **Each row is an observation, not a fact** - a rescraped location appears multiple times across days with different counts, so "current availability" means the newest observation per (practice, service), never a naive sum. TTL-cached 300s. **Fallback:** any exception on the live read (revoked share, renamed tab, network error, quota) falls back to the committed `data/slot_checker_snapshot.json` - a live read that *succeeds* with zero rows is not a failure and renders as-is. To refresh the fallback: export the sheet to `.xlsx`, run `scripts/import_slot_checker_snapshot.py <file>`, commit the resulting JSON. **Note:** that script's own docstring is currently stale (still claims the sheet can't be read live by the service account - it can, as of this feature's build; worth fixing next time this file is touched).
 
 **AI Insights** (`tracker/slot_checker_insights.py`): one Claude call synthesizing the dashboard's own derived numbers into a headline, synthesis, top actions, and a coverage note, under the same "never state anything not in the given JSON" rule as LPS's. **On-demand, not automatic** - triggered by opening the Insights panel, 1-hour TTL-cached and invalidated early if the underlying snapshot's `generated_at` changes, so it costs roughly one Claude call per cache miss, not per view. Degrades cleanly without `ANTHROPIC_API_KEY`. **`probe()` self-test exists but has no admin route wired up** (unlike LPS's `lps-insights-check`) - currently unreachable except by calling it directly.
 
-**UI** (`templates/42_north_dental_slot_checker.html`, `static/css/42_north_dental_slot_checker.css`): 4 KPI stat tiles, 3 summary cards (availability by day, capacity by state, brand mix), a main card with 4 tabs (Locations - default, sortable/searchable table with a centered drawer; Calendar - heatmap; Needs Attention - alerts; Services), a split filters/sort-export toolbar, and a compact AI Insights card at the page bottom.
+**UI** (`templates/slot_checker.html`, `static/css/slot_checker.css`): 4 KPI stat tiles, 3 summary cards (availability by day, capacity by state, brand mix), a main card with 4 tabs (Locations - default, sortable/searchable table with a centered drawer; Calendar - heatmap; Needs Attention - alerts; Services), a split filters/sort-export toolbar, and a compact AI Insights card at the page bottom.
 
 **Calendar heatmap - current, live color scheme (changed today, don't assume an older version):** 6 discrete steps by open-slot count (`RAMP_BREAKS=[2,5,10,20]`): 0 / 1-2 / 3-5 / 6-10 / 11-20 / 21+. **Vivid red-to-green** by hue step (not opacity-faded single-hue): dark theme orange `#f97316` -> amber `#f59e0b` -> yellow `#eab308` -> lime `#84cc16` -> green `#22c55e`; light theme uses deeper equivalents. The **zero-slots cell is not part of the color ramp** - a transparent cell with a red-tinted hairline border and a red dash through the middle, deliberately signaling "needs action" rather than "no data." **This ramp was churned same-day**: it started black-to-green (opacity-faded single teal hue), was changed to this vivid red-to-green version, briefly tried a desaturated/pastel version, and was reverted back to the vivid version per explicit user feedback ("this looks terrible"). The vivid version above is the correct, current, live state - do not reintroduce the pastel one without being asked.
 
@@ -488,35 +487,12 @@ A mismatch raises **`CompanyMismatch`, deliberately NOT a subclass of `UnipileTr
 
 ---
 
-## THE NORTHSTAR ABM SIGNAL TRACKER (complete, maintenance mode, unchanged)
-
-**Note the naming overlap with the general "ABM Signal Tracker" product above** - this is NorthStar's own specific client-portal instance, coincidentally identical display name, different code paths.
-
-- **All 35 companies researched across 7 batches; 71 curated signals** (52 HIGH / 16 MEDIUM / 3 LOW).
-- Data in SQLite (`data/tracker_northstar.db`), seeded from `data/northstar_signals_manual.json` via `seed_northstar_signals.py --prune` (**always with `--prune`**, the JSON is the source of truth).
-- **`_quality_bar` inside that JSON is the living curation policy** - permanent 6-month admission cutoff by `signal_date`. See `[[feedback-signal-relevance-bar]]`.
-- **"Creative Hiring" displays as "Anesthesiologists" for NorthStar only**, via a per-account override. Reuse this pattern; never globally rename a shared category.
-- `reports/dashboard*.html` are **built artifacts committed to git**. Never hand-edit them.
-
----
-
-## SURFACE 4 - CLIENT PORTALS
-
-Per-client co-branded front door at `/<client-slug>`. Currently one client: `northstaranesthesia`. Unchanged.
-
-- **`CLIENTS` registry** entry fields: `slug`, `name`, `short`, `website`, `logo`, `domains`, `accent`/`accent2`, `tagline`, `blurb`, `agents` (ordered `APP_AGENTS` slugs), `dashboards`, `linkedin_sheet`, `external_tools`.
-- NorthStar: `domains=["northstaranesthesia.com"]`, `accent="#5b9dff"`. Its agents list still references **LinkedIn Social Researcher** (the old external tool, currently hidden - see below), not the new native LinkedIn Strategy Researcher.
-- **Three agent types:** SERP-connected (`seo_slug`), dashboard-backed (`is_dashboard`), external-tool (`is_external`).
-- `_client_agent_view(slug, client)`: **always pass `client`**. Omitting it silently resolves `connected=False` for an external-tool-only agent.
-
----
-
 ## LINKEDIN SOCIAL RESEARCHER - STILL HIDDEN, NOT DELETED (the OLD external agent - see the NEW native LinkedIn Strategy Researcher section above)
 
 **Pulled from every listing on 2026-08-14; renamed 2026-08-20 to LinkedIn Social Researcher (slug `linkedin-social-researcher`) when its old name/slug moved to the brand-new native agent documented above.** Still hidden as of this cycle, no restore request received. Nothing underneath was deleted: `/p2/b2b-agents/linkedin-social-researcher` still resolves, the watchtower tool it embeds still loads, `APP_AGENTS_BY_SLUG` still holds the full entry, NorthStar's own `agents` list is untouched.
 
 **To restore, in this exact order:**
-1. Empty `HIDDEN_AGENT_SLUGS` in `app.py` (currently `{"linkedin-social-researcher"}` - drives `/app`'s main grid, sidebar, and every client portal).
+1. Empty `HIDDEN_AGENT_SLUGS` in `app.py` (currently `{"linkedin-social-researcher"}` - drives `/app`'s main grid, sidebar).
 2. Un-comment the card in `templates/b2b_agents.html` **and** its Ctrl+K command-palette entry (hand-written HTML, does NOT derive from `HIDDEN_AGENT_SLUGS`).
 3. Bump `templates/hub.html`'s B2B card counts and "by the numbers" band (re-verify the arithmetic in the file's own comments, don't assume a number - it has moved multiple times).
 4. Restore `templates/context.html`'s mentions.
@@ -538,7 +514,7 @@ An agent whose entire backend lives on a third-party AI app-builder platform we 
 
 1. Confirm no `X-Frame-Options`/CSP `frame-ancestors` blocks iframing.
 2. Add it to `APP_AGENTS` with no `seo_slug`.
-3. Add its slug to the client's `agents` list and its URL to `external_tools` (client portal), or add a small route rendering `templates/embed.html` (internal).
+3. Add a small route rendering `templates/embed.html` (internal).
 4. `client_embed.html` / `embed.html` iframe it; the address bar shows OUR path.
 5. **Metering requires the external tool's cooperation** via `postMessage`. Deployed and working for LinkedIn Social Researcher (the old external tool, currently hidden from listings, but the mechanism itself is untouched).
 6. **Any prompt written to be pasted into that other platform must be self-contained** and describe only that tool's own observable behaviour, never our internal routes, slugs, or architecture.
@@ -547,7 +523,7 @@ An agent whose entire backend lives on a third-party AI app-builder platform we 
 
 ## LINKEDIN INTELLIGENCE (internal + per-client, multi-sheet, unchanged)
 
-Route `/p2/b2b-agents/linkedin-intelligence`. Renders `templates/linkedin_scraper.html`; all content drawn client-side by `static/js/linkedin.js`. One row per person x post engagement, header-mapped, per-sheet caches so internal and each client portal read independent sheets.
+Route `/p2/b2b-agents/linkedin-intelligence`. Renders `templates/linkedin_scraper.html`; all content drawn client-side by `static/js/linkedin.js`. One row per person x post engagement, header-mapped, per-sheet caches so each sheet is read independent sheets.
 
 **Do not confuse** this (your own engagement data from a Sheet) with: **LinkedIn Strategy Researcher** (the new NATIVE Arena-backed competitive-strategy agent, its own section above), **LinkedIn Social Researcher** (the OLD external tool, currently hidden), the ABM Signal Tracker's own News Mention/Partnership categories, Social Media Intelligence (creative/vision analysis of organic posts across 6 platforms, an entirely different agent), or Job Change Alert (new-role detections from Slack).
 
@@ -567,12 +543,12 @@ Route `/p2/b2b-agents/linkedin-intelligence`. Renders `templates/linkedin_scrape
 intelligence-platform/
 ├── app.py                ← Flask server (~18,067 lines, 203 route decorator lines): auth
 │                            (3 decorators + client gate), all 4
-│                            surfaces, AGENTS/APP_AGENTS/SIGNALS/INDUSTRIES/CLIENTS/ACCOUNTS
+│                            surfaces, AGENTS/APP_AGENTS/SIGNALS/INDUSTRIES/ACCOUNTS
 │                            registries, HIDDEN_AGENT_SLUGS, OpenAI (Vimi x2 + Contact
 │                            Finder's chain) + Anthropic (Contact Finder cross-check, LPS/
 │                            Slot Checker/SCI AI layers, SCI vision/synthesis), Contact
 │                            Finder's cpi_* routes, Job Change Alert's routes, LPS's
-│                            linkedin_playbook_studio* routes, Gentle Dental's gentle_dental_
+│                            linkedin_playbook_studio* routes, the Slot Checker's 
 │                            slot_checker* routes, SCI's social_creative_intelligence* routes
 │                            + unipile-check/-connect admin routes, marketing routes, /api/*,
 │                            /app/*, /p2/*, client-portal routes, Postgres history.
@@ -583,7 +559,7 @@ intelligence-platform/
 │                                      ← LPS's Postgres store, AI Insights, local engagement
 │                                      computation (new this cycle)
 ├── tracker/slot_checker.py, tracker/slot_checker_insights.py
-│                                      ← Gentle Dental's Sheets-backed data + AI Insights
+│                                      ← the Slot Checker's Sheets-backed data + AI Insights
 │                                      (new this cycle)
 ├── tracker/sci_*.py (identify, pipeline, store, vision, video, audio, classify, synthesize,
 │       youtube_client, company_search, source_instagram/facebook/tiktok/x/linkedin,
@@ -608,13 +584,12 @@ intelligence-platform/
 │                            dashboard_builder [build_dashboard(), takes hiring_opts],
 │                            csv_loader, snapshot_store, sheets_client)
 ├── main.py               ← weekly orchestrator (Healthcare) -> data/tracker.db
-├── build_northstar_dashboard.py, build_csg_dashboard.py
-├── seed_northstar_signals.py   ← always run with --prune
+├── build_csg_dashboard.py
 ├── ad_intelligence/      ← built React app served by Flask
 ├── static/
 │   ├── css/ (ds-tokens, ds-components, gtm, hub, seo, linkedin, admin, aurora-app,
 │   │        grid-tokens, client-portal, company_people_intelligence, job_change_alert,
-│   │        linkedin_playbook_studio, 42_north_dental_slot_checker, social_creative_
+│   │        linkedin_playbook_studio, slot_checker, social_creative_
 │   │        intelligence, event_conference_intelligence.css - the last one new this cycle)
 │   └── js/ (theme, linkedin, visitor_track, pfx_bg, aurora, anonymous_visitors,
 │           company_people_intelligence.js, scroll-rail.js)
@@ -623,7 +598,7 @@ intelligence-platform/
 │   ├── app.html, app_base.html, app_embed.html, app_history*.html, app_settings.html
 │   ├── hub.html, b2b_agents.html, seo.html, accounts.html, embed.html, context.html, 403.html
 │   ├── company_people_intelligence.html   ← Contact Finder
-│   ├── job_change_alert.html, linkedin_playbook_studio.html, 42_north_dental_slot_checker.html,
+│   ├── job_change_alert.html, linkedin_playbook_studio.html, slot_checker.html,
 │   │       social_media_intelligence.html, event_conference_intelligence.html
 │   │       ← the last one new this cycle
 │   ├── linkedin_scraper.html   ← serves BOTH internal and client LinkedIn dashboards
@@ -644,9 +619,9 @@ intelligence-platform/
 ### Deploy + data model
 
 - **Code/UI** push to `main` -> Railway redeploys (~60-100s). No hot reload locally.
-- **Google Sheets** is the primary store for internal analytics AND for 42 North Dental Slot Checker's live availability data. Job Change Alert's tracked-roster sheet is currently blocked (Workspace DLP) and falls back to a committed snapshot.
+- **Google Sheets** is the primary store for internal analytics AND for Slot Checker Agent's live availability data. Job Change Alert's tracked-roster sheet is currently blocked (Workspace DLP) and falls back to a committed snapshot.
 - **Postgres** (`DATABASE_URL`): `agent_run_history`, `cpi_search_history`, Contact Finder's persistent caches, `lps_runs`/`lps_playbooks` (LPS), `sci_runs`/`sci_platform_runs`/`sci_posts`/`sci_spend_log` (SCI), `evi_events`/`evi_participants`/`evi_sources`/`evi_runs`/`evi_profiles`/`evi_candidates`/`evi_outreach`/`evi_outcomes` (Event & Conference Intelligence - `evi_candidates` gained `name_key`/`format` columns and `evi_outcomes`/`evi_runs` gained `profile_id` this cycle; `evi_profiles` gained `confidential` for the new cross-client feature). **This is the only Postgres store on the whole platform doing genuine cross-run, cross-client learning as of this cycle** - see the "make it crazy good" section above.
-- **SQLite** (committed): `data/tracker.db` (Healthcare), `data/tracker_csg_v2.db` (CSG), `data/tracker_northstar.db` (NorthStar), `data/job_change_alerts.db`. **Gitignored, real PII, NEVER commit: `data/identity_graph.db`.**
+- **SQLite** (committed): `data/tracker.db` (Healthcare), `data/tracker_csg_v2.db` (CSG), `data/job_change_alerts.db`. **Gitignored, real PII, NEVER commit: `data/identity_graph.db`.**
 
 ---
 
@@ -657,7 +632,7 @@ intelligence-platform/
 - **`p2_vid` stitching:** Page Views and both login tabs carry a visitor-id column.
 - **Surface 2, `/app`:** shell `app_base.html`, `APP_AGENTS` cards (minus `HIDDEN_AGENT_SLUGS`), a few wired to live seo-apps tools plus LinkedIn Social Researcher (currently hidden), the rest request-access-only.
 - **Surface 1, public site:** one template `agents.html`, `{% if page %}` chain.
-- **Surface 3, `/p2/*`:** `/p2/hub`, `/p2/b2b-agents` (Contact Finder, Job Change Alert, LinkedIn Strategy Researcher [native], 42 North Dental Slot Checker, Social Media Intelligence, Event & Conference Intelligence, sentiment-pulse MOCK data, ad-intelligence React app, linkedin-intelligence, linkedin-social-researcher), `/p2/seo` + tools (16), `/p2/abm-signal-tracker/accounts` + signal trackers, `/p2/playbook`, admin dashboards.
+- **Surface 3, `/p2/*`:** `/p2/hub`, `/p2/b2b-agents` (Contact Finder, Job Change Alert, LinkedIn Strategy Researcher [native], Slot Checker Agent, Social Media Intelligence, Event & Conference Intelligence, sentiment-pulse MOCK data, ad-intelligence React app, linkedin-intelligence, linkedin-social-researcher), `/p2/seo` + tools (16), `/p2/abm-signal-tracker/accounts` + signal trackers, `/p2/playbook`, admin dashboards.
 
 **Agent roster hazard, worse than ever now:** the roster exists in **three independent lists** (`AGENTS`, `APP_AGENTS`, and a JS array in `templates/context.html`), plus the internal SEO Suite tools list, plus `HIDDEN_AGENT_SLUGS`, plus now FOUR agents this cycle alone (Job Change Alert, LPS, Gentle Dental, SCI) each with their own hand-written `b2b_agents.html` card and command-palette entry that derives from none of the above. **Nothing derives one from another.**
 
@@ -720,7 +695,7 @@ Details that are load-bearing:
 
 ## ENVIRONMENT VARIABLES
 
-**Railway:** `DATABASE_URL`, `GH_DISPATCH_TOKEN`, `GMAIL_SENDER`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_SA_JSON` (Sheets read - internal analytics AND 42 North Dental Slot Checker), `LOGIN_LOG_SHEET_ID`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_INSIGHTS_MODEL`, `SECRET_KEY`/`FLASK_SECRET_KEY` (confirmed set to a strong value), `SEO_STUDIO_URL` + `SEO_STUDIO_SECRET` (SEO Studio; `SERP_PLATFORM_TOKEN` is only the legacy fallback), `SLACK_BOT_TOKEN` (post-only scope confirmed; read-scope for `#job_change_alert_apollo` history unverified), `SLACK_CHANNEL_ID`, `SLACK_WEBHOOK_URL`, `DEMO_REQUEST_SHEET_ID`, `ANON_VISITORS_SHEET_ID`, `AD_INTEL_SHEET_ID`, `DEMO_NOTIFY_EMAIL`, `IPINFO_TOKEN` (opt), `IDENTIFY_TOKEN` (opt), **`APOLLO_API_KEY` (Contact Finder + de-anon + person enrichment + SCI's own company search all depend on this one shared key/pool)**, **`ARENA_API_KEY` (LinkedIn Strategy Researcher's entire vendor backend depends on this - was missing from prior context-file revisions despite being load-bearing since before v25)**, **`ANTHROPIC_API_KEY` (shared across MANY features now: Contact Finder's Claude cross-check, LPS's AI Insights, Gentle Dental's AI Insights, and ALL of SCI's identify/vision/synthesis calls - **confirmed SET on Railway** as of 2026-08-21, so the Claude cross-check in Contact Finder is live, not inert)**, `ANTHROPIC_MODEL` (opt, defaults to `claude-sonnet-5`), `VI_ENRICH_ON_VIEW` (opt), `VI_COOP_FILE` (opt), `VI_GRAPH_DB` (opt), `SMTP_*` (unusable on Railway).
+**Railway:** `DATABASE_URL`, `GH_DISPATCH_TOKEN`, `GMAIL_SENDER`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_SA_JSON` (Sheets read - internal analytics AND Slot Checker Agent), `LOGIN_LOG_SHEET_ID`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_INSIGHTS_MODEL`, `SECRET_KEY`/`FLASK_SECRET_KEY` (confirmed set to a strong value), `SEO_STUDIO_URL` + `SEO_STUDIO_SECRET` (SEO Studio; `SERP_PLATFORM_TOKEN` is only the legacy fallback), `SLACK_BOT_TOKEN` (post-only scope confirmed; read-scope for `#job_change_alert_apollo` history unverified), `SLACK_CHANNEL_ID`, `SLACK_WEBHOOK_URL`, `DEMO_REQUEST_SHEET_ID`, `ANON_VISITORS_SHEET_ID`, `AD_INTEL_SHEET_ID`, `DEMO_NOTIFY_EMAIL`, `IPINFO_TOKEN` (opt), `IDENTIFY_TOKEN` (opt), **`APOLLO_API_KEY` (Contact Finder + de-anon + person enrichment + SCI's own company search all depend on this one shared key/pool)**, **`ARENA_API_KEY` (LinkedIn Strategy Researcher's entire vendor backend depends on this - was missing from prior context-file revisions despite being load-bearing since before v25)**, **`ANTHROPIC_API_KEY` (shared across MANY features now: Contact Finder's Claude cross-check, LPS's AI Insights, Gentle Dental's AI Insights, and ALL of SCI's identify/vision/synthesis calls - **confirmed SET on Railway** as of 2026-08-21, so the Claude cross-check in Contact Finder is live, not inert)**, `ANTHROPIC_MODEL` (opt, defaults to `claude-sonnet-5`), `VI_ENRICH_ON_VIEW` (opt), `VI_COOP_FILE` (opt), `VI_GRAPH_DB` (opt), `SMTP_*` (unusable on Railway).
 
 **GitHub Actions secrets (separate store from Railway):** `CONFIG_YAML`, `GOOGLE_SERVICE_ACCOUNT_JSON`, and `SLACK_BOT_TOKEN` needs adding here too for the Job Change Alert sync workflow.
 
@@ -807,10 +782,10 @@ Details that are load-bearing:
 17. **Signal refresh secrets (blocking Healthcare refresh):** set GitHub Actions `CONFIG_YAML` + `GOOGLE_SERVICE_ACCOUNT_JSON`.
 18. **Agent roster will drift again.** It now lives in `AGENTS`, `APP_AGENTS`, a JS array in `templates/context.html`, the SEO Suite tools list, `HIDDEN_AGENT_SLUGS`, and five hand-written `b2b_agents.html` cards with their own command-palette entries. **Nothing derives one from another.** Consider deriving them if the roster changes materially again.
 19. **Fully connect the `/app` "Competitor Analysis" placeholder** once the live SEO Studio tool's per-client data scoping is addressed.
-20. **NorthStar client-side portal adoption is minimal.** A relationship conversation, not a code fix.
+20. *(removed: a note about a client portal that no longer exists)*
 21. **`data/identity_graph.db` is on Railway's ephemeral disk.** Move to a persistent volume or Postgres.
 22. **Cold-visitor identification** needs a licensed identity feed. Plug point ready.
-23. **ABM Signal Tracker maintenance mode:** periodically prune `data/northstar_signals_manual.json` by `signal_date` and re-run `seed_northstar_signals.py --prune`.
+23. *(removed: maintenance notes for a client account that no longer exists)*
 24. **An open, unverified accuracy question for Job Change Alert:** a third-party Coresignal-backed skill (Swan) reportedly catches job changes Apollo's own alert misses.
 25. **LPS's Arena-connected LinkedIn account will lapse again**, and now so can the Unipile one. Recurring operational risk, not a one-time fix; the error messages name it directly when it happens.
 26. **Set `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`** - SCI's 7th surface is fully inert without them, and `sci_reddit_client.normalize()` is fixture-proven only. **The user explicitly paused this work ("leave reddit for a while"); do not resume unasked.**

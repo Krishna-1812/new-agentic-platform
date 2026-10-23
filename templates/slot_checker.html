@@ -2,28 +2,20 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{# palette=not client_mode: this page is also served to the client's own
-   front desk, and the command palette lists every internal destination in
-   the product. The topbar is already gated below for the same reason; the
-   palette needed gating too, and a client's browser receiving a list of
-   internal URLs is not something that looks broken from the code's side. #}
-{{ head("42 North Dental Slot Checker", [
-     "42_north_dental_slot_checker.css?v=2",
+{{ head("Slot Checker Agent", [
+     "slot_checker.css?v=3",
      "agent-feedback.css",
-   ], [], palette=not client_mode, compat=True) }}
+   ], [], compat=True) }}
 </head>
 <body>
 
-  {% if not client_mode %}
-  {{ topbar([(brand.agents_plural, "/strategic-agents"), ("42 North Dental Slot Checker", none)]) }}
-
-  {% endif %}
+  {{ topbar([(brand.agents_plural, "/strategic-agents"), ("Slot Checker Agent", none)]) }}
 
   <div class="main">
     <div class="ph">
       <div>
         <div class="eyebrow">Strategic Agents · Appointment availability</div>
-        <h1>42 North Dental Slot Checker</h1>
+        <h1>Slot Checker Agent</h1>
         <p>What a new patient would actually be offered if they tried to book right now, across every location the agent checks: which services are open, on which days, and where the calendar is full.</p>
       </div>
       <div class="gd-ph-side">
@@ -236,7 +228,7 @@
  /* boot */
     function boot(){
       loadInsights();
-      fetch('{{ data_url or "/strategic-agents/42-north-dental-slot-checker/data" }}')
+      fetch('/strategic-agents/slot-checker/data')
         .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
         .then(function(d){
           DATA = d;
@@ -314,7 +306,7 @@
         body.setAttribute('data-state','loading');
         body.innerHTML='<div class="gd-ai-loading" data-orb-state="solving">Reading this week\'s numbers…</div>';
       }
-      fetch('{{ insights_url or "/strategic-agents/42-north-dental-slot-checker/insights" }}'+(force?'?fresh=1':''))
+      fetch('/strategic-agents/slot-checker/insights'+(force?'?fresh=1':''))
         .then(function(r){ return r.json(); })
         .then(renderInsights)
         .catch(function(){
@@ -368,7 +360,7 @@
       // generated_at (the underlying snapshot's own version stamp -- see
       // slot_checker_insights.fetch's cache-invalidation key) stands in for
       // a run id, keeping one week's feedback from blending into the next.
-      if(window.agentFeedbackHtml) h+=window.agentFeedbackHtml({agentSlug:'42-north-dental-slot-checker',runId:d.generated_at,sectionKey:'ai-insights',sectionLabel:'AI Insights'});
+      if(window.agentFeedbackHtml) h+=window.agentFeedbackHtml({agentSlug:'slot-checker',runId:d.generated_at,sectionKey:'ai-insights',sectionLabel:'AI Insights'});
       body.innerHTML=h;
       document.getElementById('aiMeta').textContent="This week's snapshot";
     }
@@ -1110,7 +1102,6 @@
     boot();
   </script>
 
-  {% if not client_mode %}
   <script>
   window.__KP_ITEMS=[
  {t:'Locations',d:'Availability by location',u:'#practices',i:''},
@@ -1119,8 +1110,8 @@
   ];
   </script>
   
-  {% endif %}
-  <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'42 North Dental Slot Checker',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+  
+  <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Slot Checker Agent',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
 {{ topbar_script() }}
 </body>
 </html>

@@ -47,7 +47,7 @@ def test_footer_columns_wrap_before_they_overflow():
 def test_asset_versions_bumped_together():
     for tpl in ("templates/agents.html", "templates/login_preview.html"):
         src = _read(tpl)
-        assert "press.css?v=8" in src and "press-play.js') }}?v=4" in src, tpl
+        assert "press.css?v=8" in src and "press-play.js') }}?v=5" in src, tpl
 
 
 def test_footer_wordmark_fits_beside_the_shape_tiles():
