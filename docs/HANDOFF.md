@@ -164,7 +164,7 @@ Google Sign-In is open to any Google account, so access is split into surfaces.
 | Surface | Who | Gate | Paths |
 |---|---|---|---|
 | Public site | anyone | none | `/`, `/agents`, `/platform`, `/industries/*`, `/privacy`, `/terms` … |
-| Member area | any signed-in user | `@login_required` | `/app/*` |
+| Member area | closed: sign-in is staff only (`STAFF_ONLY`, 2026-10-23) and `/app/*` redirects to `/hub` | | `/app/*` |
 | Staff app | Markify staff and the admins | `@position2_required` (the name is historical) | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/dashboards/*`, `/abm-signal-tracker/*` |
 | Admin | `ADMIN_EMAILS` only | `@admin_required` | `/admin` and `/admin/*` |
 | Client workspaces | staff, and invited clients for what is shared with them | `_acct_view()` | `/<account>/…` |
@@ -200,7 +200,7 @@ Google Sign-In is open to any Google account, so access is split into surfaces.
 
 `ACCT_AGENTS_EXEMPT` lists the exceptions, each with its reason:
 - Page Watch and Video Studio have their own workspace pages (`ACCT_PAGES`).
-- 42 North Dental is for one client only.
+- The Slot Checker Agent reads one fixed set of dental practices, not a client account.
 - Older agents don't yet save runs to spaces: ABM tracker, Anonymous Visitors, LinkedIn Intelligence, LinkedIn Strategy Researcher, LinkedIn Social Researcher, Ad Intelligence and Sentiment Pulse.
 
 The owner said to leave the exempt ones as they are for now.
@@ -251,7 +251,7 @@ The owner-facing plain-English guide is a Claude Doc called **"Northaxis agents:
 | LinkedIn Intelligence, LinkedIn Strategy Researcher, LinkedIn Social Researcher | `/strategic-agents/linkedin-*` | live | Older agents. The Social Researcher is an external app shown in an iframe. |
 | Ad Intelligence | `/strategic-agents/ad-intelligence` | live | React app; the built output is committed in `ad_intelligence/`. |
 | Sentiment Pulse | `/strategic-agents/sentiment-pulse` | live | Older agent. Earlier notes said it was switched off; verify before relying on it. |
-| 42 North Dental Slot Checker | `/strategic-agents/42-north-dental-slot-checker` | live | Built for one client. |
+| Slot Checker Agent | `/strategic-agents/slot-checker` | live | One fixed set of dental practices. |
 | Contact Finder Lab | `/admin/contact-lab` | **hidden** | `CONTACT_LAB_HIDDEN = True` (PR #110). Its engine stays because People & Signals reuses its web-search and email-pattern helpers. |
 
 ### Market Radar (PRs #99–#104, #112, #115–#119, #131–#133)

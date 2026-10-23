@@ -113,7 +113,7 @@ def test_a_moved_ground_never_carries_important(page):
 @pytest.mark.parametrize("page", [
     "event_conference_intelligence.css",
     "social_media_intelligence.css",
-    "42_north_dental_slot_checker.css",
+    "slot_checker.css",
     "thought_leader_pr.css",
 ])
 def test_a_page_with_its_own_dark_ground_still_sets_a_background_color(page):

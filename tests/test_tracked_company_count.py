@@ -3,8 +3,8 @@
 The hub's "by the numbers" band said 1200+; the ABM Signal Tracker card on the
 dashboard page said 1,500+. Both were typed in by hand, months apart, and neither
 was wrong on purpose: the healthcare universe was the only one that existed when
-the first number was written, and nobody went back to the band when CSG and
-NorthStar were added. A hardcoded count is a promise to update it, and that promise
+the first number was written, and nobody went back to the band when more
+accounts were added. A hardcoded count is a promise to update it, and that promise
 gets broken every time a dashboard is rebuilt.
 
 So neither page holds a number any more. Each Signal Tracker dashboard is a
@@ -80,12 +80,11 @@ def test_the_total_is_the_sum_across_every_account_universe():
 
 
 def test_the_client_only_dashboard_is_not_double_counted():
-    """reports/dashboard_northstar_client.html was the same 35 companies again, served
-    to the client portal. It was deleted with the NorthStar account on 2026-09-24;
-    the check stays so that no account is ever registered twice."""
+    """A client-only copy of a dashboard was once registered as a second account, counting
+    the same companies twice. It is gone; the check stays so that no account is ever
+    registered twice."""
     paths = [str(cfg["dashboard"]) for cfg in appmod.ACCOUNTS.values()]
     assert len(paths) == len(set(paths))
-    assert not any("northstar_client" in p for p in paths)
 
 
 # ── The accounts page still reads its own per-universe count ────────────────

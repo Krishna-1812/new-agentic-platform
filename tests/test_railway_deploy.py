@@ -100,7 +100,7 @@ def test_the_public_marketing_pages_can_be_indexed():
 
 def test_signed_in_internal_and_client_areas_cannot():
     rules = _rules()
-    client = sorted(appmod.CLIENTS)[0]
+    client = "acme"   # a client workspace lives at /<account>
     for path in ("/hub", "/admin/members", "/app", "/app/settings", "/api/whoami",
                  "/auth/google", "/login", "/logout", "/ppc", "/dashboard/healthcare",
                  "/" + client, "/" + client + "/agents/x"):

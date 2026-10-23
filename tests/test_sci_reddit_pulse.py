@@ -51,15 +51,15 @@ def test_no_queries_without_a_company_name():
 
 def test_a_hit_that_does_not_name_the_company_is_dropped():
     """Reddit's search matches on stemming and on single words of a
-    multi-word name, so "Northstar Anesthesia" otherwise collects every
+    multi-word name, so "Bluepeak Anesthesia" otherwise collects every
     thread that merely mentions anesthesia."""
     hit = _post("x1", title="General anesthesia question", body="nothing to do with them")
-    assert pulse._mentions_company(hit, "Northstar Anesthesia", None) is False
+    assert pulse._mentions_company(hit, "Bluepeak Anesthesia", None) is False
 
 
 def test_a_real_mention_survives_the_filter():
-    hit = _post("x2", title="Northstar Anesthesia billing", body="")
-    assert pulse._mentions_company(hit, "Northstar Anesthesia", None) is True
+    hit = _post("x2", title="Bluepeak Anesthesia billing", body="")
+    assert pulse._mentions_company(hit, "Bluepeak Anesthesia", None) is True
 
 
 def test_spacing_variants_still_count_as_a_mention():
@@ -273,8 +273,8 @@ def test_collect_mentions_actually_applies_the_mention_filter(monkeypatch):
     subject entirely."""
     from tracker import sci_reddit_client
     monkeypatch.setattr(sci_reddit_client, "search_posts", lambda q, **k: [
-        _post("real", title="Northstar Anesthesia billing question"),
+        _post("real", title="Bluepeak Anesthesia billing question"),
         _post("noise", title="General anesthesia dosing", body="unrelated thread"),
     ])
-    found = pulse.collect_mentions("Northstar Anesthesia", None)
+    found = pulse.collect_mentions("Bluepeak Anesthesia", None)
     assert [p["platform_post_id"] for p in found] == ["real"]

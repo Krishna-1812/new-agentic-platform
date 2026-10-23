@@ -34,7 +34,6 @@ import app as appmod  # noqa: E402
 
 _SLUG = "linkedin-social-researcher"
 _NAME = "LinkedIn Social Researcher"
-_CLIENT = "northstaranesthesia"
 
 
 @pytest.fixture
@@ -115,26 +114,6 @@ def test_the_app_sidebar_does_not_offer_it(client):
     assert "Keyword Finder" in body, "the sidebar emptied out"
 
 
-def test_the_client_portal_does_not_list_it(client):
-    assert _NAME not in _body(client, "/" + _CLIENT)
-
-
-def test_the_client_portal_still_lists_the_others(client):
-    body = _body(client, "/" + _CLIENT)
-    # ABM Signal Tracker left this portal on 2026-09-24 with the NorthStar
-    # account it read from; Keyword Finder stands in as the second sibling.
-    for name in ("LinkedIn Intelligence", "Keyword Finder"):
-        assert name in body, "%s went missing too" % name
-
-
-def test_the_client_portal_sidebar_and_related_strip_skip_it(client):
-    """Both are built from _client_agents, and the related strip on a sibling
-    agent's page is the one that survives a fix applied only to the home page."""
-    body = _body(client, "/%s/agents/%s" % (_CLIENT, "linkedin-intelligence"))
-    assert _NAME not in body
-    assert "Content Enhancer" in body, "the related strip emptied out"
-
-
 # ── Hidden means unlisted, not gone ─────────────────────────────────────────
 
 def test_the_agent_page_itself_still_resolves():
@@ -151,13 +130,6 @@ def test_the_registry_entry_is_untouched():
     assert appmod.APP_AGENTS_BY_SLUG[_SLUG]["name"] == _NAME
     assert appmod.APP_AGENTS_BY_SLUG[_SLUG].get("external_url"), (
         "the tool it embeds was removed, which is a retirement, not a hide")
-
-
-def test_the_clients_own_agent_order_is_untouched():
-    """The ordered slug list is the client's curation. Editing it to hide an
-    agent would silently lose the position the agent goes back into."""
-    assert _SLUG in appmod.CLIENTS[_CLIENT]["agents"]
-    assert appmod.CLIENTS[_CLIENT]["external_tools"].get(_SLUG)
 
 
 def test_run_history_can_still_name_the_hidden_agent():

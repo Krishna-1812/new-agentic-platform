@@ -90,7 +90,7 @@ def test_the_hub_card_carries_the_current_name(client):
     "/strategic-agents/linkedin-intelligence",
     "/strategic-agents/ad-intelligence",
     "/strategic-agents/linkedin-strategy-researcher",
-    "/strategic-agents/42-north-dental-slot-checker",
+    "/strategic-agents/slot-checker",
 ])
 def test_every_renamed_page_is_routed(path):
     """Registered, not necessarily 200 (some need live upstreams). A missing

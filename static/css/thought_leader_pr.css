@@ -26,7 +26,7 @@ html:root{
      tile -- a wide/tall viewport, or the canvas a fast overscroll bounce
      exposes beyond the document box -- falls through to the browser's own
      white canvas instead of this page's ground. Same trap, same fix as
-     static/css/42_north_dental_slot_checker.css; see feedback_platform_css_
+     static/css/slot_checker.css; see feedback_platform_css_
      gotchas.md trap #3. */
   background-color:var(--bg);
   background-attachment:fixed;

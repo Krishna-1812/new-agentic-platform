@@ -34,7 +34,7 @@ def test_accepts_a_name_that_differs_only_in_spacing():
 
 
 def test_accepts_a_branded_suffix():
-    assert nm.plausible_match("Northstar Anesthesia", "Northstar Anesthesia Official") is True
+    assert nm.plausible_match("Bluepeak Anesthesia", "Bluepeak Anesthesia Official") is True
 
 
 def test_a_name_that_is_only_boilerplate_still_has_tokens():

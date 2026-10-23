@@ -549,7 +549,7 @@
     })(t0);
   }
   doc.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-signup], [data-demo]");
+    var b = e.target.closest && e.target.closest("[data-demo]");
     if (!b) return;
     var r = b.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + r.height / 2, 56);

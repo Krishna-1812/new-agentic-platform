@@ -81,7 +81,7 @@ def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
     "/strategic-agents/linkedin-intelligence",
     "/strategic-agents/ad-intelligence",
     "/strategic-agents/linkedin-strategy-researcher",
-    "/strategic-agents/42-north-dental-slot-checker",
+    "/strategic-agents/slot-checker",
     "/strategic-agents/job-change-alert",
     "/strategic-agents/social-media-intelligence",
     "/strategic-agents/event-conference-intelligence",
@@ -197,7 +197,7 @@ def test_a_descendant_alias_recorded_under_the_old_prefix_still_folds():
     rename existed. Those rows must fold all the way to the current prefix
     too, not get stranded one rename behind."""
     assert (appmod._page_label("/p2/b2b-agents/gentle-dental-slot-checker")
-            == "/strategic-agents/42-north-dental-slot-checker")
+            == "/strategic-agents/slot-checker")
 
 
 def test_an_unrelated_label_is_untouched():

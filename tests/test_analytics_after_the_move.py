@@ -152,14 +152,13 @@ def test_external_usage_does_not_list_the_team(sheet):
 
 
 def test_every_analytics_reader_classifies_with_was_staff():
-    """The five places recorded rows are split into team and public."""
+    """The four places recorded rows are split into team and public (the client-portal reader went with the portals, 2026-10-23)."""
     src = open(os.path.join(ROOT, "app.py"), encoding="utf-8").read()
     for line in ('entry["type"] = "staff" if _was_staff(entry["email"]) else "member"',
                  'if e and (not _was_staff(e) or path.startswith("/app")):',
                  'external_out = [x for x in out_members if not _was_staff(x["email"])]',
                  "def _is_p2(e): return _was_staff(e)"):
         assert line in src, line
-    assert re.search(r"def seg_of\(email\):\s+e = \(email or \"\"\)\.lower\(\)\s+if _was_staff\(e\):", src)
 
 
 # ── 2. Renamed paths fold once ──────────────────────────────────────────────
@@ -174,7 +173,7 @@ def test_every_analytics_reader_classifies_with_was_staff():
     ("/seo-aeo/gbp-qc", "/operational-agents/gbp-qc"),
     ("/operational-agents/gbp-qc", "/operational-agents/gbp-qc"),
     ("/p2/gtm/ad-intelligence", "/strategic-agents/ad-intelligence"),
-    ("/p2/b2b-agents/gentle-dental-slot-checker", "/strategic-agents/42-north-dental-slot-checker"),
+    ("/p2/b2b-agents/gentle-dental-slot-checker", "/strategic-agents/slot-checker"),
     ("/p2/strategic-agents", "/strategic-agents"),
     ("/p2/hub", "/hub"),
     ("SEO Dashboards", "Operational Agents"),

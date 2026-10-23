@@ -105,7 +105,7 @@ def test_staff_land_on_hub_and_admin_pages_stay_admin_only():
 def test_a_staff_sign_in_that_lands_in_the_internal_app_is_recognised_as_internal():
     for p in ("/hub", "/admin/x", "/strategic-agents/y?z=1", "/seo-aeo", "/p2/hub"):
         assert appmod._is_internal_path(p), p
-    for p in ("/app", "/app/settings", "/", "/agents", "/42northdental", "/login"):
+    for p in ("/app", "/app/settings", "/", "/agents", "/login"):
         assert not appmod._is_internal_path(p), p
 
 

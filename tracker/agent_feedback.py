@@ -1,6 +1,6 @@
 """Postgres-backed storage for the thumbs up/down feedback control on
 Strategic Agents' generated reports (Contact Finder, LinkedIn Strategy
-Researcher, 42 North Dental Slot Checker, Social Media Intelligence, Event &
+Researcher, Slot Checker Agent, Social Media Intelligence, Event &
 Conference Intelligence, Thought Leader Intelligence).
 
 One shared table rather than one per agent: every agent's report is a
@@ -44,7 +44,7 @@ RATINGS = ("up", "down")
 AGENT_LABELS = {
     "company-people-intelligence": "Contact Finder",
     "linkedin-strategy-researcher": "LinkedIn Strategy Researcher",
-    "42-north-dental-slot-checker": "42 North Dental Slot Checker",
+    "slot-checker": "Slot Checker Agent",
     "social-media-intelligence": "Social Media Intelligence",
     "event-conference-intelligence": "Event & Conference Intelligence",
     "thought-leader-pr": "Thought Leader Intelligence",
@@ -95,6 +95,9 @@ def _ensure_tables(conn) -> None:
             CREATE INDEX IF NOT EXISTS idx_agent_feedback_agent_section
             ON agent_feedback (agent_slug, section_key, rating)
         """)
+        # The Slot Checker's feedback was saved under its old slug until 2026-10-23.
+        cur.execute("UPDATE agent_feedback SET agent_slug = 'slot-checker' "
+                    "WHERE agent_slug = '42-north-dental-slot-checker'")
     conn.commit()
     _TABLES_READY = True
 

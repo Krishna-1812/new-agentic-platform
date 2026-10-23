@@ -272,7 +272,7 @@ def test_plausible_channel_match_accepts_real_pairs():
     # Spacing differences between a company name and its channel branding.
     assert yt._plausible_channel_match("Gentle Dental", "GentleDental")
     # Corporate boilerplate must not be what carries the match.
-    assert yt._plausible_channel_match("Northstar Anesthesia Group LLC", "Northstar Anesthesia")
+    assert yt._plausible_channel_match("Bluepeak Anesthesia Group LLC", "Bluepeak Anesthesia")
 
 
 def test_plausible_channel_match_rejects_an_unrelated_channel():

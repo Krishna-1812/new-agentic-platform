@@ -2,7 +2,7 @@
 
     The orange block before the colophon, and the last call to action on
     every page. Set
-    cta_h / cta_p / cta_btn before the include to change the words; the
+    cta_h / cta_p / cta_btn / cta_interest before the include to change the words; the
     defaults below are the home page's.
 -#}
 <section class="limeband">
@@ -11,10 +11,9 @@
       <div class="shead-l"><span class="lbl" style="color:var(--ink2)">Next step</span></div>
       <div class="shead-r">
         <h2 class="d2 rv"><span class="ln"><span>{{ cta_h|default('Point it at your accounts.') }}</span></span></h2>
-        <p class="lead rv fade" style="color:var(--ink2);margin-top:var(--s5)">{{ cta_p|default("Sign up, add the companies you care about, and see who's moving this week.") }}</p>
+        <p class="lead rv fade" style="color:var(--ink2);margin-top:var(--s5)">{{ cta_p|default("Book a demo, bring the companies you care about, and see who's moving this week.") }}</p>
         <div class="btns rv fade" style="margin-top:var(--s6)">
-          <button class="btn btn-1" data-signup>{{ cta_btn|default('Sign up') }}</button>
-          <button class="btn btn-2" type="button" data-demo{% if cta_interest %} data-interest="{{ cta_interest }}"{% endif %}>Talk to us</button>
+          <button class="btn btn-1" type="button" data-demo data-interest="{{ cta_interest|default('Book a demo') }}">{{ cta_btn|default('Book a demo') }}</button>
         </div>
       </div>
     </div>

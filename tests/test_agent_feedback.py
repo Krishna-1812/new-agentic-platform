@@ -76,7 +76,7 @@ def test_only_the_six_agents_with_a_real_generated_report_are_allowed():
     assert set(agent_feedback.AGENT_LABELS) == {
         "company-people-intelligence",
         "linkedin-strategy-researcher",
-        "42-north-dental-slot-checker",
+        "slot-checker",
         "social-media-intelligence",
         "event-conference-intelligence",
         "thought-leader-pr",

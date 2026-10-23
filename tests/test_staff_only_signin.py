@@ -21,7 +21,7 @@ import app as appmod  # noqa: E402
 STAFF = "someone@markifydigital.com"
 KRISHNA_GMAIL = "ladhakrishna2022@gmail.com"
 OUTSIDER = "someone@gmail.com"
-CLIENT = "ops@42northdental.com"
+CLIENT = "ops@acme-dental.com"
 
 
 def _client(email=None):
@@ -66,7 +66,7 @@ def test_staff_and_krishnas_gmail_can_sign_in_and_land_on_the_hub(google, email)
     assert signed_in == email
 
 
-@pytest.mark.parametrize("email", [OUTSIDER, CLIENT, "ops@northstaranesthesia.com", "someone@position2.com",
+@pytest.mark.parametrize("email", [OUTSIDER, CLIENT, "someone@position2.com",
                                    "someone@markifydigital.com.evil.com", "markifydigital.com@gmail.com", ""])
 def test_anyone_else_is_refused_and_gets_no_session(google, email):
     r, signed_in = google(email)
@@ -84,14 +84,6 @@ def test_an_outsider_already_signed_in_is_signed_out_on_the_next_request():
     c = _client(OUTSIDER)
     r = c.get("/hub")
     assert r.status_code == 302 and "/login" in r.headers["Location"]
-    with c.session_transaction() as sess:
-        assert "google_user" not in sess
-
-
-def test_an_outsider_session_cannot_open_a_client_portal():
-    c = _client(CLIENT)
-    r = c.get("/42northdental")
-    assert r.status_code in (302, 401, 403)
     with c.session_transaction() as sess:
         assert "google_user" not in sess
 

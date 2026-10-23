@@ -1,8 +1,8 @@
 /* Shared thumbs up/down control for Strategic Agents' generated reports.
    One script, wired into every report-rendering function across six very
    differently-shaped agents (LinkedIn Strategy Researcher, Social Media
-   Intelligence, Event & Conference Intelligence, 42 North Dental Slot
-   Checker, Contact Finder's assistant, Thought Leader Intelligence), rather
+   Intelligence, Event & Conference Intelligence, Slot Checker Agent,
+   Contact Finder's assistant, Thought Leader Intelligence), rather
    than six copies of the same handful of DOM calls -- POST /api/agent-
    feedback (app.py) is the one backend contract all six talk to.
 

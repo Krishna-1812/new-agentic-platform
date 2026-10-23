@@ -123,7 +123,7 @@ def _mentions_company(post: dict, company_name: str, domain: str | None) -> bool
     """Reddit's search is fuzzy and will return threads that match on
     stemming or on only one word of a multi-word name, so every hit is
     re-checked against its own text before it is allowed to count as a
-    mention. Without this, a company called "Northstar Anesthesia" collects
+    mention. Without this, a company called "Bluepeak Anesthesia" collects
     every thread mentioning anesthesia."""
     name = (company_name or "").strip().lower()
     if not name:

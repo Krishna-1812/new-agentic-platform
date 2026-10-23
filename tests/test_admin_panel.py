@@ -87,9 +87,7 @@ def test_the_old_tabs_lead_into_the_panel():
                          "/admin/requests": "inbox", "/admin/agent-runs": "inbox"}.items():
         r = _client().get(old)
         assert r.status_code == 301 and r.headers["Location"].endswith("/admin#" + section), old
-    r = c.get("/admin/client-usage/northstaranesthesia")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/admin#clients"), "portals are not in the panel"
-    assert c.get("/admin/client-usage/no-such-portal").status_code == 404
+    assert c.get("/admin/client-usage/no-such-portal").status_code == 404, "the client portals are gone"
     assert _client(STAFF).get("/admin/internal-usage").status_code == 403, "the old addresses keep the gate"
 
 
@@ -202,14 +200,13 @@ def _fake_account(slug, name, space):
 
 def test_clients_lists_only_the_shared_accounts_with_totals(monkeypatch):
     monkeypatch.setattr(appmod, "_cu_shared_accounts", lambda: [_fake_account("lumina", "Lumina", "acct:7"), _fake_account("bloom", "Bloom", "acct:8")])
-    monkeypatch.setattr(appmod, "_fetch_all_client_summaries", lambda force=False: pytest.fail("portals are not read"))
     d = _client(ADMIN).get("/admin/panel/clients").get_json()
     assert d["totals"] == {"accounts": 2, "people": 2, "visitors_30": 4, "runs": 6}
     a = d["accounts"][0]
     assert a["tools"] == ["Page Watch"] and a["limit"] == 20 and a["space"] == "acct:7" and a["last_change"] == "Kris shared Page Watch"
     assert a["last_visit"] and "T" in a["last_visit"], "dates are sent as ISO text"
     assert "portals" not in d
-    assert _client(ADMIN).get("/admin/panel/portal/northstaranesthesia").status_code == 404, "the portal route is gone"
+    assert _client(ADMIN).get("/admin/panel/portal/acme").status_code == 404, "the portal route is gone"
 
 
 def test_traffic_joins_the_visitor_and_sign_in_figures(monkeypatch):
