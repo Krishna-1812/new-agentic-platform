@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
-const BRANDS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
+const BRANDS = ['global','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
 const INDUSTRY_KBS = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
 const CATEGORIES = ['industry','brand','client-feedback'];
 const ALL_MODULES = ['content-research','keyword-research','article-recommendation'];

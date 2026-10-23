@@ -3,14 +3,11 @@
 //
 // ONE source of truth, because three places have to agree about every number
 // in it: the writer prompt (what the model is asked for), the QC gates (what
-// is accepted), and the brief + wizard (what the SEO team is shown). The
-// dental side learned this the hard way -- its paragraph cap was written out
-// twice and editing one silently decoupled the instruction from the gate.
+// is accepted), and the brief + wizard (what the SEO team is shown). A cap
+// written out twice is how editing one silently decouples the instruction from
+// the gate.
 //
-// This contract REPLACES the dental section shape for CBH. It is not a
-// variation on it: the dental body is 7-8 flat H2 blocks of HTML with headings
-// forbidden inside, and this is ten sections, one of which nests 4-5
-// H3s under a single H2.
+// The contract is ten sections, one of which nests 4-5 H3s under a single H2.
 //
 // Every limit here is a MAXIMUM from the guidelines unless the name says
 // otherwise. Character counts are on rendered text, never on markup.
@@ -349,7 +346,7 @@ const LIMITS = {
 };
 
 // Derived: the most body text this contract can produce, which is what makes
-// the dental 600-word floor wrong for CBH. Roughly 5,700 characters at every
+// a generic 600-word floor wrong for CBH. Roughly 5,700 characters at every
 // maximum, and a legitimate page can land near half that.
 function maxBodyChars() {
   const l = LIMITS;

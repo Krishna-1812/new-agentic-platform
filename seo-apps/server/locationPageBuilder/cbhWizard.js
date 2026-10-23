@@ -1,6 +1,5 @@
 // ── Generate a Clear Behavioral Health page from its approved brief ─────────
-// The CBH counterpart to briefWizard.generateFromBrief. It does NOT research
-// or plan: it reads what a human approved and hands that to the writer. If it
+// It does NOT research or plan: it reads what a human approved and hands that to the writer. If it
 // re-planned here, the brief step would be decorative -- the reviewer would
 // edit an outline the generator then discarded.
 
@@ -89,7 +88,7 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
   return { pageId: saved.id, page: scaffold };
 }
 
-// Re-run QC over an edited page and persist it. Mirrors dentalWizard.saveContent.
+// Re-run QC over an edited page and persist it.
 async function saveContent({ pageId, page }) {
   const existing = await store.get('pages', pageId);
   if (!existing || existing.page_type !== PAGE_TYPE) throw new Error('Page not found.');

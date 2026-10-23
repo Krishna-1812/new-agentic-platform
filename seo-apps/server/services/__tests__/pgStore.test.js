@@ -71,6 +71,9 @@ async function dropSchema() {
   ]);
   assert.strictEqual(await s.universeCount('c1'), 3);
   const ku = require('../../locationPageBuilder/keywordUniverseStore');
+  // The service map ships empty; register one service for this test so the cluster lookup has something to read.
+  const kum = require('../../locationPageBuilder/keywordUniverseMap');
+  kum.SERVICE_UNIVERSE_MAP['veneers'] = { clusters: ['Veneers'], terms: ['veneer'] };
   assert.strictEqual(await ku.hasUniverse('c1'), true);
   assert.strictEqual(await ku.hasUniverse('c9'), false);
   const c = await ku.getUniverseCandidates({ clientId: 'c1', serviceSlug: 'veneers', city: 'Derry' });
@@ -78,6 +81,7 @@ async function dropSchema() {
   const kl = await s.universeCandidates({ clientId: 'c1', city: 'derry', filter: { keywordLike: ['*cost*'] }, limit: 5 });
   assert.deepStrictEqual(kl.map(x => x.keyword), ['veneers derry cost']);
   assert.deepStrictEqual(await ku.getKnownCities('c1'), ['Derry']);
+  delete kum.SERVICE_UNIVERSE_MAP['veneers'];
   // unsafe identifier refused
   await assert.rejects(() => s.list('x; drop table y'), /unsafe identifier/);
   await s.universeWipe('c1');

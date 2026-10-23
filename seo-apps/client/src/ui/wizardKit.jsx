@@ -1,9 +1,6 @@
 // ── Shared wizard primitives ────────────────────────────────────────────────
-// Lifted out of LocationServiceWizardPage so a second wizard doesn't fork its
-// styling. Deliberately a COPY rather than a refactor of that page: the Gentle
-// Dental wizard is in daily use, and pointing it at a new module to save sixty
-// lines of style objects would risk a live flow for no user-visible gain.
-// Whoever next touches the dental wizard can switch it over.
+// Styling and small controls shared by the Location Page Builder wizards, so a
+// new wizard doesn't fork them.
 
 export const btnStyle = (primary) => ({
   padding: '0.5rem 0.9rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: 'var(--r-md,6px)',
@@ -138,10 +135,10 @@ const SOURCE_LABELS = {
   brand: { label: 'closing block', bg: 'var(--success-soft,#E9F5ED)', fg: 'var(--success,#17753F)' },
 };
 
-// `labels` lets a caller override the vocabulary. The same `fallback` key means
-// different things in different contracts -- a curated-ladder heading in the
-// dental flow, a section written from a cited clinical authority in CBH -- and
-// showing the wrong word next to a source URL misreads the page.
+// `labels` lets a caller override the vocabulary. The same `fallback` key can
+// mean different things in different contracts -- in CBH it is a section
+// written from a cited clinical authority -- and showing the wrong word next to
+// a source URL misreads the page.
 export function SourceTag({ source, labels }) {
   const s = (labels && labels[source]) || SOURCE_LABELS[source];
   if (!s) return null;

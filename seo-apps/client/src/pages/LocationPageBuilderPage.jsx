@@ -4,23 +4,15 @@ import { lpb } from '../lib/lpbApi';
 
 // This page's Pages dashboard + LocationPageDetailPage are built around
 // Neuro's page_object shape and approval workflow — NOT generic across
-// clients. Gentle Dental has its own dedicated flow (LocationServiceWizardPage)
-// with a different section contract. NewPageWizard below is the shared entry
-// point: it lets the user pick EITHER client, but branches at the last step —
-// Neuro goes through the existing eligibility+createPage pipeline, Gentle
-// Dental hands off to the dedicated wizard (with service/location pre-filled)
-// instead of trying to run it through Neuro's pipeline.
+// clients. NewPageWizard below runs the eligibility+createPage pipeline for
+// the client picked.
 const NEURO_CLIENT_ID = 'client_neuro_wellness_spa';
-const GD_CLIENT_ID = 'client_gentle_dental';
 const CBH_CLIENT_ID = 'client_clear_behavioral_health';
-// Clear Behavioral Health runs the Neuro flow (same section contract, same
-// YMYL approval gates) — only Gentle Dental branches to its own wizard.
-// Reference data is seeded at onboarding, not from this dashboard. The two
-// clients with a wizard of their own re-import their taxonomy from it ("Sync
-// list"); Neuro Wellness has no such route, so its seeder is run by hand.
+// Reference data is seeded at onboarding, not from this dashboard. Clear
+// Behavioral Health re-imports its taxonomy from its own wizard ("Sync list");
+// Neuro Wellness has no such route, so its seeder is run by hand.
 const CLIENT_OPTIONS = [
   { id: NEURO_CLIENT_ID, label: 'Neuro Wellness Spa' },
-  { id: GD_CLIENT_ID, label: 'Gentle Dental of New England' },
   { id: CBH_CLIENT_ID, label: 'Clear Behavioral Health' },
 ];
 
@@ -57,7 +49,7 @@ function StatusPill({ status }) {
   );
 }
 
-function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
+function NewPageWizard({ onClose, onCreated }) {
   const [clientId, setClientId] = useState(NEURO_CLIENT_ID);
   const [data, setData] = useState(null);
   const [serviceId, setServiceId] = useState('');
@@ -65,18 +57,15 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const isDental = clientId === GD_CLIENT_ID;
 
   useEffect(() => {
     setData(null); setServiceId(''); setLocationId(''); setResult(null); setError('');
     lpb.clients().then(async (clients) => {
       if (!clients.some(c => c.id === clientId)) {
         const label = CLIENT_OPTIONS.find(c => c.id === clientId)?.label || 'This client';
-        setError(isDental
-          ? 'Gentle Dental reference data not found. Seed it from the Gentle Dental Wizard first.'
-          : clientId === CBH_CLIENT_ID
-            ? 'Clear Behavioral Health reference data not found. Seed it from the Clear Behavioral Health Wizard first.'
-            : `${label} reference data not found. Its seeder has to be run against the database by hand.`);
+        setError(clientId === CBH_CLIENT_ID
+          ? 'Clear Behavioral Health reference data not found. Seed it from the Clear Behavioral Health Wizard first.'
+          : `${label} reference data not found. Its seeder has to be run against the database by hand.`);
         return;
       }
       const full = await lpb.client(clientId);
@@ -115,7 +104,7 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>New Page</h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1rem' }}>
-          {isDental ? 'Select a Client · Service · Location, then start the Gentle Dental wizard.' : 'Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).'}
+          Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).
         </p>
         <div style={{ marginBottom: '0.75rem' }}>
           <label style={labelStyle}>Client</label>
@@ -157,7 +146,7 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
               </select>
             </div>
 
-            {!isDental && result && (
+            {result && (
               <div style={{
                 fontSize: '0.875rem', borderRadius: 'var(--r-md,6px)', padding: '0.75rem',
                 background: result.blocked ? 'var(--danger-soft,#FFE1DE)' : result.existing ? '#FFE4D8' : 'var(--success-soft,#E9F5ED)',
@@ -171,15 +160,6 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '0.5rem' }}>
               <button style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>Cancel</button>
-              {isDental ? (
-                <button
-                  disabled={!serviceId || !locationId}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: (!serviceId || !locationId) ? 'not-allowed' : 'pointer', opacity: (!serviceId || !locationId) ? 0.5 : 1, background: 'var(--primary)' }}
-                  onClick={() => onStartDentalWizard({ serviceId, locationId })}
-                >
-                  Start Wizard →
-                </button>
-              ) : (
               <button
                 disabled={!serviceId || !locationId || busy}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: (!serviceId || !locationId || busy) ? 'not-allowed' : 'pointer', opacity: (!serviceId || !locationId || busy) ? 0.5 : 1, background: 'var(--primary)' }}
@@ -187,7 +167,6 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
               >
                 {busy ? 'Checking…' : 'Check eligibility & create'}
               </button>
-              )}
             </div>
           </div>
         )}
@@ -226,18 +205,6 @@ export default function LocationPageBuilderPage() {
             <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Every Location × Service page, its stage, approvals, and QA status.</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={() => navigate('/location-page-builder/gentle-dental')}
-              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
-            >
-              Gentle Dental Pages
-            </button>
-            <button
-              onClick={() => navigate('/location-page-builder/wizard')}
-              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
-            >
-              Gentle Dental Wizard →
-            </button>
             <button
               onClick={() => setWizard(true)}
               style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', background: 'var(--primary)', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: 'pointer' }}
@@ -310,10 +277,6 @@ export default function LocationPageBuilderPage() {
         <NewPageWizard
           onClose={() => { setWizard(false); load(); }}
           onCreated={(id) => navigate(`/location-page-builder/${id}`)}
-          onStartDentalWizard={({ serviceId, locationId }) => {
-            setWizard(false);
-            navigate(`/location-page-builder/wizard?serviceId=${serviceId}&locationId=${locationId}`);
-          }}
         />
       )}
     </>

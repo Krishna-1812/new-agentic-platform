@@ -31,24 +31,10 @@ function breadcrumbLabel(serviceName, locationName) {
   return `${serviceName} in ${locationName}`;
 }
 
-// ── Dental (Gentle Dental) URL pattern — /dental-offices/{state}/{city}/{slug} ─
-// The location's own `location_page_url` (from Appendix B) already encodes the
-// state + city[+sub-area] segments (e.g. "/dental-offices/ma/boston/newbury-st"),
-// so the combo page is simply that path + the service slug.
-function dentalPageUrl(locationPageUrl, serviceSlug) {
-  const base = String(locationPageUrl || '').replace(/\/+$/, '');
-  return `${base}/${slugify(serviceSlug)}`;
-}
-
-function canonicalDentalUrl(baseUrl, locationPageUrl, serviceSlug) {
-  const origin = String(baseUrl || '').replace(/\/+$/, '');
-  return `${origin}${dentalPageUrl(locationPageUrl, serviceSlug)}`;
-}
-
 // CBH URLs carry a trailing slash -- "/locations/<location>/<service>/" --
-// which is how the client's live site serves them. Kept apart from
-// dentalPageUrl because the dental pages ship without one and are not ours to
-// move.
+// which is how the client's live site serves them. The location's own
+// `location_page_url` already encodes the location segment, so the combo page
+// is that path plus the service slug.
 function cbhPageUrl(locationPageUrl, serviceSlug) {
   const base = String(locationPageUrl || '').replace(/\/+$/, '');
   const slug = slugify(serviceSlug);
@@ -61,6 +47,6 @@ function canonicalCbhUrl(baseUrl, locationPageUrl, serviceSlug) {
 }
 
 module.exports = {
-  slugify, pageUrl, canonicalUrl, breadcrumbLabel, dentalPageUrl, canonicalDentalUrl,
+  slugify, pageUrl, canonicalUrl, breadcrumbLabel,
   cbhPageUrl, canonicalCbhUrl,
 };

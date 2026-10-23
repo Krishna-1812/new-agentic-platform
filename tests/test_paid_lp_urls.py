@@ -24,10 +24,10 @@ def fresh_caches():
 
 
 def test_pages_that_a_site_tells_apart_by_a_parameter_are_different_pages():
-    a = r.page_id("https://www.gentledental.com/ols?location_title=south-nashua&state=nh&utm_source=GoogleAds&utm_term={Keyword}")
-    b = r.page_id("https://www.gentledental.com/ols?location_title=somerville&state=ma&utm_source=GoogleAds&utm_term={Keyword}")
+    a = r.page_id("https://www.brightsidedental.com/ols?location_title=south-nashua&state=nh&utm_source=GoogleAds&utm_term={Keyword}")
+    b = r.page_id("https://www.brightsidedental.com/ols?location_title=somerville&state=ma&utm_source=GoogleAds&utm_term={Keyword}")
     assert a != b
-    assert a == "gentledental.com/ols?location_title=south-nashua&state=nh"
+    assert a == "brightsidedental.com/ols?location_title=south-nashua&state=nh"
 
 
 def test_the_same_page_with_other_tracking_is_one_page():

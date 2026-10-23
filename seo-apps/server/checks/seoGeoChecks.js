@@ -1997,8 +1997,8 @@ const URL_PAGE_TYPE_PATTERNS = [
   { type: 'landing',   pattern: /\/(lp|landing|campaign)s?\// },
 ];
 
-// Visible-content address/hours detection. Found on a real audit (gentledental.com root-canal page):
-// the address "320 Washington St., Brighton, MA 02135" sits in a plain <div class="title-wrap"> with
+// Visible-content address/hours detection. Found on a real audit (a dental practice's root-canal page):
+// the street address sits in a plain <div class="title-wrap"> with
 // no itemprop/address class at all, so the old class-only selector missed it — which meant the
 // schema-recommendation engine never suggested adding PostalAddress/OpeningHoursSpecification schema
 // for a page that plainly has this content, just not marked up. Falls back to text-shaped patterns,
@@ -2352,7 +2352,7 @@ function detectPageElements($, rawHtml) {
 // and the H1 — the only two hard errors in the whole audit — purely because the terms were reversed.
 //
 // A boolean cannot fix that without breaking something else: making it order-insensitive and
-// stem-aware enough to match "Gentle Dental Arlington" would simultaneously make the density and
+// stem-aware enough to match "Brightside Dental Arlington" would simultaneously make the density and
 // heading-repetition checks fire on the brand name. The graded tier lets placement checks (KW1/KW2)
 // accept a low bar and report the shortfall, while density/repetition checks demand a high one.
 
@@ -2554,9 +2554,9 @@ function checksKW($, rawHtml, keywords, pageUrl = null, pageContext = {}) {
     : notice(KW12, forms.join(' | ') || null, `Only ${forms.length} distinct form(s) — add natural variations (plural, reordered, with a preposition).`);
 
   // ── KW13: over-repetition in headings ───────────────────────────────────────
-  // Counts at the strict tier and excludes brand-name incidentals: "Gentle Dental Arlington" appears
-  // in most headings on this page for reasons unrelated to keyword targeting, and counting those would
-  // manufacture a stuffing warning.
+  // Counts at the strict tier and excludes brand-name incidentals: a practice name such as "Brightside
+  // Dental Arlington" appears in most headings of a location page for reasons unrelated to keyword
+  // targeting, and counting those would manufacture a stuffing warning.
   const KW13 = KW('KW13', 'Keyword not over-repeated in headings');
   const brandLower = brandName.toLowerCase();
   const hitHeadings = allHeadings.filter(h => {

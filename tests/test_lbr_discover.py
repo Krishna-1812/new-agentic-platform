@@ -198,7 +198,7 @@ def test_three_unrelated_law_offices_are_not_a_chain():
 
 
 def test_generic_names_are_not_mistaken_for_brands():
-    ps = lbr_discover.mark_chains(_profiles(("Gentle Dental Care of Austin", ""), ("Downtown Urgent Care", "")))
+    ps = lbr_discover.mark_chains(_profiles(("Bright Dental Care of Austin", ""), ("Downtown Urgent Care", "")))
     assert not any(p["chain"] for p in ps.values())
 
 

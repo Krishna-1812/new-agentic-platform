@@ -1,7 +1,7 @@
 // A CBH page written to the client's guidelines, used as the baseline for the
 // QC tests. Its job is to prove the gates are SATISFIABLE -- a contract whose
-// own limits cannot all be met at once is the failure mode the dental config
-// warns about, and the only way to catch it is a hand-written page that obeys
+// own limits cannot all be met at once is a prompt that cannot pass its own
+// gate, and the only way to catch it is a hand-written page that obeys
 // every rule and is then run through every gate.
 //
 // Tests mutate a clone of this to prove each gate bites.

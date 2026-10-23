@@ -13,8 +13,6 @@ const CATEGORY_LABELS = {
 
 const CLIENTS = [
   { value: '', label: 'All clients' },
-  { value: 'gentle-dental', label: 'Gentle Dental' },
-  { value: 'great-lakes', label: 'Great Lakes' },
   { value: 'riccobene', label: 'Riccobene' },
   { value: 'clear-behavioral-health', label: 'Clear Behavioral Health' },
   { value: 'neuro-wellness-spa', label: 'Neuro Wellness Spa' },

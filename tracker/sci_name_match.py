@@ -50,7 +50,7 @@ def plausible_match(company_name: str, account_title: str) -> bool:
     if shorter <= longer:
         return True
     # Spacing differs between a company name and its account handle
-    # ("Gentle Dental" vs "GentleDental"), so compare with separators
+    # ("Bright Dental" vs "BrightDental"), so compare with separators
     # stripped as well.
     flat_a = re.sub(r"[^a-z0-9]", "", (company_name or "").lower())
     flat_b = re.sub(r"[^a-z0-9]", "", (account_title or "").lower())

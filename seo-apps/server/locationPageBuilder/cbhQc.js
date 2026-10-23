@@ -1,13 +1,11 @@
 // ── Clear Behavioral Health QC ──────────────────────────────────────────────
 // Gates the CBH page contract (cbhContract.js). Deliberately separate from the
-// dental checks in qaEngine.js: the two contracts share no section, and the
-// dental gates would fail every CBH page on sight -- they demand 7-8 H2 blocks
-// and 600+ words, where this contract has ten sections and can
+// Neuro checks in qaEngine.js: the two contracts share no section, and a
+// generic 600+ word floor would fail a contract that has ten sections and can
 // legitimately land near 450.
 //
-// Same result shape as runDentalQC ({ verdict, checks: [{ id, name, severity,
-// field, pass, detail }] }) so the wizard's QC panel and the exports render
-// both flows without branching.
+// Result shape: { verdict, checks: [{ id, name, severity, field, pass, detail }] },
+// which the wizard's QC panel and the exports render.
 //
 // Severity, consistently applied:
 //   Critical  the page is wrong and cannot ship (a fixed heading altered, a

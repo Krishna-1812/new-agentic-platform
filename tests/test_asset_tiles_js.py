@@ -127,8 +127,8 @@ def test_the_other_kinds_each_show_what_they_are():
     assert "Services" in price and "<b>Crown</b>" in price and "USD 900" in price and "Per tooth" in price
     form = one("tile", asset({"type": "LEAD_FORM", "leadFormAsset": {"businessName": "Acme", "headline": "Book a visit", "description": "Tell us more.", "callToActionType": "BOOK_NOW"}}))
     assert "Book a visit" in form and "Tell us more." in form and ">Acme<" in form and ">Book now<" in form
-    text = one("tile", asset({"type": "TEXT", "textAsset": {"text": "Gentle Dental Hudson"}}))
-    assert "Gentle Dental Hudson" in text and "20 characters" in text and "has-m" not in text
+    text = one("tile", asset({"type": "TEXT", "textAsset": {"text": "Bright Dental Hudson"}}))
+    assert "Bright Dental Hudson" in text and "20 characters" in text and "has-m" not in text
     assert "Learn more" in one("tile", asset({"type": "CALL_TO_ACTION", "callToActionAsset": {"callToAction": "LEARN_MORE"}}))
     assert "Main Street" in one("tile", {"t": "SET", "x": "Main Street", "n": "Location sync", "st": "live", "lv": "campaign"}) and "Location sync" in one("tile", {"t": "SET", "x": "Main Street", "n": "Location sync", "st": "live"})
     assert "bundle.zip" in one("tile", asset({"type": "MEDIA_BUNDLE", "name": "bundle.zip"}))

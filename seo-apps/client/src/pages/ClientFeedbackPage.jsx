@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
 const CLIENTS = [
-  { value: 'gentle-dental', label: 'Gentle Dental' },
-  { value: 'great-lakes', label: 'Great Lakes' },
   { value: 'riccobene', label: 'Riccobene' },
   { value: 'clear-behavioral-health', label: 'Clear Behavioral Health' },
   { value: 'neuro-wellness-spa', label: 'Neuro Wellness Spa' },
@@ -44,7 +42,7 @@ const selectStyle = {
 
 export default function ClientFeedbackPage() {
   const navigate = useNavigate();
-  const [client, setClient] = useState('gentle-dental');
+  const [client, setClient] = useState('riccobene');
   const [period, setPeriod] = useState(currentQuarter());
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);

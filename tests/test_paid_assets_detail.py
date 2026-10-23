@@ -85,7 +85,7 @@ def test_callouts_snippets_calls_text_videos_and_calls_to_action_keep_what_they_
     assert D.content({"type": "CALLOUT", "calloutAsset": {"calloutText": "Open late"}}) == {"t": "CALLOUT", "x": "Open late"}
     assert D.content({"type": "STRUCTURED_SNIPPET", "structuredSnippetAsset": {"header": "Types", "values": ["Exam", "Cleaning"]}}) == {"t": "STRUCTURED_SNIPPET", "x": "Types", "v": ["Exam", "Cleaning"]}
     assert D.content({"type": "CALL", "callAsset": {"phoneNumber": "(781) 318-8040", "countryCode": "US"}}) == {"t": "CALL", "x": "(781) 318-8040", "cc": "US"}
-    assert D.content(text("1", "Gentle Dental")) == {"t": "TEXT", "x": "Gentle Dental"}
+    assert D.content(text("1", "Brightside Dental")) == {"t": "TEXT", "x": "Brightside Dental"}
     assert D.content({"type": "YOUTUBE_VIDEO", "youtubeVideoAsset": {"youtubeVideoId": "DceKeCNqo-g", "youtubeVideoTitle": "New Patient Deal"}}) == {"t": "YOUTUBE_VIDEO", "x": "New Patient Deal", "vid": "DceKeCNqo-g"}
     assert D.content({"type": "CALL_TO_ACTION", "callToActionAsset": {"callToAction": "LEARN_MORE"}}) == {"t": "CALL_TO_ACTION", "cta": "Learn more"}
     assert D.content({"type": "MEDIA_BUNDLE", "name": "bundle.zip"}) == {"t": "MEDIA_BUNDLE", "n": "bundle.zip"}

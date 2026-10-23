@@ -1,19 +1,16 @@
 // ── Competitor research for a primary keyword ───────────────────────────────
 // SERP the keyword, scrape the top non-own-domain results, and return their
-// H2/H3 headings plus any FAQ questions found. Two consumers: the Gentle
-// Dental wizard (which feeds it straight into the outline planner) and the
-// brief builder (which turns it into an editable brief).
+// H2/H3 headings plus any FAQ questions found. Consumed by the CBH brief
+// builder (which turns it into an editable brief).
 //
-// Lifted out of dentalWizard.js when the brief step needed it, with one
-// change: the own-domain filter is a PARAMETER rather than a hardcoded
-// gentledental.com. A client's own pages ranking for their own keyword are not
-// competitors, and filtering the wrong domain means modelling the page on
-// itself.
+// The own-domain filter is a PARAMETER: a client's own pages ranking for their
+// own keyword are not competitors, and filtering the wrong domain means
+// modelling the page on itself.
 //
 // Fully fault-tolerant by design: a SERP or scrape failure returns empty
 // arrays rather than throwing, because every caller can write a page without
-// competitor data (it just falls back to the curated ladder) and none of them
-// should die because a third-party site timed out.
+// competitor data (it just falls back to authoritative sources) and none of
+// them should die because a third-party site timed out.
 
 const store = require('./store');
 const config = require('./config');

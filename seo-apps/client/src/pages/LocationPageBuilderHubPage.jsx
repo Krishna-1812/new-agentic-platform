@@ -2,22 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lpb } from '../lib/lpbApi';
 
-// The module's front door. It used to BE the Gentle Dental page list, which
-// worked while dental was the only client in here; with Clear Behavioral
-// Health added, landing on one client's pages hid the other entirely. Gentle
-// Dental now lives at /location-page-builder/gentle-dental and this chooses
-// between them.
+// The module's front door: one card per client, each opening that client's
+// own flow, so landing here never hides one client behind another.
 //
 // Client ids match server/locationPageBuilder/seed.js and verticals.js.
 const CLIENTS = [
-  {
-    id: 'client_gentle_dental',
-    name: 'Gentle Dental',
-    vertical: 'Dental',
-    blurb: 'Location × Service pages written to the dental outline. One page per combination, always saved.',
-    path: '/location-page-builder/gentle-dental',
-    count: () => lpb.wizardPages('client_gentle_dental'),
-  },
   {
     id: 'client_clear_behavioral_health',
     name: 'Clear Behavioral Health',

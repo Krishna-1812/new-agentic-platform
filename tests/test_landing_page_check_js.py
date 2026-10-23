@@ -93,9 +93,9 @@ def test_rates_numbers_and_shares_read_plainly():
 
 def test_a_long_page_address_is_cut_in_the_middle_and_the_scheme_and_www_are_dropped():
     assert run("L.shortPage('https://www.a.test/x')") == "a.test/x"
-    long = "gentledental.com/lp/dental-offices/ma/boston/some-very-long-location-name-that-goes-on"
+    long = "brightdental.com/lp/dental-offices/ma/boston/some-very-long-location-name-that-goes-on"
     out = run("L.shortPage(s, 40)", s=long)
-    assert len(out) == 40 and out.startswith("gentledental.com/lp/") and out.endswith("-goes-on") and "…" in out
+    assert len(out) == 40 and out.startswith("brightdental.com/lp/") and out.endswith("-goes-on") and "…" in out
     assert run("L.shortPage(s, 200)", s=long) == long and run("L.shortPage(null)") == ""
     assert run("L.hostOf('a.test/x/y')") == "a.test"
 

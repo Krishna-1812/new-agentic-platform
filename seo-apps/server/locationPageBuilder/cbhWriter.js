@@ -2,11 +2,10 @@
 // Produces every generated string on a CBH page in one structured call.
 //
 // Its own module rather than a branch inside contentGenerator: that writer's
-// entire prompt is built around a flat stack of H2 blocks with a fixed outline
-// contract, and this contract is ten named sections with hard character
-// caps, one of which nests 4-5 H3s budgeted in LINES. Bending one prompt to
-// serve both would make each harder to reason about and put Gentle Dental at
-// risk on every CBH change.
+// prompt is built around the Neuro page_data shape, and this contract is ten
+// named sections with hard character caps, one of which nests 4-5 H3s
+// budgeted in LINES. Bending one prompt to serve both would make each harder
+// to reason about and put the other client at risk on every CBH change.
 //
 // The correction pass is driven by the QC gates themselves (cbhQc), not by a
 // second copy of the limits. A model cannot count its own characters reliably,

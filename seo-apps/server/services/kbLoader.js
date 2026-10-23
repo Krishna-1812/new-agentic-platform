@@ -2,7 +2,7 @@
  * KB Loader — resolves module KB dependencies and returns injected context.
  *
  * Usage:
- *   const { loaded, confidence, missing, systemPromptSuffix } = await loadKBContext('content-research', 'gentle-dental', feedbackKbIds);
+ *   const { loaded, confidence, missing, systemPromptSuffix } = await loadKBContext('content-research', 'neuro-wellness-spa', feedbackKbIds);
  *
  * feedbackKbIds: string (legacy single) or array of KB ids — all will be loaded.
  * The systemPromptSuffix is a pre-formatted string ready to append to any AI system prompt.
