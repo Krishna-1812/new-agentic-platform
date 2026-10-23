@@ -148,7 +148,7 @@ def test_a_negative_number_in_a_csv_stays_a_number():
 def test_index_to_100_starts_at_the_first_real_value():
     assert run("P.indexTo100([0,0,50,100,25])") == [0, 0, 100, 200, 50]
     assert run("P.indexTo100([0,0,0])") == [None, None, None]
-    assert run("[P.initials('Gentle Dental'),P.initials('1369614 B.C. LTD. (BD Engine Brake)'),P.fmtId('2497090182')]") == ["GD", "1B", "249-709-0182"]
+    assert run("[P.initials('Brightside Dental'),P.initials('1369614 B.C. LTD. (BD Engine Brake)'),P.fmtId('2497090182')]") == ["BD", "1B", "249-709-0182"]
 
 
 # ── Charts a reader can build ──────────────────────────────────────────────
