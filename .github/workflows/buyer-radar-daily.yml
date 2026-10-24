@@ -37,7 +37,7 @@ jobs:
             echo "::notice::BUYER_RADAR_CRON_TOKEN is not set yet, so the daily search is off (Settings > Secrets and variables > Actions)."
             exit 0
           fi
-          code=$(curl -sS -o reply.json -w '%{http_code}' --max-time 60 \
+          code=$(curl -sS -o reply.json -w '%{http_code}' --max-time 110 \
                       --retry 2 --retry-delay 20 --retry-all-errors \
                       -X POST -H "Authorization: Bearer $TOKEN" "$APP_URL/api/buyer-radar/daily") || code=000
           echo "HTTP $code"
