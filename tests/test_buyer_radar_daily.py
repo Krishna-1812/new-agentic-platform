@@ -531,8 +531,8 @@ def test_the_daily_slack_message_shows_what_decides_whether_to_act(monkeypatch):
     msg = send.slack_message("", leads, "https://app/br", total=84, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit",
                              by_source={"post": 50, "comment": 24, "jobs": 10})
     text = json.dumps(msg, ensure_ascii=False)
-    assert "84 new leads today, 2 strong (50 linkedin post, 24 comment on a post, 10 job ads)" in text
-    assert "Strong by offer: " in text and "CallVibe 1" in text
+    assert "84 new leads today, 2 strong (50 posts, 24 comments, 10 job ads), all in the Google Sheet\\nStrong by offer: " in text
+    assert "CallVibe 1" in text
     assert "*1. Tahiti Tourisme* — Tourism board" in text and "score *90*" in text and "for *Markify Digital*" in text
     assert "*Wants:* A digital agency for Instagram and TikTok" in text
     assert "Why it fits" not in text and "Names the service" not in text

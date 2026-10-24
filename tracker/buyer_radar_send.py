@@ -357,23 +357,29 @@ def _slack_details(lead, kind):
     return "  ·  ".join(bits)
 
 
+SLACK_SOURCE_COUNT = {"post": "posts", "comment": "comments", "jobs": "job ads", "icp": "customer profiles", "rfp": "RFPs",
+                      "reddit": "Reddit threads"}
+
+
 def _slack_summary(total, strong, daily, sheet_url, by_source):
     """The context line under the headline: how the day went, where leads came from, who they are for."""
     from . import buyer_radar as br
     if not daily:
         return "%d new leads in all, the %d strong ones below" % (total, len(strong))
     line = "%d new lead%s today, %d strong" % (total, "" if total == 1 else "s", len(strong))
-    where = ", ".join("%d %s" % (n, br.SOURCE_LABELS.get(k, k).lower()) for k, n in
+    where = ", ".join("%d %s" % (n, SLACK_SOURCE_COUNT.get(k, k)) for k, n in
                       sorted((by_source or {}).items(), key=lambda kv: -kv[1]) if n)
     if where:
         line += " (" + where + ")"
+    if sheet_url:
+        line += ", all in the Google Sheet"
     offers = {}
     for lead in strong:
         label = br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])
         offers[label] = offers.get(label, 0) + 1
     if len(offers) > 1:
         line += "\nStrong by offer: " + ", ".join("%s %d" % (k, n) for k, n in sorted(offers.items(), key=lambda kv: -kv[1]))
-    return line + (", all in the Google Sheet" if sheet_url else "")
+    return line
 
 
 def slack_message(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None):
