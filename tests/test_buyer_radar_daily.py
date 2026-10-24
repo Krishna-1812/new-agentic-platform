@@ -268,12 +268,12 @@ def test_waiting_messages_go_out_once_their_hour_has_come():
 
 
 def test_the_daily_slack_message_says_how_the_day_went_even_with_nothing_strong():
-    msg = send.slack_message("", [], "https://app/br", total=27, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
+    msg = send.slack_messages("", [], "https://app/br", total=27, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
     text = json.dumps(msg)
     assert "no strong leads today" in text and "27 new leads today, 0 strong, all in the Google Sheet" in text
     assert "Open the Google Sheet" in text and "Open Buyer Radar" in text
-    assert "nothing new today" in json.dumps(send.slack_message("", [], "", total=0, daily=True))
-    manual = json.dumps(send.slack_message("", [{"post": {"url": "https://x.co/p", "author": {"name": "A"}}, "offer": "callvibe",
+    assert "nothing new today" in json.dumps(send.slack_messages("", [], "", total=0, daily=True))
+    manual = json.dumps(send.slack_messages("", [{"post": {"url": "https://x.co/p", "author": {"name": "A"}}, "offer": "callvibe",
                                                  "score": 90, "verdict": {}}], "", total=5))
     assert "5 new leads in all, the 1 strong ones below" in manual and "Open the Google Sheet" not in manual
 
@@ -528,35 +528,55 @@ def test_the_daily_slack_message_shows_what_decides_whether_to_act(monkeypatch):
     monkeypatch.setattr(send, "_ago", lambda iso, now=None: "2 days ago" if iso else "")
     leads = [_rich_lead(), _rich_lead(id=2, offer="callvibe", score=84, email="cmo@acme.com",
                                       verdict={"need": "Call QA", "intent_label": "Asking for recommendations"})]
-    msg = send.slack_message("", leads, "https://app/br", total=84, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit",
-                             by_source={"post": 50, "comment": 24, "jobs": 10})
-    text = json.dumps(msg, ensure_ascii=False)
+    msgs = send.slack_messages("", leads, "https://app/br", total=84, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit",
+                               by_source={"post": 50, "comment": 24, "jobs": 10})
+    assert len(msgs) == 3, "the headline, then one message for each strong lead"
+    text = json.dumps(msgs, ensure_ascii=False)
     assert "84 new leads today, 2 strong (50 posts, 24 comments, 10 job ads), all in the Google Sheet\\nStrong by offer: " in text
     assert "CallVibe 1" in text
-    assert "*1. Tahiti Tourisme* — Tourism board" in text and "score *90*" in text and "for *Markify Digital*" in text
+    assert "*1 of 2 · Tahiti Tourisme* — Tourism board" in text and "*2 of 2 · " in text and "score *90*" in text and "for *Markify Digital*" in text
     assert "*Wants:* A digital agency for Instagram and TikTok" in text
     assert "Why it fits" not in text and "Names the service" not in text
     assert "🏢 Tahiti Tourisme Board" in text and "📍 French Polynesia" in text and "⏰ due Nov 6" in text and "🕒 2 days ago" in text
     assert "🔗 LinkedIn profile" in text and "✉️ email known" in text
-    assert [b["type"] for b in msg["blocks"]].count("divider") == 1, "one between the two leads, none after the last"
+    assert "Open Buyer Radar" in json.dumps(msgs[0]) and "Open the Google Sheet" in json.dumps(msgs[0])
+    assert "Tahiti" not in json.dumps(msgs[0]) and "1 of 2" in msgs[1]["text"] and "2 of 2" in msgs[2]["text"]
 
 
 def test_the_slack_message_leaves_out_what_a_lead_does_not_have_and_escapes_the_rest():
     bare = {"id": 3, "offer": "markify", "score": 75, "post": {"kind": "reddit", "url": "https://www.reddit.com/r/x/1",
                                                                    "author": {"name": "<b>u/x</b>"}},
             "verdict": {"need": "<!channel> an agency"}}
-    text = json.dumps(send.slack_message("", [bare], "", total=1), ensure_ascii=False)
+    text = json.dumps(send.slack_messages("", [bare], "", total=1), ensure_ascii=False)
     assert "Wants" in text and "📍" not in text and "⏰" not in text
     assert "💬 answer in the thread" in text and "<!channel>" not in text and "&lt;!channel&gt;" in text
-    assert "Strong by offer" not in text and "divider" not in text
+    assert "Strong by offer" not in text and "divider" not in text and len(send.slack_messages("", [bare], "", total=1)) == 2
 
 
-def test_a_long_run_names_the_rest_and_stays_inside_slacks_limits():
-    leads = [_rich_lead(id=i, verdict={"need": "n" * 4000}) for i in range(14)]
-    msg = send.slack_message("", leads, "u", total=90, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
-    assert len(msg["blocks"]) <= 50
-    assert all(len(b["text"]["text"]) <= 3000 for b in msg["blocks"] if b["type"] == "section")
-    assert "and 4 more in the Google Sheet" in json.dumps(msg)
+def test_a_long_run_posts_every_strong_lead_one_message_each_inside_slacks_limits():
+    leads = [_rich_lead(id=i, verdict={"need": "n" * 4000}) for i in range(50)]
+    msgs = send.slack_messages("", leads, "u", total=90, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
+    assert len(msgs) == 51 and "50 new leads" in msgs[0]["text"]
+    assert all(len(m["blocks"]) <= 50 for m in msgs)
+    assert all(len(b["text"]["text"]) <= 3000 for m in msgs[1:] for b in m["blocks"])
+    assert "*50 of 50 · " in json.dumps(msgs[-1], ensure_ascii=False) and "more" not in json.dumps(msgs)
+
+
+def test_every_lead_is_posted_a_second_apart_and_one_refused_does_not_stop_the_rest(monkeypatch):
+    monkeypatch.setenv("BUYER_RADAR_SLACK_BOT_TOKEN", "xoxb")
+    leads = [_rich_lead(id=i) for i in range(1, 6)]
+    sent, naps = [], []
+
+    def post(token, channel, msg):
+        sent.append(msg["text"])
+        return (False, "msg_too_long", "") if "lead 3 of 5" in msg["text"] else (True, "", "1")
+    ok, why = send.slack_leads("#c", "o", leads, post=post, sleep=naps.append)
+    assert len(sent) == 6 and naps == [send.SLACK_PAUSE_S] * 5
+    assert (ok, why) == (False, "1 of 5 leads not posted (msg_too_long)")
+    sent.clear()
+    assert send.slack_leads("#c", "o", leads, post=lambda t, c, m: sent.append(m) or (False, "channel_not_found", ""),
+                            sleep=naps.append) == (False, "channel_not_found")
+    assert len(sent) == 1, "no headline, no leads"
 
 
 def test_how_fresh_a_post_is():

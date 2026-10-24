@@ -445,7 +445,7 @@ def test_the_slack_message_says_where_each_lead_came_from():
     signal["contacts"] = [{"name": "Meera Shah", "title": "VP Marketing"}]
     leads = [dict(lead(), post=signal, offer="markify", verdict={"need": "a team"}),
              dict(lead(), post=com.normalize(comment(1), parent()), verdict={"need": "the same"})]
-    text = json.dumps(send.slack_message("", leads, "u"))
+    text = json.dumps(send.slack_messages("", leads, "u"))
     assert "Hiring" in text and "write to Meera Shah, VP Marketing" in text and "Open the company" in text
     assert "Comment" in text and "Open the post they commented on" in text
 

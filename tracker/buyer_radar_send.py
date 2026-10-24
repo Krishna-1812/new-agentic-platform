@@ -19,6 +19,7 @@ from __future__ import annotations
 import html
 import logging
 import os
+import time
 
 from . import buyer_radar_source as src
 
@@ -382,13 +383,44 @@ def _slack_summary(total, strong, daily, sheet_url, by_source):
     return line
 
 
-def slack_message(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None):
-    """The strong leads, each as the team reads it: who and where, what they want, and
-    the facts that say how to act (company, place, deadline, how fresh, whether an email is known).
-    `total` is every new lead of the run (the strong ones are some of them), `by_source` how many came
-    from each place; the daily run says how its day went even when none is strong; `sheet_url` adds a
-    button to the workspace's Google Sheet."""
+def _slack_card(i, n, lead):
+    """One strong lead as its own message: who and what they are, what they want, the facts that say how to
+    act, and the link."""
     from . import buyer_radar as br, watch_alerts
+    esc = watch_alerts.esc
+    p, v = lead["post"], lead["verdict"]
+    a = p.get("author") or {}
+    kind = p.get("kind") or "post"
+    name = esc(a.get("name") or "Someone")
+    headline = (a.get("headline") or "")[:90]
+    if kind == "jobs" and p.get("contacts"):
+        c = p["contacts"][0]
+        headline = "write to %s%s" % (c.get("name") or "", (", " + c["title"][:60]) if c.get("title") else "")
+    if len(v.get("signals") or []) > 1:
+        headline += (" · " if headline else "") + "also found by %s" % ", ".join(
+            SLACK_KIND.get(x, x).lower() for x in v["signals"] if x != kind)
+    url = p.get("url") or ""
+    link = ("\n<%s|%s>" % (url, SLACK_LINK.get(kind, "Open the post"))) if url.startswith(("https://", "http://")) else ""
+    offer = esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"]))
+    text = "*%d of %d · %s*%s\n%s · %s · for *%s* · score *%d*" % (
+        i, n, name, (" — " + esc(headline)) if headline else "", SLACK_KIND.get(kind, "Post"),
+        esc(v.get("intent_label") or "Lead"), offer, lead["score"])
+    if v.get("need"):
+        text += "\n*Wants:* " + esc(v["need"])
+    details = _slack_details(lead, kind)
+    if details:
+        text += "\n" + details
+    return {"text": "Buyer Radar lead %d of %d: %s, score %d" % (i, n, a.get("name") or "Someone", lead["score"]),
+            "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": text[:2900] + link}}]}
+
+
+def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None):
+    """What a run posts: first its headline (how many leads, how the day went, the buttons), then every
+    strong lead as a message of its own, however many there are. `total` is every new lead of the run
+    (the strong ones are some of them), `by_source` how many came from each place; the daily run says
+    how its day went even when none is strong; `sheet_url` adds a button to the workspace's Google
+    Sheet. A list of {"text", "blocks"}, the headline first."""
+    from . import watch_alerts
     esc = watch_alerts.esc
     who = (" for " + esc(owner_label)) if owner_label else ""
     if leads:
@@ -399,35 +431,6 @@ def slack_message(owner_label, leads, page_url, *, total=None, daily=False, shee
     if total is not None and (daily or total > len(leads)):
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": _slack_summary(
             total, leads, daily, sheet_url, by_source)}]})
-    for i, lead in enumerate(leads[:10], 1):
-        p, v = lead["post"], lead["verdict"]
-        a = p.get("author") or {}
-        kind = p.get("kind") or "post"
-        name = esc(a.get("name") or "Someone")
-        headline = (a.get("headline") or "")[:90]
-        if kind == "jobs" and p.get("contacts"):
-            c = p["contacts"][0]
-            headline = "write to %s%s" % (c.get("name") or "", (", " + c["title"][:60]) if c.get("title") else "")
-        if len(v.get("signals") or []) > 1:
-            headline += (" · " if headline else "") + "also found by %s" % ", ".join(
-                SLACK_KIND.get(x, x).lower() for x in v["signals"] if x != kind)
-        url = p.get("url") or ""
-        link = ("\n<%s|%s>" % (url, SLACK_LINK.get(kind, "Open the post"))) if url.startswith(("https://", "http://")) else ""
-        offer = esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"]))
-        text = "*%d. %s*%s\n%s · %s · for *%s* · score *%d*" % (
-            i, name, (" — " + esc(headline)) if headline else "", SLACK_KIND.get(kind, "Post"),
-            esc(v.get("intent_label") or "Lead"), offer, lead["score"])
-        if v.get("need"):
-            text += "\n*Wants:* " + esc(v["need"])
-        details = _slack_details(lead, kind)
-        if details:
-            text += "\n" + details
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text[:2900] + link}})
-        if i < min(len(leads), 10):
-            blocks.append({"type": "divider"})
-    if len(leads) > 10:
-        blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "and %d more%s" % (
-            len(leads) - 10, " in the Google Sheet" if sheet_url else " in Buyer Radar")}]})
     buttons = []
     if page_url:
         buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open Buyer Radar"}, "url": page_url})
@@ -435,12 +438,17 @@ def slack_message(owner_label, leads, page_url, *, total=None, daily=False, shee
         buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open the Google Sheet"}, "url": sheet_url})
     if buttons:
         blocks.append({"type": "actions", "elements": buttons})
-    return {"text": "Buyer Radar: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
+    first = {"text": "Buyer Radar: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
+    return [first] + [_slack_card(i, len(leads), lead) for i, lead in enumerate(leads, 1)]
+
+
+SLACK_PAUSE_S = 0.6             # a channel takes about a message a second in bursts; 429s are waited out by gads_digest.post
 
 
 def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=None, total=None, daily=False, sheet_url="",
-                by_source=None):
-    """(ok, why). Never raises."""
+                by_source=None, sleep=time.sleep):
+    """(ok, why). Every strong lead is posted, one message each, after the headline. Never raises.
+    A lead whose message Slack refused is said in `why` (the others still go out)."""
     from . import gads_digest
     token = slack_token()
     if not token:
@@ -448,8 +456,17 @@ def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=No
     post = post or gads_digest.post
     url = page_url or (base_url() + "/strategic-agents/buyer-radar")
     try:
-        ok, err, _ = post(token, channel, slack_message(owner_label, leads, url, total=total, daily=daily,
-                                                   sheet_url=sheet_url, by_source=by_source))
+        messages = slack_messages(owner_label, leads, url, total=total, daily=daily, sheet_url=sheet_url,
+                                  by_source=by_source)
+        ok, err, _ = post(token, channel, messages[0])
+        if not ok:
+            return False, err or "failed"
+        failed, last = 0, ""
+        for msg in messages[1:]:
+            sleep(SLACK_PAUSE_S)
+            ok, err, _ = post(token, channel, msg)
+            if not ok:
+                failed, last = failed + 1, err or "failed"
     except Exception as e:
         return False, "%s" % type(e).__name__
-    return (True, "") if ok else (False, err or "failed")
+    return (True, "") if not failed else (False, "%d of %d leads not posted (%s)" % (failed, len(messages) - 1, last))
