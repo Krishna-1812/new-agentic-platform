@@ -227,7 +227,7 @@ def test_the_daily_runs_slack_message_waits_for_its_hour(monkeypatch):
     FakeStore().install(monkeypatch)                     # another workspace: the same posts are new to it
     s["deliver_at"] = "2020-01-01T03:30:00+00:00"
     summary = br.run(2, "acct:8", s, deps=d)
-    assert out["slack"] == ("#leads", [92, 75]) and out["slack_kw"] == {"total": 2, "daily": True, "sheet_url": ""}, \
+    assert out["slack"] == ("#leads", [92, 75]) and out["slack_kw"] == {"total": 2, "daily": True, "by_source": {"post": 2}, "sheet_url": ""}, \
         "finished after its hour: posted at once"
 
 
@@ -259,7 +259,7 @@ def test_waiting_messages_go_out_once_their_hour_has_come():
     posted = []
     n = br.deliver_waiting(now=now, store=st, post=lambda ch, owner, leads, **kw: posted.append((ch, owner, leads, kw)) or (True, ""))
     assert n == 1 and st.results == {1: ("slack", "sent")} and st.asked == [("acct:1", 1, 70)]
-    assert posted[0][3] == {"total": 30, "daily": True, "sheet_url": sheet.sheet_url("x" * 30)}
+    assert posted[0][3] == {"total": 30, "daily": True, "by_source": {}, "sheet_url": sheet.sheet_url("x" * 30)}
     st = WaitingStore(st.rows[:1], claimable=False)
     assert br.deliver_waiting(now=now, store=st, post=lambda *a, **k: 1 / 0) == 0, "claimed by another call: not twice"
     st = WaitingStore(st.rows[:1])
@@ -511,3 +511,57 @@ def test_settings_show_the_hour_the_target_and_the_sheet():
     assert "<img" not in html and "&lt;img" in html
     assert run_js("return [BR.hourLabel(0), BR.hourLabel(12), BR.hourLabel(new Date('2026-10-22T03:30:00Z'))];") == \
         ["12:00 AM", "12:00 PM", "9:00 AM"]
+
+
+def _rich_lead(**kw):
+    out = {"id": 1, "offer": "markify", "score": 90, "email": "", "source": "post",
+           "post": {"url": "https://www.linkedin.com/posts/x", "kind": "post", "posted_at": "2026-10-22T08:00:00Z",
+                    "author": {"name": "Tahiti Tourisme", "headline": "Tourism board", "url": "https://www.linkedin.com/company/tt"}},
+           "verdict": {"need": "A digital agency for Instagram and TikTok", "intent_label": "Looking for a vendor",
+                       "reason": "Names the service and asks for a vendor", "region": "French Polynesia", "deadline": "Nov 6",
+                       "company": "Tahiti Tourisme Board"}}
+    out.update(kw)
+    return out
+
+
+def test_the_daily_slack_message_shows_what_decides_whether_to_act(monkeypatch):
+    monkeypatch.setattr(send, "_ago", lambda iso, now=None: "2 days ago" if iso else "")
+    leads = [_rich_lead(), _rich_lead(id=2, offer="callvibe", score=84, email="cmo@acme.com",
+                                      verdict={"need": "Call QA", "intent_label": "Asking for recommendations"})]
+    msg = send.slack_message("", leads, "https://app/br", total=84, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit",
+                             by_source={"post": 50, "comment": 24, "jobs": 10})
+    text = json.dumps(msg, ensure_ascii=False)
+    assert "84 new leads today, 2 strong (50 linkedin post, 24 comment on a post, 10 job ads)" in text
+    assert "Strong by offer: " in text and "CallVibe 1" in text
+    assert "*1. Tahiti Tourisme* — Tourism board" in text and "score *90*" in text and "for *Markify Digital*" in text
+    assert "*Wants:* A digital agency for Instagram and TikTok" in text
+    assert "*Why it fits:* Names the service and asks for a vendor" in text
+    assert "🏢 Tahiti Tourisme Board" in text and "📍 French Polynesia" in text and "⏰ due Nov 6" in text and "🕒 2 days ago" in text
+    assert "🔗 LinkedIn profile" in text and "✉️ email known" in text
+    assert [b["type"] for b in msg["blocks"]].count("divider") == 1, "one between the two leads, none after the last"
+
+
+def test_the_slack_message_leaves_out_what_a_lead_does_not_have_and_escapes_the_rest():
+    bare = {"id": 3, "offer": "markify", "score": 75, "post": {"kind": "reddit", "url": "https://www.reddit.com/r/x/1",
+                                                                   "author": {"name": "<b>u/x</b>"}},
+            "verdict": {"need": "<!channel> an agency"}}
+    text = json.dumps(send.slack_message("", [bare], "", total=1), ensure_ascii=False)
+    assert "Wants" in text and "Why it fits" not in text and "📍" not in text and "⏰" not in text
+    assert "💬 answer in the thread" in text and "<!channel>" not in text and "&lt;!channel&gt;" in text
+    assert "Strong by offer" not in text and "divider" not in text
+
+
+def test_a_long_run_names_the_rest_and_stays_inside_slacks_limits():
+    leads = [_rich_lead(id=i, verdict={"need": "n" * 4000, "reason": "r" * 4000}) for i in range(14)]
+    msg = send.slack_message("", leads, "u", total=90, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
+    assert len(msg["blocks"]) <= 50
+    assert all(len(b["text"]["text"]) <= 3000 for b in msg["blocks"] if b["type"] == "section")
+    assert "and 4 more in the Google Sheet" in json.dumps(msg)
+
+
+def test_how_fresh_a_post_is():
+    from datetime import datetime, timezone
+    now = datetime(2026, 10, 24, 12, tzinfo=timezone.utc)
+    assert send._ago("2026-10-24T01:00:00Z", now) == "today" and send._ago("2026-10-23T01:00:00Z", now) == "yesterday"
+    assert send._ago("2026-10-21T01:00:00Z", now) == "3 days ago" and send._ago("2026-06-01T01:00:00Z", now) == "01 Jun 2026"
+    assert send._ago("", now) == "" and send._ago("not a date", now) == "" and send._ago("2027-01-01T00:00:00Z", now) == ""
