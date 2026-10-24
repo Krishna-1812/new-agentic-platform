@@ -377,7 +377,7 @@ def _slack_summary(total, strong, daily, sheet_url, by_source):
 
 
 def slack_message(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None):
-    """The strong leads, each as the team reads it: who and where, what they want, why it was kept, and
+    """The strong leads, each as the team reads it: who and where, what they want, and
     the facts that say how to act (company, place, deadline, how fresh, whether an email is known).
     `total` is every new lead of the run (the strong ones are some of them), `by_source` how many came
     from each place; the daily run says how its day went even when none is strong; `sheet_url` adds a
@@ -413,8 +413,6 @@ def slack_message(owner_label, leads, page_url, *, total=None, daily=False, shee
             esc(v.get("intent_label") or "Lead"), offer, lead["score"])
         if v.get("need"):
             text += "\n*Wants:* " + esc(v["need"])
-        if v.get("reason"):
-            text += "\n*Why it fits:* " + esc(v["reason"])
         details = _slack_details(lead, kind)
         if details:
             text += "\n" + details

@@ -535,7 +535,7 @@ def test_the_daily_slack_message_shows_what_decides_whether_to_act(monkeypatch):
     assert "Strong by offer: " in text and "CallVibe 1" in text
     assert "*1. Tahiti Tourisme* — Tourism board" in text and "score *90*" in text and "for *Markify Digital*" in text
     assert "*Wants:* A digital agency for Instagram and TikTok" in text
-    assert "*Why it fits:* Names the service and asks for a vendor" in text
+    assert "Why it fits" not in text and "Names the service" not in text
     assert "🏢 Tahiti Tourisme Board" in text and "📍 French Polynesia" in text and "⏰ due Nov 6" in text and "🕒 2 days ago" in text
     assert "🔗 LinkedIn profile" in text and "✉️ email known" in text
     assert [b["type"] for b in msg["blocks"]].count("divider") == 1, "one between the two leads, none after the last"
@@ -546,13 +546,13 @@ def test_the_slack_message_leaves_out_what_a_lead_does_not_have_and_escapes_the_
                                                                    "author": {"name": "<b>u/x</b>"}},
             "verdict": {"need": "<!channel> an agency"}}
     text = json.dumps(send.slack_message("", [bare], "", total=1), ensure_ascii=False)
-    assert "Wants" in text and "Why it fits" not in text and "📍" not in text and "⏰" not in text
+    assert "Wants" in text and "📍" not in text and "⏰" not in text
     assert "💬 answer in the thread" in text and "<!channel>" not in text and "&lt;!channel&gt;" in text
     assert "Strong by offer" not in text and "divider" not in text
 
 
 def test_a_long_run_names_the_rest_and_stays_inside_slacks_limits():
-    leads = [_rich_lead(id=i, verdict={"need": "n" * 4000, "reason": "r" * 4000}) for i in range(14)]
+    leads = [_rich_lead(id=i, verdict={"need": "n" * 4000}) for i in range(14)]
     msg = send.slack_message("", leads, "u", total=90, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
     assert len(msg["blocks"]) <= 50
     assert all(len(b["text"]["text"]) <= 3000 for b in msg["blocks"] if b["type"] == "section")
