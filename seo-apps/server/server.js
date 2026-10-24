@@ -146,6 +146,10 @@ try {
   console.error('[CachePurge] Scheduler init failed:', err.message);
 }
 
+// Deletes what a retired client (Gentle Dental) left in the database and on
+// the data volume. Safe to run on every start: see the job's own comment.
+require('./jobs/retiredClientCleanup').run();
+
 require('./modules/robotsMonitor/monitorStore').init().then(() => {
   require('./modules/robotsMonitor/monitorScheduler').init().catch(err => {
     console.error('[RobotsMonitor] Scheduler init failed:', err.message);

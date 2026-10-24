@@ -318,6 +318,13 @@ async function setSetting(key, value) {
   return value;
 }
 
+async function deleteSetting(key) {
+  try {
+    const { rowCount } = await run('settings', `delete from ${q('settings')} where key = $1`, [key]);
+    return rowCount > 0;
+  } catch (e) { fail('deleteSetting', 'settings', e); }
+}
+
 // ── Keyword universe (typed table, see 0007_keyword_universe.sql) ────────────
 
 const KU = 'lpb_keyword_universe';
@@ -369,7 +376,7 @@ module.exports = {
   list, get, findOne,
   insert, update, remove, upsertBy, upsertById, replaceAll, removeWhere,
   cacheGet, cacheSet, cacheKey, purgeExpired,
-  getSetting, setSetting,
+  getSetting, setSetting, deleteSetting,
   universeCount, universeCandidates, universeWipe, universeInsert,
   close, SCHEMA,
 };

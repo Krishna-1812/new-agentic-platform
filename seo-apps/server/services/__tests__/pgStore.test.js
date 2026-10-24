@@ -82,6 +82,26 @@ async function dropSchema() {
   assert.deepStrictEqual(kl.map(x => x.keyword), ['veneers derry cost']);
   assert.deepStrictEqual(await ku.getKnownCities('c1'), ['Derry']);
   delete kum.SERVICE_UNIVERSE_MAP['veneers'];
+  // settings can be deleted
+  assert.strictEqual(await s.deleteSetting('ku-cities:c1'), true);
+  assert.strictEqual(await s.deleteSetting('ku-cities:c1'), false);
+  assert.deepStrictEqual(await s.getSetting('ku-cities:c1', 'gone'), 'gone');
+  // a retired client's records, universe and setting are removed (jobs/retiredClientCleanup.js)
+  const lpb = require('../../locationPageBuilder/store');
+  await lpb.insert('pages', { client_id: 'client_gentle_dental', name: 'gd' }, 'pag');
+  await lpb.insert('clients', { id: 'client_gentle_dental', name: 'Gentle Dental' });
+  await lpb.insert('clients', { id: 'client_keep', name: 'Keep' });
+  await lpb.insert('pages', { client_id: 'client_keep', name: 'keep' }, 'pag');
+  await s.setSetting('ku-cities:client_gentle_dental', ['Derry']);
+  await s.universeInsert([{ client_id: 'client_gentle_dental', keyword: 'k', keyword_norm: 'k', semrush_sv: 1, geo_detected_norm: '' }]);
+  const cleanup = require('../../jobs/retiredClientCleanup');
+  const out = await cleanup.purgeDatabase({ lpbStore: lpb, store: s, wipeUniverse: id => s.universeWipe(id), log: { log() {} } });
+  assert.deepStrictEqual(out.records, { clients: 1, pages: 1 });
+  assert.deepStrictEqual(out.errors, []);
+  assert.deepStrictEqual((await lpb.list('pages', { client_id: 'client_keep' })).map(p => p.name), ['keep']);
+  assert.deepStrictEqual(await lpb.list('pages', { client_id: 'client_gentle_dental' }), []);
+  assert.strictEqual(await s.universeCount('client_gentle_dental'), 0);
+  assert.strictEqual(await s.getSetting('ku-cities:client_gentle_dental', null), null);
   // unsafe identifier refused
   await assert.rejects(() => s.list('x; drop table y'), /unsafe identifier/);
   await s.universeWipe('c1');
