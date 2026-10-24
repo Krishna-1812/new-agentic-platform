@@ -1158,7 +1158,7 @@ def slack_extra(settings, summary, daily):
     """What a Slack message adds to its strong leads: the run's count of new leads, whether it is the
     daily one (which posts even with none strong), and the Google Sheet's link."""
     from . import buyer_radar_sheet as sheet
-    return {"total": int(summary.get("new") or 0), "daily": daily,
+    return {"total": int(summary.get("new") or 0), "daily": daily, "by_source": summary.get("by_source") or {},
             "sheet_url": sheet.sheet_url(settings.get("sheet_id")) if settings.get("sheet_id") else ""}
 
 
