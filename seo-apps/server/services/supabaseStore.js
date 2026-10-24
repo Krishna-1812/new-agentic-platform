@@ -265,12 +265,19 @@ async function setSetting(key, value) {
   return value;
 }
 
+async function deleteSetting(key) {
+  const { error, count } = await getSupabase()
+    .from('settings').delete({ count: 'exact' }).eq('key', key);
+  if (error) fail('deleteSetting', 'settings', error);
+  return (count || 0) > 0;
+}
+
 const supabaseImpl = {
   newId, nowIso,
   list, get, findOne,
   insert, update, remove, upsertBy, upsertById, replaceAll, removeWhere,
   cacheGet, cacheSet, cacheKey, purgeExpired,
-  getSetting, setSetting,
+  getSetting, setSetting, deleteSetting,
 };
 
 // Without Supabase credentials but with a Postgres DATABASE_URL, the same API
