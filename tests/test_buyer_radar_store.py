@@ -179,6 +179,19 @@ def test_identities_cursors_and_the_daily_view(db):
     assert db.claim_slack(d) is True and db.claim_slack(d) is False, "posted once"
     db.set_run_summary_key(d, "slack", "sent")
     assert db.get_run(d, "acct:1")["summary"] == {"slack": "sent", "slack_at": "2026-10-22T03:30:00+00:00", "new": 3}
+    assert db.claim_resend(d) is True and db.get_run(d, "acct:1")["summary"]["slack"] == "sending"
+    assert db.claim_resend(d) is False, "one resend at a time"
+    db._exec("UPDATE br_runs SET updated_at = now() - interval '11 minutes' WHERE id=%s", (d,))
+    assert db.claim_resend(d) is True, "one that stopped long ago can be sent again"
+    db.set_run_summary_key(d, "slack", "waiting")
+    assert db.claim_resend(d) is False, "not while the message waits for its hour"
+    db.set_run_summary_key(d, "slack_msgs", [{"channel": "C1", "ts": "1.1"}])
+    db.set_run_summary_key(d, "slack", "channel_not_found")
+    assert db.claim_resend(d) is True, "a failed one can be tried again"
+    assert db.get_run(d, "acct:1")["summary"]["slack_msgs"] == [{"channel": "C1", "ts": "1.1"}]
+    db.set_run_summary_key(d, "slack", "sent")
+    running = db.create_run("acct:1", br.merged({}), 2.0)
+    assert db.claim_resend(running) is False, "only a finished search"
     assert [x["id"] for x in db.run_leads("acct:1", run, 80)] == [a, b] and db.run_leads("acct:1", run, 95) == []
 
 

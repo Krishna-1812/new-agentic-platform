@@ -227,8 +227,9 @@ def test_the_daily_runs_slack_message_waits_for_its_hour(monkeypatch):
     FakeStore().install(monkeypatch)                     # another workspace: the same posts are new to it
     s["deliver_at"] = "2020-01-01T03:30:00+00:00"
     summary = br.run(2, "acct:8", s, deps=d)
-    assert out["slack"] == ("#leads", [92, 75]) and out["slack_kw"] == {"total": 2, "daily": True, "by_source": {"post": 2}, "sheet_url": ""}, \
-        "finished after its hour: posted at once"
+    assert out["slack"] == ("#leads", [92, 75]) and {k: v for k, v in out["slack_kw"].items() if k != "posted"} == {
+        "total": 2, "daily": True, "by_source": {"post": 2}, "sheet_url": ""}, "finished after its hour: posted at once"
+    assert out["slack_kw"]["posted"] == [] and summary["slack_msgs"] == []
 
 
 class WaitingStore:
@@ -259,7 +260,8 @@ def test_waiting_messages_go_out_once_their_hour_has_come():
     posted = []
     n = br.deliver_waiting(now=now, store=st, post=lambda ch, owner, leads, **kw: posted.append((ch, owner, leads, kw)) or (True, ""))
     assert n == 1 and st.results == {1: ("slack", "sent")} and st.asked == [("acct:1", 1, 70)]
-    assert posted[0][3] == {"total": 30, "daily": True, "by_source": {}, "sheet_url": sheet.sheet_url("x" * 30)}
+    assert {k: v for k, v in posted[0][3].items() if k != "posted"} == {
+        "total": 30, "daily": True, "by_source": {}, "sheet_url": sheet.sheet_url("x" * 30)}
     st = WaitingStore(st.rows[:1], claimable=False)
     assert br.deliver_waiting(now=now, store=st, post=lambda *a, **k: 1 / 0) == 0, "claimed by another call: not twice"
     st = WaitingStore(st.rows[:1])
@@ -585,3 +587,175 @@ def test_how_fresh_a_post_is():
     assert send._ago("2026-10-24T01:00:00Z", now) == "today" and send._ago("2026-10-23T01:00:00Z", now) == "yesterday"
     assert send._ago("2026-10-21T01:00:00Z", now) == "3 days ago" and send._ago("2026-06-01T01:00:00Z", now) == "01 Jun 2026"
     assert send._ago("", now) == "" and send._ago("not a date", now) == "" and send._ago("2027-01-01T00:00:00Z", now) == ""
+
+
+# == sending a finished search's Slack message again ====================================================
+
+class ResendStore:
+    def __init__(self, run=None, claim=True, slack_channel="C0123"):
+        self.run = run if run is not None else {"id": 5, "status": "ready", "trigger": "daily", "summary": {
+            "new": 40, "by_source": {"post": 40}, "slack": "sent",
+            "slack_msgs": [{"channel": "C0123", "ts": "1.1"}, {"channel": "C0123", "ts": "1.2"}]}}
+        self.claim, self.slack_channel, self.saved, self.claims = claim, slack_channel, {}, 0
+
+    def get_run(self, run_id, owner):
+        return self.run if run_id == 5 and owner == "acct:1" else None
+
+    def get_settings(self, owner):
+        return br.merged({"slack_channel": self.slack_channel, "alert_score": 70, "sheet_id": "x" * 30})
+
+    def claim_resend(self, run_id):
+        self.claims += 1
+        return self.claim
+
+    def run_leads(self, owner, run_id, min_score):
+        return [{"score": 88}, {"score": 75}]
+
+    def set_run_summary_key(self, run_id, key, value):
+        self.saved[key] = value
+
+
+def _resend(st, monkeypatch, posts=(True, ""), deletes=None, token="xoxb"):
+    monkeypatch.setenv("BUYER_RADAR_SLACK_BOT_TOKEN", token) if token else monkeypatch.delenv("BUYER_RADAR_SLACK_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("GOOGLE_ADS_SLACK_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
+    calls = {"post": [], "delete": []}
+
+    def post(channel, owner, leads, posted=None, **kw):
+        calls["post"].append((channel, owner, len(leads), kw))
+        posted.extend([{"channel": "C0123", "ts": "2.%d" % i} for i in range(3)])
+        return posts
+
+    def delete(msgs):
+        calls["delete"].append(msgs)
+        return (len(msgs), []) if deletes is None else deletes(msgs)
+    return br.resend_slack("acct:1", st.run["id"], store=st, post=post, delete=delete), calls
+
+
+def test_resending_deletes_the_runs_old_messages_and_posts_it_again(monkeypatch):
+    st = ResendStore()
+    out, calls = _resend(st, monkeypatch)
+    assert out == {"ok": True, "posted": 3, "deleted": 2, "still_there": 0}
+    assert calls["delete"] == [[{"channel": "C0123", "ts": "1.1"}, {"channel": "C0123", "ts": "1.2"}]]
+    channel, owner, n, kw = calls["post"][0]
+    assert (channel, owner, n) == ("C0123", "acct:1", 2) and kw["daily"] is True and kw["total"] == 40
+    assert kw["by_source"] == {"post": 40} and kw["sheet_url"] == sheet.sheet_url("x" * 30)
+    assert st.saved == {"slack_msgs": [{"channel": "C0123", "ts": "2.%d" % i} for i in range(3)], "slack": "sent"}
+
+
+def test_a_message_that_could_not_be_deleted_is_remembered_for_the_next_resend(monkeypatch):
+    st = ResendStore()
+    stuck = {"channel": "C0123", "ts": "1.2"}
+    out, _ = _resend(st, monkeypatch, deletes=lambda msgs: (1, [stuck]))
+    assert out["ok"] and out["still_there"] == 1 and out["deleted"] == 1
+    assert st.saved["slack_msgs"][0] == stuck and len(st.saved["slack_msgs"]) == 4
+
+
+def test_a_failed_resend_says_why_and_keeps_what_was_posted(monkeypatch):
+    st = ResendStore()
+    out, _ = _resend(st, monkeypatch, posts=(False, "2 of 2 leads not posted (channel_not_found)"))
+    assert out["ok"] is False and out["status"] == 502 and "channel_not_found" in out["error"] and out["posted"] == 3
+    assert st.saved["slack"].startswith("2 of 2 leads not posted") and len(st.saved["slack_msgs"]) == 3
+    boom = ResendStore()
+    out, _ = _resend(boom, monkeypatch, deletes=lambda msgs: 1 / 0)
+    assert out["ok"] is False and boom.saved["slack"] == "ZeroDivisionError", "never left sending"
+
+
+@pytest.mark.parametrize("kw, token, status, words", [
+    ({"run": {"id": 9, "status": "ready", "summary": {}}}, "xoxb", 404, "No such search"),
+    ({"run": {"id": 5, "status": "running", "summary": {}}}, "xoxb", 409, "finished search"),
+    ({"slack_channel": ""}, "xoxb", 400, "Slack channel"),
+    ({}, "", 400, "BUYER_RADAR_SLACK_BOT_TOKEN"),
+    ({"run": {"id": 5, "status": "ready", "summary": {"slack": "waiting"}}}, "xoxb", 409, "waiting for its time"),
+    ({"claim": False}, "xoxb", 409, "being sent right now"),
+])
+def test_a_search_that_cannot_be_sent_again_says_so_and_posts_nothing(monkeypatch, kw, token, status, words):
+    st = ResendStore(**kw)
+    out, calls = _resend(st, monkeypatch, token=token)
+    assert out["ok"] is False and out["status"] == status and words in out["error"]
+    assert not calls["post"] and not calls["delete"] and not st.saved
+
+
+def test_a_search_with_no_remembered_messages_posts_without_deleting(monkeypatch):
+    st = ResendStore(run={"id": 5, "status": "ready", "trigger": "manual", "summary": {"new": 3, "slack": "sent"}})
+    out, calls = _resend(st, monkeypatch)
+    assert out["ok"] and out["deleted"] == 0 and calls["post"][0][3]["daily"] is False
+
+
+class _SlackSession:
+    """Slack's web API, as post() and delete() call it."""
+    def __init__(self, replies):
+        self.replies, self.calls = list(replies), []
+
+    def post(self, url, headers=None, json=None, timeout=None):
+        self.calls.append((url, json))
+        status, body, hdrs = self.replies.pop(0)
+        return type("R", (), {"status_code": status, "headers": hdrs, "json": lambda self_: body})()
+
+
+def test_a_posted_message_gives_back_its_channels_id_for_deleting_it_later():
+    from tracker import gads_digest
+    meta = {}
+    s = _SlackSession([(200, {"ok": True, "ts": "1.5", "channel": "C0123ABC"}, {})])
+    assert gads_digest.post("t", "#leads", {"text": "x", "blocks": []}, session=s, meta=meta) == (True, "", "1.5")
+    assert meta == {"channel": "C0123ABC"}
+    assert gads_digest.post("t", "#leads", {"text": "x", "blocks": []},
+                            session=_SlackSession([(200, {"ok": True, "ts": "1"}, {})])) == (True, "", "1")
+
+
+def test_a_message_is_deleted_by_channel_id_and_one_already_gone_counts():
+    from tracker import gads_digest
+    s = _SlackSession([(200, {"ok": True}, {})])
+    assert gads_digest.delete("t", "C0123ABC", "1.5", session=s) == (True, "")
+    assert s.calls == [(gads_digest.SLACK_DELETE, {"channel": "C0123ABC", "ts": "1.5"})]
+    assert gads_digest.delete("t", "C", "1", session=_SlackSession([(200, {"ok": False, "error": "message_not_found"}, {})])) == (True, "")
+    assert gads_digest.delete("t", "C", "1", session=_SlackSession([(200, {"ok": False, "error": "cant_delete_message"}, {})])) == (False, "cant_delete_message")
+    naps = []
+    assert gads_digest.delete("t", "C", "1", sleep=naps.append, session=_SlackSession(
+        [(429, {}, {"Retry-After": "2"}), (200, {"ok": True}, {})])) == (True, "") and naps == [2]
+
+
+def test_every_posted_message_is_remembered_and_deleting_keeps_the_ones_that_stay(monkeypatch):
+    monkeypatch.setenv("BUYER_RADAR_SLACK_BOT_TOKEN", "xoxb")
+    n = iter(range(10))
+    posted = []
+    ok, why = send.slack_leads("#leads", "o", [_rich_lead(id=1), _rich_lead(id=2)], posted=posted, sleep=lambda s: None,
+                               post=lambda t, c, m: (True, "", "9.%d" % next(n)))
+    assert (ok, why) == (True, "") and [m["ts"] for m in posted] == ["9.0", "9.1", "9.2"] and posted[0]["channel"] == "#leads"
+    posted.clear()
+    send.slack_leads("#leads", "o", [_rich_lead(id=1)], posted=posted, sleep=lambda s: None,
+                     post=lambda t, c, m: (False, "x", "") if not posted and next(n) % 2 else (True, "", "7"))
+    gone, left = send.delete_messages([{"channel": "C", "ts": "1"}, {"channel": "C", "ts": "2"}, {"channel": "C", "ts": "3"}],
+                                      delete=lambda t, c, ts: (ts != "2", ""), sleep=lambda s: None)
+    assert gone == 2 and left == [{"channel": "C", "ts": "2"}]
+    assert send.delete_messages([{"channel": "C", "ts": "1"}], delete=lambda *a: 1 / 0, sleep=lambda s: None) == (0, [{"channel": "C", "ts": "1"}])
+    monkeypatch.delenv("BUYER_RADAR_SLACK_BOT_TOKEN")
+    for var in ("GOOGLE_ADS_SLACK_BOT_TOKEN", "SLACK_BOT_TOKEN"):
+        monkeypatch.delenv(var, raising=False)
+    assert send.delete_messages([{"channel": "C", "ts": "1"}], sleep=lambda s: None) == (0, [{"channel": "C", "ts": "1"}]), "no token, nothing deleted"
+
+
+def test_the_resend_route_is_the_teams_and_asks_to_be_confirmed(mem, monkeypatch):
+    url = BASE + "/api/runs/5/slack"
+    assert _client(None).post(url, json={"confirm": True}, headers=H).status_code in (302, 401, 403)
+    c = _client(STAFF)
+    assert c.post(url, json={}, headers=H).status_code == 400
+    monkeypatch.setattr(br, "resend_slack", lambda owner, run_id: {"ok": True, "posted": 23, "deleted": 23, "still_there": 0})
+    r = c.post(url, json={"confirm": True}, headers=H)
+    assert r.status_code == 200 and r.get_json() == {"ok": True, "posted": 23, "deleted": 23, "still_there": 0}
+    monkeypatch.setattr(br, "resend_slack", lambda owner, run_id: {"ok": False, "error": "No such search here.", "status": 404})
+    r = c.post(url, json={"confirm": True}, headers=H)
+    assert r.status_code == 404 and r.get_json() == {"ok": False, "error": "No such search here."}
+    assert c.get(url, headers=H).status_code == 405
+
+
+def test_the_runs_list_offers_resend_only_when_a_channel_is_set_and_the_message_is_not_waiting():
+    run = lambda s: {"id": 4, "status": "ready", "summary": dict({"strong": 22, "slack": "sent"}, **s)}
+    out = run_js("return [BR.renderRuns([%s], 'C0123'), BR.renderRuns([%s], ''), BR.renderRuns([%s], 'C0123'), "
+                 "BR.renderRuns([{id: 3, status: 'failed', error: 'x', summary: {}}], 'C0123'), "
+                 "BR.renderRuns([%s], 'C0123')];" % (json.dumps(run({"slack_msgs": [{"ts": "1"}]})), json.dumps(run({})),
+                                                    json.dumps(run({"slack": "waiting"})), json.dumps(run({}))))
+    known, no_channel, waiting, failed, unknown = out
+    assert 'data-resend="4"' in known and 'data-strong="22"' in known and 'data-known="1"' in known and "Resend to Slack" in known
+    assert "data-resend" not in no_channel and "data-resend" not in waiting and "data-resend" not in failed
+    assert 'data-resend="4"' in unknown and 'data-known=""' in unknown

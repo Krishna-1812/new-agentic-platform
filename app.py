@@ -14584,6 +14584,25 @@ def buyer_radar_run(run_id):
     return jsonify(run)
 
 
+@app.route(BR + "/api/runs/<int:run_id>/slack", methods=["POST"])
+@position2_required
+def buyer_radar_run_slack(run_id):
+    """Sends a finished search's Slack message again in today's format, deleting the messages Buyer Radar
+    posted for it before. Free; the team's only (a client's workspace posts nothing to Slack)."""
+    from tracker import buyer_radar as br, buyer_radar_store as store
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    if (request.get_json(silent=True) or {}).get("confirm") is not True:
+        return jsonify(error="Confirm to send it to Slack again."), 400
+    try:
+        out = br.resend_slack(_mr_email(), run_id)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    status = out.pop("status", 200)
+    return jsonify(out), status
+
+
 def _br_lead_out(lead, client):
     out = dict(lead)
     if client:
