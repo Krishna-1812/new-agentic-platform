@@ -226,7 +226,7 @@
   }
 
   // ── searches ─────────────────────────────────────────────────────────────
-  function renderRuns(runs) {
+  function renderRuns(runs, slackChannel) {
     if (!runs || !runs.length) return '<div class="mr-empty">No searches yet.</div>';
     return '<ol class="br-runlist">' + runs.slice(0, 8).map(function (r) {
       var s = r.summary || {};
@@ -251,9 +251,17 @@
       return '<li id="run-' + esc(r.id) + '" class="br-r br-r--' + esc(r.status) + '"><span class="br-r-dot"></span><span class="br-r-t"><b>' + esc(label) + '</b>' +
         '<small>' + esc((r.trigger === 'daily' ? 'Daily · ' : '') + ago(r.created_at)) + (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
         (r.status === 'failed' && r.error ? '<small class="br-err">' + esc(r.error) + '</small>' : '') +
-        (r.status === 'ready' && !CLIENT ? renderNotes(s.notes) : '') +
+        (r.status === 'ready' && !CLIENT ? renderNotes(s.notes) + renderResend(r, slackChannel) : '') +
         (r.status === 'ready' && !s.kept ? renderClosest(s.closest) : '') + '</span></li>';
     }).join('') + '</ol>';
+  }
+
+  // Send a finished search's Slack message again in today's format. Not while it waits for its hour.
+  function renderResend(r, slackChannel) {
+    var s = r.summary || {};
+    if (!slackChannel || s.slack === 'waiting' || s.slack === 'sending') return '';
+    return '<button type="button" class="mr-btn small ghost br-resend" data-resend="' + esc(r.id) + '" data-strong="' + esc(s.strong || 0) +
+      '" data-known="' + ((s.slack_msgs || []).length ? '1' : '') + '">Resend to Slack</button>';
   }
 
   // What went wrong along the way (posts Claude could not read, a search cut short), in the run's own words.
@@ -641,7 +649,7 @@
   }
 
   function loadRuns() {
-    return api('/runs').then(function (j) { $('brRuns').innerHTML = renderRuns(j.runs); })
+    return api('/runs').then(function (j) { $('brRuns').innerHTML = renderRuns(j.runs, state.status && state.status.settings && state.status.settings.slack_channel); })
       .catch(function (e) { $('brRuns').innerHTML = '<div class="mr-empty">' + esc(e.message) + '</div>'; });
   }
 
@@ -674,6 +682,25 @@
       if (!yes) return;
       api('/runs', { method: 'POST', body: { confirm_spend: true } }).then(function (j) { watch(j.run_id); loadRuns(); })
         .catch(function (e) { toast(e.message, true); if (e.data && e.data.run_id) watch(e.data.run_id); });
+    });
+  });
+
+  // The run's messages are posted again: its old ones deleted first (those Buyer Radar remembers).
+  $('brRuns').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-resend]');
+    if (!b) return;
+    var n = parseInt(b.getAttribute('data-strong'), 10) || 0;
+    var text = 'Posts this search to Slack again: a headline and one message for each of its ' + n + ' strong lead' + (n === 1 ? '' : 's') +
+      '. It costs nothing. ' + (b.getAttribute('data-known') ? 'The messages posted for it before are deleted first.' :
+        'It does not know the messages it posted for this search before, so delete those in Slack yourself first.');
+    confirmBox('Send this to Slack again?', text).then(function (yes) {
+      if (!yes) return;
+      b.disabled = true;
+      b.textContent = 'Sending…';
+      api('/runs/' + b.getAttribute('data-resend') + '/slack', { method: 'POST', body: { confirm: true } })
+        .then(function (j) { toast('Sent to Slack: ' + j.posted + ' messages' + (j.deleted ? ', ' + j.deleted + ' old deleted' : '') + (j.still_there ? ', ' + j.still_there + ' old ones could not be deleted' : '') + '.'); })
+        .catch(function (e) { toast(e.message, true); })
+        .then(function () { loadRuns(); });
     });
   });
 

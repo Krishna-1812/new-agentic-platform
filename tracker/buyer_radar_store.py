@@ -277,6 +277,17 @@ def claim_slack(run_id):
     return bool(row)
 
 
+def claim_resend(run_id):
+    """Marks a finished run's Slack message as being sent again, once at a time: True for the caller that gets
+    it. Not while the message waits for its hour, nor while one is being sent (unless that stopped 10 minutes
+    ago and never finished)."""
+    row = _exec("""UPDATE br_runs SET summary = jsonb_set(COALESCE(summary, '{}'::jsonb), '{slack}', '"sending"'), updated_at=now()
+                   WHERE id=%s AND status='ready' AND (COALESCE(summary->>'slack', '') NOT IN ('waiting', 'sending')
+                     OR (summary->>'slack' = 'sending' AND updated_at < now() - interval '10 minutes'))
+                   RETURNING id""", (run_id,), fetch="one")
+    return bool(row)
+
+
 def set_run_summary_key(run_id, key, value):
     _exec("UPDATE br_runs SET summary = jsonb_set(COALESCE(summary, '{}'::jsonb), %s, %s::jsonb) WHERE id=%s",
           ("{%s}" % key, json.dumps(value), run_id))

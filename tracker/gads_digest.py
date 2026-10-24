@@ -36,6 +36,7 @@ LIMITED_SHARE = 0.1      # search impression share lost to budget, as the pacing
 STALE_AFTER_DAYS = 2     # an account's latest day older than this (in India time) has stopped arriving
 TOP_CAMPAIGNS = 3
 SLACK_POST = "https://slack.com/api/chat.postMessage"
+SLACK_DELETE = "https://slack.com/api/chat.delete"
 SPACING_SECONDS = 1.1
 SYMBOLS = {"INR": "₹", "USD": "$", "GBP": "£", "EUR": "€", "AUD": "A$", "CAD": "C$",
            "SGD": "S$", "AED": "AED ", "SAR": "SAR "}
@@ -630,9 +631,10 @@ def overview(summaries, base_url="", today=None):
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────
-def post(token, channel, msg, session=None, sleep=time.sleep):
+def post(token, channel, msg, session=None, sleep=time.sleep, meta=None):
     """Post one message. Returns (ok, error, ts): Slack's own error code on failure, never the token, and
-    the message's timestamp (its id in the channel, so replies under it can be told apart)."""
+    the message's timestamp (its id in the channel, so replies under it can be told apart). `meta`, when
+    given, gets the channel's id ("channel"), which deleting the message later needs (a name will not do)."""
     http = session or requests
     body = {"channel": channel, "text": msg["text"], "blocks": msg["blocks"],
             "unfurl_links": False, "unfurl_media": False}
@@ -656,9 +658,38 @@ def post(token, channel, msg, session=None, sleep=time.sleep):
         except ValueError:
             return False, "http_%d" % r.status_code, ""
         if data.get("ok"):
+            if meta is not None:
+                meta["channel"] = str(data.get("channel") or "")
             return True, "", str(data.get("ts") or "")
         return False, str(data.get("error") or "unknown_error")[:80], ""
     return False, "ratelimited", ""
+
+
+def delete(token, channel, ts, session=None, sleep=time.sleep):
+    """Delete one message the bot posted (channel is its id, ts its timestamp). Returns (ok, error); a message
+    that is already gone counts as deleted. Never the token."""
+    http = session or requests
+    headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json; charset=utf-8"}
+    for attempt in range(2):
+        try:
+            r = http.post(SLACK_DELETE, headers=headers, json={"channel": channel, "ts": ts}, timeout=15)
+        except requests.RequestException as exc:
+            return False, type(exc).__name__
+        if r.status_code == 429 and attempt == 0:
+            try:
+                wait = min(30, int(r.headers.get("Retry-After", "1")))
+            except ValueError:
+                wait = 1
+            sleep(wait)
+            continue
+        try:
+            data = r.json()
+        except ValueError:
+            return False, "http_%d" % r.status_code
+        if data.get("ok") or data.get("error") == "message_not_found":
+            return True, ""
+        return False, str(data.get("error") or "unknown_error")[:80]
+    return False, "ratelimited"
 
 
 OVERVIEW = "__overview__"

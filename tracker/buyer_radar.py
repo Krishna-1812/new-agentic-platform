@@ -1149,8 +1149,10 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
             summary["slack"], summary["slack_at"] = "waiting", settings["deliver_at"]
         else:
             stage("posting to Slack")
-            ok, why = deps["slack"](settings["slack_channel"], owner, strong, **slack_extra(settings, summary, daily))
+            posted = []
+            ok, why = deps["slack"](settings["slack_channel"], owner, strong, posted=posted, **slack_extra(settings, summary, daily))
             summary["slack"] = "sent" if ok else why
+            summary["slack_msgs"] = posted
     return summary
 
 
@@ -1182,14 +1184,56 @@ def deliver_waiting(*, now=None, store=None, post=None):
         result = "not_configured"
         if settings.get("slack_channel"):
             strong = store.run_leads(owner, run_id, settings["alert_score"])
+            posted = []
             try:
-                ok, why = post(settings["slack_channel"], owner, strong, **slack_extra(settings, summary, True))
+                ok, why = post(settings["slack_channel"], owner, strong, posted=posted, **slack_extra(settings, summary, True))
             except Exception as e:             # never leave it "sending": say why
                 ok, why = False, type(e).__name__
             result = "sent" if ok else why
             n += 1 if ok else 0
+            if posted:
+                store.set_run_summary_key(run_id, "slack_msgs", posted)
         store.set_run_summary_key(run_id, "slack", result)
     return n
+
+
+def resend_slack(owner, run_id, *, store=None, post=None, delete=None):
+    """Sends a finished search's Slack message again, in today's format: the messages Buyer Radar posted for it
+    are deleted first (those it remembers; older ones are the team's to delete), then the headline and every
+    strong lead are posted. {"ok", "posted", "deleted", "still_there"} or {"ok": False, "error", "status"}."""
+    from . import buyer_radar_send as send, buyer_radar_store
+    store = store or buyer_radar_store
+    post = post or send.slack_leads
+    delete = delete or send.delete_messages
+    run = store.get_run(run_id, owner)
+    if not run:
+        return {"ok": False, "error": "No such search here.", "status": 404}
+    summary = run.get("summary") or {}
+    if run["status"] != "ready":
+        return {"ok": False, "error": "Only a finished search can be sent to Slack again.", "status": 409}
+    settings = store.get_settings(owner)
+    if not settings.get("slack_channel"):
+        return {"ok": False, "error": "Save a Slack channel in Settings first.", "status": 400}
+    if not send.slack_token():
+        return {"ok": False, "error": "Slack is not set up on this service (BUYER_RADAR_SLACK_BOT_TOKEN, in Railway → web → Variables).",
+                "status": 400}
+    if summary.get("slack") == "waiting":
+        return {"ok": False, "error": "This search's Slack message is still waiting for its time.", "status": 409}
+    if not store.claim_resend(run_id):
+        return {"ok": False, "error": "This search's Slack message is being sent right now.", "status": 409}
+    posted, gone, left = [], 0, []
+    try:
+        gone, left = delete(summary.get("slack_msgs") or [])
+        strong = store.run_leads(owner, run_id, settings["alert_score"])
+        ok, why = post(settings["slack_channel"], owner, strong, posted=posted,
+                       **slack_extra(settings, summary, run.get("trigger") == "daily"))
+    except Exception as e:                     # never leave it "sending": say why
+        ok, why = False, type(e).__name__
+    store.set_run_summary_key(run_id, "slack_msgs", left + posted)
+    store.set_run_summary_key(run_id, "slack", "sent" if ok else why)
+    if not ok:
+        return {"ok": False, "error": "Slack: %s" % why, "status": 502, "posted": len(posted), "deleted": gone}
+    return {"ok": True, "posted": len(posted), "deleted": gone, "still_there": len(left)}
 
 
 def _book_claude(budget, spend, op, since=Decimal(0)):

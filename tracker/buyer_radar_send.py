@@ -446,27 +446,57 @@ SLACK_PAUSE_S = 0.6             # a channel takes about a message a second in bu
 
 
 def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=None, total=None, daily=False, sheet_url="",
-                by_source=None, sleep=time.sleep):
+                by_source=None, sleep=time.sleep, posted=None):
     """(ok, why). Every strong lead is posted, one message each, after the headline. Never raises.
-    A lead whose message Slack refused is said in `why` (the others still go out)."""
+    A lead whose message Slack refused is said in `why` (the others still go out). `posted`, a list,
+    gets {"channel", "ts"} for every message that went out, so the run can delete them if it is sent again."""
     from . import gads_digest
     token = slack_token()
     if not token:
         return False, "not_configured"
-    post = post or gads_digest.post
+    meta = {}
+    post = post or (lambda t, c, m: gads_digest.post(t, c, m, meta=meta))
+    posted = [] if posted is None else posted
     url = page_url or (base_url() + "/strategic-agents/buyer-radar")
+
+    def send_one(msg):
+        ok, err, ts = post(token, channel, msg)
+        if ok and ts:
+            posted.append({"channel": meta.get("channel") or channel, "ts": ts})
+        return ok, err
+
     try:
         messages = slack_messages(owner_label, leads, url, total=total, daily=daily, sheet_url=sheet_url,
                                   by_source=by_source)
-        ok, err, _ = post(token, channel, messages[0])
+        ok, err = send_one(messages[0])
         if not ok:
             return False, err or "failed"
         failed, last = 0, ""
         for msg in messages[1:]:
             sleep(SLACK_PAUSE_S)
-            ok, err, _ = post(token, channel, msg)
+            ok, err = send_one(msg)
             if not ok:
                 failed, last = failed + 1, err or "failed"
     except Exception as e:
         return False, "%s" % type(e).__name__
     return (True, "") if not failed else (False, "%d of %d leads not posted (%s)" % (failed, len(messages) - 1, last))
+
+
+def delete_messages(messages, *, delete=None, sleep=time.sleep):
+    """Deletes messages Buyer Radar posted: [{"channel", "ts"}]. (how many are gone, those still there).
+    Never raises."""
+    from . import gads_digest
+    token = slack_token()
+    delete = delete or gads_digest.delete
+    gone, left = 0, []
+    for m in messages or []:
+        try:
+            ok = bool(token) and delete(token, m.get("channel"), m.get("ts"))[0]
+        except Exception:
+            ok = False
+        if ok:
+            gone += 1
+        else:
+            left.append(m)
+        sleep(0.3)
+    return gone, left
