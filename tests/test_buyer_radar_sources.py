@@ -23,7 +23,8 @@ os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
 os.environ.setdefault("FLASK_SECRET_KEY", "test")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tests.test_buyer_radar import (BASE, EVIL, H, STAFF, XA, FakeStore, SendStore, T, _client, deps, lead,  # noqa: E402
+from tests.test_buyer_radar import (jobs_on,  # noqa: F401  (fixture)
+                                     BASE, EVIL, H, STAFF, XA, FakeStore, SendStore, T, _client, deps, lead,  # noqa: E402
                                     mem, run_js, seeded, verdict, world)  # noqa: F401  (fixtures)
 from tracker import buyer_radar as br  # noqa: E402
 from tracker import buyer_radar_comments as com  # noqa: E402
@@ -305,6 +306,7 @@ def test_a_message_is_written_from_the_signal_and_to_the_person_who_decides():
 
 # == the run ==============================================================================================
 
+@pytest.mark.usefixtures("jobs_on")
 def test_a_run_keeps_posts_comments_and_hiring_companies_each_as_its_kind(monkeypatch):
     fake = FakeStore()
     fake.install(monkeypatch)
@@ -344,6 +346,7 @@ def test_a_run_keeps_posts_comments_and_hiring_companies_each_as_its_kind(monkey
     assert fake.seen >= {posts[1]["key"], found[1]["key"]}, "what was read and not kept is not read again"
 
 
+@pytest.mark.usefixtures("jobs_on")
 def test_a_hiring_companys_decision_maker_is_emailed_once_saleshandy_reveals_them(monkeypatch):
     fake = FakeStore()
     fake.install(monkeypatch)
@@ -376,6 +379,7 @@ def test_the_days_room_is_shared_fairly_between_the_searches():
     assert br.split_room(0, {"posts": 10}) == {"posts": 0}
 
 
+@pytest.mark.usefixtures("jobs_on")
 def test_the_new_settings_are_checked():
     s = br.clean_settings({"sources": ["jobs", "posts", "bogus"], "job_locations": "India, Dubai,, India",
                            "job_queries": {"markify": "SEO lead\n\n  PPC   manager ", "nobody": "x"}, "jobs_days": 7,
@@ -391,6 +395,7 @@ def test_the_new_settings_are_checked():
     assert br.merged({})["sources"] == ["posts", "comments", "jobs", "icp", "rfps", "reddit"]
 
 
+@pytest.mark.usefixtures("jobs_on")
 def test_a_run_with_only_job_ads_needs_only_unipile(monkeypatch):
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     monkeypatch.setenv("UNIPILE_API_KEY", "u")
@@ -496,6 +501,7 @@ def test_a_client_never_finds_emails(seeded, mem, monkeypatch):
 
 # == the page ===============================================================================================
 
+@pytest.mark.usefixtures("jobs_on")
 def test_a_hiring_company_and_a_comment_show_where_they_came_from_and_escape_everything():
     signal = jobs.by_company([jobs.normalize(job(1, title=EVIL, company=EVIL), "q")], "2026-10")[0]
     signal["contacts"] = [{"name": EVIL, "title": EVIL, "key": "sh/1", "linkedin": "javascript:alert(1)"}]
@@ -513,7 +519,7 @@ def test_a_hiring_company_and_a_comment_show_where_they_came_from_and_escape_eve
     assert "br-kind--jobs" in job_card and ">Hiring<" in job_card and "Who decides" in job_card and "Open the company" in job_card
     assert "br-kind--comment" in comment_card and "Asker&#39;s post" in comment_card
     assert 'name="brWho"' in drawer and 'data-act="find"' in drawer and "Find their email first" in drawer
-    assert 'data-filter="source:jobs" aria-pressed="true"' in filters and ">Comments<" in filters
+    assert "source:jobs" not in filters and ">Comments<" in filters and ">Hiring<" not in filters, "job ads are switched off"
     assert query == "?source=comment"
 
 
@@ -524,3 +530,23 @@ def test_the_settings_form_holds_the_new_sources():
     for id_ in ("brSrc-posts", "brSrc-comments", "brSrc-jobs", "brJ-callvibe", "brJobLoc", "brJobDays", "brJobPer", "brComPosts"):
         assert 'id="%s"' % id_ in form, id_
     assert 'value="India"' in form and "Where to look" in form
+
+
+def test_job_ads_are_switched_off_for_every_workspace(monkeypatch):
+    assert "jobs" not in br.LEAD_SOURCES and "jobs" not in br.DEFAULTS["sources"] and "jobs" in br.ALL_LEAD_SOURCES
+    saved = br.merged({"sources": ["posts", "jobs", "reddit"]})
+    assert br.sources_on(saved) == ["posts", "reddit"], "a workspace that saved it is not searched for it"
+    assert br.clean_settings({"sources": ["posts", "jobs"]})["sources"] == ["posts"]
+    est = br.estimate(br.merged({}))
+    assert est["jobs"] == 0 and est["job_queries"] == 0
+    monkeypatch.setenv("UNIPILE_API_KEY", "u")
+    monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
+    FakeStore().install(monkeypatch)
+    out = {}
+    d, _ = deps([92], out)
+
+    def boom(*a, **k):
+        raise AssertionError("job ads were searched")
+    d["jobs_search"] = boom
+    summary = br.run(1, "acct:7", br.merged({"sources": ["posts", "jobs"]}), deps=d)
+    assert "jobs" not in summary["by_source"] and summary["kept"] == 1 and "job_ads" not in summary

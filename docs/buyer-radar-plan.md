@@ -78,6 +78,14 @@ three letters are never matched. Slack and the spreadsheet (column "Also found i
 
 ## Job ads (`tracker/buyer_radar_jobs.py`)
 
+**Switched off on 2026-10-25** (the team does not want "hiring for it" leads). `jobs` is in `RETIRED_SOURCES`
+(`tracker/buyer_radar.py`), so no workspace is searched for them, whatever its saved Settings say, and Settings
+no longer offers the switch. The search code stays, with its tests (the `jobs_on` fixture switches it back on):
+take the name out of `RETIRED_SOURCES` to bring it back. What the source left was removed: the leads and their
+people are deleted when the service starts (`RETIRED_SOURCES` statements in `buyer_radar_store.py`; a lead
+someone was written to stays), and the next sheet update deletes the rows whose "Found in" is "Job ads"
+(`buyer_radar_sheet.RETIRED_FOUND_IN`). What follows is how it worked.
+
 A company hiring a performance marketing manager or an SEO executive is building marketing in house that
 it could hand to an agency (Markify). A company hiring call quality analysts or call auditors pays people
 to listen to calls that CallVibe scores. Each offer lists the job titles that mean this (`OFFERS[...]["jobs"]`,

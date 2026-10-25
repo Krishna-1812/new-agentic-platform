@@ -33,6 +33,7 @@ log = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 LEADS, RUNS = "Leads", "Runs"
+RETIRED_FOUND_IN = ("Job ads",)     # leads found this way were switched off; their rows are taken out of the sheet
 ID_RX = re.compile(r"^[A-Za-z0-9_-]{25,80}$")
 LINK_RX = re.compile(r"/spreadsheets/d/([A-Za-z0-9_-]{25,80})")
 CELL_MAX = 5000                     # Google's limit is 50,000 characters a cell; a post is never near it
@@ -280,6 +281,29 @@ def _append(svc, sheet_id, tab, rows):
             body={"values": rows}).execute()
 
 
+def _remove_retired(svc, sheet_id, headers):
+    """Deletes the Leads rows whose "Found in" is a source that was switched off. How many went."""
+    if "Found in" not in headers:
+        return 0
+    col = _col(headers.index("Found in") + 1)
+    got = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range="%s!%s2:%s" % (_quote(LEADS), col, col)).execute()
+    rows = [i for i, r in enumerate(got.get("values") or [], start=2) if r and str(r[0]).strip() in RETIRED_FOUND_IN]
+    if not rows:
+        return 0
+    meta = svc.spreadsheets().get(spreadsheetId=sheet_id, fields="sheets.properties(sheetId,title)").execute()
+    gid = next(s["properties"]["sheetId"] for s in meta["sheets"] if s["properties"]["title"] == LEADS)
+    spans = []                                  # runs of neighbouring rows: [first, last]
+    for n in rows:
+        if spans and n == spans[-1][1] + 1:
+            spans[-1][1] = n
+        else:
+            spans.append([n, n])
+    svc.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body={"requests": [
+        {"deleteDimension": {"range": {"sheetId": gid, "dimension": "ROWS", "startIndex": a - 1, "endIndex": b}}}
+        for a, b in reversed(spans)]}).execute()    # from the bottom up, so the row numbers above stay true
+    return len(rows)
+
+
 def check(sheet_id, service=None):
     """(ok, message): can Buyer Radar write to the sheet? Sets up its Leads and Runs tabs and headers."""
     if not sheet_id:
@@ -301,7 +325,8 @@ def _lock(owner):
 
 def sync(owner, settings, *, store=None, service=None):
     """Every lead not in the sheet yet gets its row; every lead changed since its row was written has its
-    kept-up-to-date cells rewritten. {"added", "updated", "left"} or {"error"}. Never raises."""
+    kept-up-to-date cells rewritten, and the rows of a source that was switched off are deleted.
+    {"added", "updated", "left", "removed"} or {"error"}. Never raises."""
     from . import buyer_radar_store
     store = store or buyer_radar_store
     sheet_id = settings.get("sheet_id") or ""
@@ -311,14 +336,15 @@ def sync(owner, settings, *, store=None, service=None):
         try:
             svc = service or _service()
             at = store.db_now()
+            cols = lead_columns(settings)
+            _tabs(svc, sheet_id, [LEADS, RUNS])
+            headers = _headers(svc, sheet_id, LEADS, [h for h, _, _ in cols])
+            removed = _remove_retired(svc, sheet_id, headers)
             leads = store.sheet_pending(owner, BATCH + 1)
             left = max(0, len(leads) - BATCH)
             leads = leads[:BATCH]
             if not leads:
-                return {"added": 0, "updated": 0, "left": 0}
-            cols = lead_columns(settings)
-            _tabs(svc, sheet_id, [LEADS, RUNS])
-            headers = _headers(svc, sheet_id, LEADS, [h for h, _, _ in cols])
+                return {"added": 0, "updated": 0, "left": 0, "removed": removed}
             where = _id_rows(svc, sheet_id, LEADS, headers, "Lead ID")
             by_header = {h: (fn, live) for h, fn, live in cols}
             new, data, updated = [], [], 0
@@ -341,7 +367,7 @@ def sync(owner, settings, *, store=None, service=None):
         except Exception as e:
             log.warning("buyer radar sheet: %s could not be updated: %s", owner, e)
             return {"error": why(e)}
-    return {"added": len(new), "updated": updated, "left": left}
+    return {"added": len(new), "updated": updated, "left": left, "removed": removed}
 
 
 def add_run(owner, settings, run_id, summary, *, store=None, service=None):

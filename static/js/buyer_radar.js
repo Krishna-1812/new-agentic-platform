@@ -218,7 +218,7 @@
 
   function renderFilters(cur, offers) {
     var f = [['all', 'All'], ['strong', 'Strong'], ['new', 'New'], ['contacted', 'Contacted'], ['replied', 'Replied'], ['dismissed', 'Not a fit']];
-    Object.keys(SOURCE).forEach(function (k) { f.push(['source:' + k, SOURCE[k][2]]); });
+    Object.keys(SOURCE).forEach(function (k) { if (k !== 'jobs') f.push(['source:' + k, SOURCE[k][2]]); });   // job ads are switched off
     Object.keys(offers || {}).forEach(function (k) { f.push(['offer:' + k, offers[k].label]); });
     return f.map(function (x) {
       return '<button type="button" class="br-f' + (x[0] === cur ? ' on' : '') + '" data-filter="' + esc(x[0]) + '" aria-pressed="' + (x[0] === cur) + '">' + esc(x[1]) + '</button>';
@@ -870,7 +870,7 @@
       if (!b) return;
       b.disabled = true;
       api('/sheet', { method: 'POST', body: { action: b.getAttribute('data-sheet') } })
-        .then(function (j) { toast(j.detail || ('Sheet updated: ' + j.added + ' added, ' + j.updated + ' brought up to date.')); })
+        .then(function (j) { toast(j.detail || ('Sheet updated: ' + j.added + ' added, ' + j.updated + ' brought up to date' + (j.removed ? ', ' + j.removed + ' removed' : '') + '.')); })
         .catch(function (e) { toast(e.message, true); })
         .then(function () { b.disabled = false; });
     });
