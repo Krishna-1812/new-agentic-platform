@@ -121,6 +121,15 @@ SCHEMA = [
     # when the lead's row last went to the workspace's Google Sheet (buyer_radar_sheet.sync)
     "ALTER TABLE br_leads ADD COLUMN IF NOT EXISTS sheet_at TIMESTAMPTZ",
 ]
+# Job-ad leads ("Hiring for it") were switched off on 2026-10-25. What they left is deleted once a process
+# starts, unless someone was written to through one (that record of who was contacted stays). Their people
+# are forgotten too, so a person who also fits a customer profile can still be found that way. The
+# sheet's rows go with the next sheet update (buyer_radar_sheet.RETIRED_FOUND_IN).
+_NEVER_CONTACTED = "NOT EXISTS (SELECT 1 FROM br_sends s WHERE s.lead_id = br_leads.id)"
+RETIRED_SOURCES = [
+    "DELETE FROM br_identities WHERE lead_id IN (SELECT id FROM br_leads WHERE source = 'jobs' AND " + _NEVER_CONTACTED + ")",
+    "DELETE FROM br_leads WHERE source = 'jobs' AND " + _NEVER_CONTACTED,
+]
 _READY = False
 
 
@@ -133,6 +142,8 @@ def _ensure():
         with conn.cursor() as cur:
             cur.execute("SELECT pg_advisory_xact_lock(hashtext('br-schema-v1'))")
             for statement in SCHEMA:
+                cur.execute(statement)
+            for statement in RETIRED_SOURCES:
                 cur.execute(statement)
         conn.commit()
     finally:

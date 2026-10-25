@@ -324,7 +324,7 @@ class FakeSheets:
         def run():
             self._check()
             if fields:
-                return {"sheets": [{"properties": {"title": t}} for t in self.tabs]}
+                return {"sheets": [{"properties": {"title": t, "sheetId": i}} for i, t in enumerate(self.tabs)]}
             tab, rows = self._tab(range), self.tabs.get(self._tab(range), [])
             ref = range.split("!")[1]
             if ref == "1:1":
@@ -338,7 +338,13 @@ class FakeSheets:
             self._check()
             self.calls.append(("batchUpdate", body))
             for req in body.get("requests") or []:
-                self.tabs.setdefault(req["addSheet"]["properties"]["title"], [])
+                if "addSheet" in req:
+                    self.tabs.setdefault(req["addSheet"]["properties"]["title"], [])
+                else:
+                    rng = req["deleteDimension"]["range"]
+                    assert rng["dimension"] == "ROWS"
+                    tab = list(self.tabs)[rng["sheetId"]]
+                    del self.tabs[tab][rng["startIndex"]:rng["endIndex"]]
             for d in body.get("data") or []:
                 assert body["valueInputOption"] == "RAW"
                 col, row = self._cell(d["range"].split("!")[1])
@@ -420,7 +426,7 @@ def test_the_sheet_id_comes_from_its_link():
 def test_every_lead_gets_one_detailed_row_with_text_kept_as_text():
     svc, st = FakeSheets(), SheetStore([_lead(1), _lead(2, source="rfp", email="bids@pune.gov.in", email_source="rfp")])
     got = sheet.sync("acct:1", {"sheet_id": "x" * 30, "alert_score": 70}, store=st, service=svc)
-    assert got == {"added": 2, "updated": 0, "left": 0} and set(svc.tabs) == {"Leads", "Runs"}
+    assert got == {"added": 2, "updated": 0, "left": 0, "removed": 0} and set(svc.tabs) == {"Leads", "Runs"}
     head, rows = svc.tabs["Leads"][0], svc.tabs["Leads"][1:]
     assert head[0] == "Lead ID" and len(head) == len(sheet.lead_columns({})) and len(rows) == 2
     row = dict(zip(head, rows[1]))
@@ -435,7 +441,7 @@ def test_a_lead_is_never_added_twice_even_when_the_database_missed_the_last_upda
     svc = FakeSheets()
     sheet.sync("acct:1", {"sheet_id": "x" * 30}, store=st, service=svc)
     got = sheet.sync("acct:1", {"sheet_id": "x" * 30}, store=st, service=svc)
-    assert len(svc.tabs["Leads"]) == 2 and got == {"added": 0, "updated": 1, "left": 0}, "found by its Lead ID: updated, not added"
+    assert len(svc.tabs["Leads"]) == 2 and got == {"added": 0, "updated": 1, "left": 0, "removed": 0}, "found by its Lead ID: updated, not added"
 
 
 def test_a_changed_lead_is_updated_in_its_own_row_after_the_team_sorted_and_added_columns():
@@ -449,7 +455,7 @@ def test_a_changed_lead_is_updated_in_its_own_row_after_the_team_sorted_and_adde
                     sends=[{"channel": "email", "status": "sent", "to": "p1@acme.com", "by": "kris@x.com", "at": "2026-10-22T05:00:00+00:00"}])
     st.leads = [changed]
     got = sheet.sync("acct:1", {"sheet_id": "x" * 30}, store=st, service=svc)
-    assert got == {"added": 0, "updated": 1, "left": 0}
+    assert got == {"added": 0, "updated": 1, "left": 0, "removed": 0}
     head = svc.tabs["Leads"][0]
     row1 = dict(zip(head, svc.tabs["Leads"][2]))
     assert row1["Lead ID"] == 1 and row1["Status"] == "contacted" and row1["Email"] == "p1@acme.com"
@@ -759,3 +765,28 @@ def test_the_runs_list_offers_resend_only_when_a_channel_is_set_and_the_message_
     assert 'data-resend="4"' in known and 'data-strong="22"' in known and 'data-known="1"' in known and "Resend to Slack" in known
     assert "data-resend" not in no_channel and "data-resend" not in waiting and "data-resend" not in failed
     assert 'data-resend="4"' in unknown and 'data-known=""' in unknown
+
+
+def test_the_rows_of_job_ads_are_taken_out_of_the_sheet_and_nothing_else_is():
+    head = [h for h, _, _ in sheet.lead_columns({})]
+
+    def row(i, found):
+        r = [""] * len(head)
+        r[0], r[head.index("Found in")] = i, found
+        return r
+    svc = FakeSheets({"Leads": [head, row(1, "LinkedIn post"), row(2, "Job ads"), row(3, "Job ads"), row(4, "Reddit"),
+                                row(5, "Job ads"), row(6, "Comment on a post")], "Runs": [["Run ID"]]})
+    s = br.merged({"sheet_id": "x" * 30})
+    assert sheet.sync("acct:1", s, store=SheetStore([]), service=svc) == {"added": 0, "updated": 0, "left": 0, "removed": 3}
+    assert [r[0] for r in svc.tabs["Leads"][1:]] == [1, 4, 6] and svc.tabs["Leads"][0] == head
+    assert sheet.sync("acct:1", s, store=SheetStore([]), service=svc)["removed"] == 0, "once"
+    st = SheetStore([_lead(7)])
+    got = sheet.sync("acct:1", s, store=st, service=svc)
+    assert got["added"] == 1 and got["removed"] == 0 and [r[0] for r in svc.tabs["Leads"][1:]] == [1, 4, 6, 7]
+
+
+def test_a_sheet_without_a_found_in_column_or_job_rows_is_left_alone():
+    head = [h for h, _, _ in sheet.lead_columns({}) if h != "Found in"]
+    svc = FakeSheets({"Leads": [head, [1] + [""] * (len(head) - 1)], "Runs": [["Run ID"]]})
+    got = sheet.sync("acct:1", br.merged({"sheet_id": "x" * 30}), store=SheetStore([]), service=svc)
+    assert got["removed"] == 0 and len(svc.tabs["Leads"]) == 2 and "Found in" in svc.tabs["Leads"][0], "its header is put back, no rows go"

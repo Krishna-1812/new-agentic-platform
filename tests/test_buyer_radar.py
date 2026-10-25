@@ -107,6 +107,7 @@ def test_queries_follow_linkedins_rules(q, bad):
     assert src.check_query(q) == bad
 
 
+@pytest.mark.usefixtures("jobs_on")
 def test_every_default_search_is_one_linkedin_accepts():
     for offer in br.OFFERS.values():
         assert offer["queries"] and len(offer["queries"]) <= br.MAX_QUERIES
@@ -526,6 +527,7 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
         "RFPs need only Claude, so a run with them on still goes"
 
 
+@pytest.mark.usefixtures("jobs_on")
 def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_it_read(monkeypatch):
     from tracker import buyer_radar_unipile as uni
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
@@ -792,6 +794,14 @@ def _client(email):
 
 
 H = {"X-Requested-With": "fetch", "Origin": "http://localhost"}
+
+
+@pytest.fixture
+def jobs_on(monkeypatch):
+    """Job ads, switched off since 2026-10-25, searched again: for the tests of that machinery."""
+    monkeypatch.setattr(br, "RETIRED_SOURCES", ())
+    monkeypatch.setattr(br, "LEAD_SOURCES", dict(br.ALL_LEAD_SOURCES))
+    monkeypatch.setitem(br.DEFAULTS, "sources", list(br.ALL_LEAD_SOURCES))
 
 
 @pytest.fixture

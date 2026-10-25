@@ -136,12 +136,17 @@ OFFERS = {
 # == settings =============================================================================================
 SEARCH_SOURCES = {"unipile": "Unipile", "apify": "Apify"}
 # where leads come from; "posts" through the source above, the rest through Unipile
-LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads", "icp": "Customer profiles",
-                "rfps": "RFPs and tenders", "reddit": "Reddit"}
+ALL_LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads", "icp": "Customer profiles",
+                    "rfps": "RFPs and tenders", "reddit": "Reddit"}
+# Job ads were switched off on 2026-10-25: the team does not want "hiring for it" leads. The search code is
+# kept (put the name out of RETIRED_SOURCES to bring it back); a workspace that still has "jobs" in its saved
+# sources is not searched for it (sources_on), and the leads it left were deleted (buyer_radar_store).
+RETIRED_SOURCES = ("jobs",)
+LEAD_SOURCES = {k: v for k, v in ALL_LEAD_SOURCES.items() if k not in RETIRED_SOURCES}
 
 DEFAULTS = {
     "source": "unipile",              # who runs the search: Unipile (free per post, as our LinkedIn account) or Apify
-    "sources": ["posts", "comments", "jobs", "icp", "rfps", "reddit"],   # where leads come from (LEAD_SOURCES)
+    "sources": [k for k in ALL_LEAD_SOURCES if k not in RETIRED_SOURCES],   # where leads come from (LEAD_SOURCES)
     "offers": ["callvibe", "markify"],
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
     "job_queries": {},                # offer -> its own job titles, in place of OFFERS[offer]["jobs"]

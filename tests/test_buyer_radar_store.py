@@ -209,3 +209,23 @@ def test_the_sheet_gets_new_and_changed_leads_and_every_send_changes_a_lead(db):
     got = db.sheet_pending("acct:1")
     assert [x["id"] for x in got] == [a] and len(got[0]["sends"]) == 2, "a second send changes the row too"
     assert db.sheet_pending("acct:2") == []
+
+
+def test_job_ad_leads_nobody_was_written_to_are_deleted_with_their_people(db):
+    run = db.create_run("acct:1", br.merged({}), 2.0, "kris@x.com")
+    ids = db.add_leads("acct:1", run, [dict(_lead("j1", person="company/a"), source="jobs"),
+                                       dict(_lead("j2", person="company/b"), source="jobs"),
+                                       dict(_lead("p1", person="in/jane"), source="post")])
+    db.add_identities("acct:1", [(ids[0], ["person:company/a"]), (ids[1], ["person:company/b"]), (ids[2], ["person:in/jane"])])
+    db.add_leads("acct:2", db.create_run("acct:2", br.merged({}), 2.0), [dict(_lead("j1"), source="jobs")])
+    db.record_send("acct:1", ids[1], "email", "x@b.co", "company/b", "sent", "", "kris@x.com")
+    for statement in db.RETIRED_SOURCES:
+        db._exec(statement)
+    left = {x["id"] for x in db.list_leads("acct:1")}
+    assert ids[0] not in left and ids[2] in left and ids[1] in left, "the one written to stays, with its record"
+    assert db.known_identities("acct:1", ["person:company/a", "person:company/b", "person:in/jane"]) == \
+        {"person:company/b", "person:in/jane"}, "a person found through a job ad can be found again some other way"
+    assert [x["id"] for x in db.list_leads("acct:2")] == [], "every workspace's job ads go"
+    for statement in db.RETIRED_SOURCES:
+        db._exec(statement)
+    assert {x["id"] for x in db.list_leads("acct:1")} == left, "again changes nothing"
