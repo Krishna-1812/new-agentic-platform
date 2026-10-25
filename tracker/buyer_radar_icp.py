@@ -28,6 +28,7 @@ the strong ones when "Find work emails" is on.
 from __future__ import annotations
 
 import re
+import time
 
 TRIGGERS = {
     "new_in_role": "New in their role",
@@ -59,6 +60,9 @@ MAX_ITEMS = 15
 PER_ICP = 25          # people a run takes from each ICP
 MAX_PAGES = 5         # pages of Saleshandy's results (25 a page) a run reads past people already met
 COMPANIES = 15        # companies a company-trigger ICP looks inside
+RATE_WAIT_S = 60      # when Saleshandy says slow down: wait this long, then search the profile again
+RATE_RETRIES = 1      # such waits for one profile
+RATE_GIVE_UP = 2      # profiles in a row it still refuses: the rest wait for the next search
 
 DEFAULT_ICPS = {
     "callvibe": [
@@ -257,7 +261,7 @@ def cursor_key(icp):
     return "icp:" + hashlib.sha1(raw.encode()).hexdigest()[:16]
 
 
-def find(icps, *, client=None, per_icp=PER_ICP, known=None, cursor=None):
+def find(icps, *, client=None, per_icp=PER_ICP, known=None, cursor=None, sleep=time.sleep):
     """The people each ICP finds that the workspace has not met, best first, at most per_icp each:
     [(offer, icp, signal, score)] and notes. `icps` is [(offer, icp)]; `known(keys)` says which of the keys
     the workspace has met before (a lead, or looked at), so the search pages on past them (MAX_PAGES at
@@ -274,52 +278,61 @@ def find(icps, *, client=None, per_icp=PER_ICP, known=None, cursor=None):
     get_page, set_page = cursor or (lambda key: 1, lambda key, page: None)
     out, notes, taken = [], [], set()      # taken: people an earlier profile kept this run
 
+    limited = 0                             # profiles in a row that Saleshandy refused even after the wait
     for offer, icp in icps:
         if not icp.get("on", True):
             continue
-        found, looked, failed = [], set(), False
-
-        def fresh(pairs):
-            pairs = [(p, c) for p, c in pairs if p.get("id") and "icp:%s" % p["id"] not in taken | looked]
-            old = known(["icp:%s" % p["id"] for p, _ in pairs])
-            new = []
-            for p, c in pairs:
-                key = "icp:%s" % p["id"]
-                if key not in looked and key not in old:
-                    new.append((p, c))
-                looked.add(key)
-            return new
-
         cf = company_filters(icp)
         ckey = cursor_key(icp)
         start = max(1, int(get_page(ckey) or 1))
-        next_page = start
-        try:
-            for page in range(start, start + MAX_PAGES):
-                if cf is None:
-                    res = client.search_people(people_filters(icp), page=page)
-                    found += fresh([(p, None) for p in res.get("people") or []])
-                else:
-                    res = client.search_companies(cf, page=page)
-                    companies = res.get("companies") or []
-                    if page == 1 and not companies:
-                        notes.append("“%s” found no companies on Saleshandy." % icp["name"])
-                    for c in companies[:COMPANIES]:
-                        found += fresh([(p, c) for p in (client.search_people(people_filters(icp, company=c)).get("people") or [])[:2]])
-                        if len(found) >= per_icp:
-                            break
-                more = bool(res.get("has_next"))
-                if len(found) >= per_icp:
-                    next_page = page                 # not finished: the rest of this page is the next run's
-                    break
-                next_page = page + 1 if more else 1  # the end of the results: back to the newest
-                if not more:
-                    break
-        except sh.SaleshandyError as e:
-            notes.append("Saleshandy stopped at “%s”: %s" % (icp["name"], e))
-            if isinstance(e, (sh.AuthError, sh.RateLimited)):
-                break
-            failed = True
+        for attempt in range(RATE_RETRIES + 1):
+            found, looked, failed, refused = [], set(), False, False
+
+            def fresh(pairs):
+                pairs = [(p, c) for p, c in pairs if p.get("id") and "icp:%s" % p["id"] not in taken | looked]
+                old = known(["icp:%s" % p["id"] for p, _ in pairs])
+                new = []
+                for p, c in pairs:
+                    key = "icp:%s" % p["id"]
+                    if key not in looked and key not in old:
+                        new.append((p, c))
+                    looked.add(key)
+                return new
+
+            next_page = start
+            try:
+                for page in range(start, start + MAX_PAGES):
+                    if cf is None:
+                        res = client.search_people(people_filters(icp), page=page)
+                        found += fresh([(p, None) for p in res.get("people") or []])
+                    else:
+                        res = client.search_companies(cf, page=page)
+                        companies = res.get("companies") or []
+                        if page == 1 and not companies:
+                            notes.append("“%s” found no companies on Saleshandy." % icp["name"])
+                        for c in companies[:COMPANIES]:
+                            found += fresh([(p, c) for p in (client.search_people(people_filters(icp, company=c)).get("people") or [])[:2]])
+                            if len(found) >= per_icp:
+                                break
+                    more = bool(res.get("has_next"))
+                    if len(found) >= per_icp:
+                        next_page = page                 # not finished: the rest of this page is the next run's
+                        break
+                    next_page = page + 1 if more else 1  # the end of the results: back to the newest
+                    if not more:
+                        break
+            except sh.SaleshandyError as e:
+                if isinstance(e, sh.RateLimited) and attempt < RATE_RETRIES:
+                    sleep(RATE_WAIT_S)               # Saleshandy asked us to slow down: wait, then this profile again
+                    continue
+                notes.append("Saleshandy stopped at “%s”: %s" % (icp["name"], e))
+                failed, refused = True, isinstance(e, sh.RateLimited)
+                if isinstance(e, sh.AuthError):
+                    limited = None
+            break
+        if limited is None:
+            break                                    # a wrong key stops every profile
+        limited = limited + 1 if refused else 0
         if not failed:
             set_page(ckey, next_page)
         rows = sorted(((offer, icp, signal(icp, offer, p, c), score(icp, p)) for p, c in found), key=lambda r: -r[3])[:per_icp]
@@ -327,6 +340,9 @@ def find(icps, *, client=None, per_icp=PER_ICP, known=None, cursor=None):
         out += rows
         if not rows and cf is None and not failed:
             notes.append("“%s” found nobody new on Saleshandy." % icp["name"])
+        if limited >= RATE_GIVE_UP:
+            notes.append("Saleshandy is still rate limiting, so the profiles after “%s” wait for the next search." % icp["name"])
+            break
     return out, notes
 
 

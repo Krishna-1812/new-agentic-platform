@@ -177,6 +177,55 @@ def test_saleshandy_saying_no_is_noted_and_a_bad_key_stops_the_rest():
     assert icp.find([("markify", off)], client=c) == ([], []) and c.asked == []
 
 
+class RateSH(SH):
+    """Saleshandy's searches, refusing as scripted: `refuse(profile call number) -> bool`."""
+
+    def __init__(self, refuse, **kw):
+        super().__init__(**kw)
+        self.refuse, self.calls = refuse, 0
+
+    def search_people(self, filters, page=1):
+        self.calls += 1
+        if self.refuse(self.calls):
+            self.asked.append(("refused", filters, page))
+            raise sh.RateLimited("Saleshandy's rate limit was hit; try again in a minute", status=429)
+        return super().search_people(filters, page=page)
+
+
+def test_a_profile_saleshandy_slowed_down_is_waited_for_and_searched_again():
+    naps, pages = [], {}
+    c = RateSH(lambda n: n == 1, people=[person(1), person(2)])
+    found, notes = icp.find([("markify", profile())], client=c, per_icp=2, sleep=naps.append,
+                            cursor=(lambda key: 1, lambda key, page: pages.__setitem__(key, page)))
+    assert sorted(f[2]["key"] for f in found) == ["icp:1", "icp:2"]
+    assert notes == [] and naps == [icp.RATE_WAIT_S] == [60]
+    assert [a[0] for a in c.asked[:2]] == ["refused", "people"] and c.asked[0][2] == c.asked[1][2] == 1, \
+        "the same page again, not the next"
+    assert list(pages.values()) == [1], "and where it stopped is saved once, after it worked"
+
+
+def test_a_profile_still_refused_after_the_wait_is_noted_and_the_others_go_on():
+    naps = []
+    c = RateSH(lambda n: n in (1, 2), people=[person(1), person(2)])
+    found, notes = icp.find([("markify", profile(name="Gong or Chorus")), ("callvibe", profile(name="B"))], client=c,
+                            per_icp=2, sleep=naps.append)
+    assert len(notes) == 1 and notes[0].startswith("Saleshandy stopped at “Gong or Chorus”") and "rate limit" in notes[0]
+    assert sorted(f[2]["key"] for f in found) == ["icp:1", "icp:2"] and all(f[0] == "callvibe" for f in found), "B was searched"
+    assert naps == [icp.RATE_WAIT_S]
+
+
+def test_saleshandy_refusing_profile_after_profile_stops_the_rest_for_this_search():
+    naps = []
+    c = RateSH(lambda n: True, people=[person(1)])
+    found, notes = icp.find([("markify", profile(name=n)) for n in ("A", "B", "C", "D")], client=c, sleep=naps.append)
+    assert found == [] and len(notes) == icp.RATE_GIVE_UP + 1 and "still rate limiting" in notes[-1] and "“B”" in notes[-1]
+    assert c.calls == 2 * (icp.RATE_RETRIES + 1), "A and B, each twice; C and D not asked"
+    assert naps == [icp.RATE_WAIT_S] * 2
+    c = RateSH(lambda n: n in (1, 2), people=[person(1)])
+    found, notes = icp.find([("markify", profile(name=n)) for n in ("A", "B", "C")], client=c, sleep=lambda s: None)
+    assert [f[0] for f in found] and not any("still rate limiting" in n for n in notes), "a good profile resets the count"
+
+
 # == the run ================================================================================================
 
 def test_a_run_keeps_people_who_fit_a_profile_each_once_and_no_more_than_asked(monkeypatch):
