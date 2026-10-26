@@ -274,7 +274,7 @@ def test_slack_names_the_places_and_never_links_nowhere():
            "score": 80, "verdict": {"intent_label": "Fits", "need": "x", "signals": ["icp", "jobs"]}}
     r = {"post": _rfp_signal(), "offer": "callvibe", "score": 90, "verdict": {"intent_label": "Looking", "need": "y"}}
     msg = json.dumps(send.slack_messages("", [icp, r], "https://app/br"))
-    assert "<|" not in msg and "Customer profile" in msg and "also found by hiring" in msg
+    assert "<|" not in msg and "(customer profile)" in msg and "also found by hiring" in msg
     assert "<https://acme.example/rfp|Open the RFP>" in msg
 
 

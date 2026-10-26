@@ -414,14 +414,64 @@ def _slack_card(i, n, lead):
             "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": text[:2900] + link}}]}
 
 
-def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None):
-    """What a run posts: first its headline (how many leads, how the day went, the buttons), then every
-    strong lead as a message of its own, however many there are. `total` is every new lead of the run
-    (the strong ones are some of them), `by_source` how many came from each place; the daily run says
-    how its day went even when none is strong; `sheet_url` adds a button to the workspace's Google
-    Sheet. A list of {"text", "blocks"}, the headline first."""
+SLACK_HOT_SCORE = 85            # a lead this strong gets a message of its own; the others share one list in a thread
+SLACK_LIST_CHARS = 2800         # a section holds 3000 characters
+SLACK_LIST_LINES = 25
+
+
+def _slack_line(lead):
+    """One lead as a line of the thread's list: score, who, offer, and what can be done about it."""
+    from . import buyer_radar as br, watch_alerts
+    esc = watch_alerts.esc
+    p, v = lead["post"], lead["verdict"]
+    a = p.get("author") or {}
+    kind = p.get("kind") or "post"
+    who = "*%s*" % esc(a.get("name") or "Someone")
+    if a.get("headline") and kind != "jobs":
+        who += ", " + esc(a["headline"][:60])
+    tag = {"icp": " (customer profile)", "reddit": " (Reddit)", "comment": " (comment)", "rfp": " (RFP)"}.get(kind, "")
+    bits = [esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"]))]
+    bits += [d for d in _slack_details(lead, kind).split("  ·  ") if d]
+    if len(v.get("signals") or []) > 1:
+        bits.append("also found by %s" % ", ".join(SLACK_KIND.get(x, x).lower() for x in v["signals"] if x != kind))
+    url = p.get("url") or ""
+    if url.startswith(("https://", "http://")):
+        bits.append("<%s|Open>" % url)
+    return ("• *%d* · %s%s · %s" % (lead["score"], who, tag, " · ".join(bits)))[:600]
+
+
+def _slack_thread(rest):
+    """The leads that are not hot, as messages for a thread: lines in sections of what a section can hold."""
+    messages, chunk, size = [], [], 0
+    for line in [_slack_line(lead) for lead in rest]:
+        if chunk and (size + len(line) > SLACK_LIST_CHARS or len(chunk) >= SLACK_LIST_LINES):
+            messages.append(chunk)
+            chunk, size = [], 0
+        chunk.append(line)
+        size += len(line) + 1
+    if chunk:
+        messages.append(chunk)
+    out = []
+    for i, lines in enumerate(messages):
+        title = "*The other %d strong lead%s*" % (len(rest), "" if len(rest) == 1 else "s") if i == 0 else "*…and more*"
+        out.append({"text": "Buyer Radar: the other %d strong leads" % len(rest), "thread": True,
+                    "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": title + "\n" + "\n".join(lines)}}]})
+    return out
+
+
+def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, sheet_url="", by_source=None,
+                   hot_score=SLACK_HOT_SCORE):
+    """What a run posts, every strong lead of it: first the headline (how many leads, how the day went, how
+    many are hot, the buttons); then each hot lead (score `hot_score` or more) as a message of its own; and
+    the other strong leads as one list, marked "thread": true, which goes under the headline as replies.
+    `total` is every new lead of the run (the strong ones are some of them), `by_source` how many came from
+    each place; the daily run says how its day went even when none is strong; `sheet_url` adds a button to
+    the workspace's Google Sheet. A list of {"text", "blocks"}, the headline first."""
     from . import watch_alerts
     esc = watch_alerts.esc
+    leads = sorted(leads, key=lambda lead: -int(lead.get("score") or 0))
+    hot = [lead for lead in leads if int(lead.get("score") or 0) >= hot_score]
+    rest = leads[len(hot):]
     who = (" for " + esc(owner_label)) if owner_label else ""
     if leads:
         head = "*Buyer Radar: %d new lead%s%s*" % (len(leads), "" if len(leads) == 1 else "s", who)
@@ -431,6 +481,13 @@ def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, she
     if total is not None and (daily or total > len(leads)):
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": _slack_summary(
             total, leads, daily, sheet_url, by_source)}]})
+    if leads:
+        parts = []
+        if hot:
+            parts.append("🔥 %d hot below" % len(hot))
+        if rest:
+            parts.append("%d %sin the thread" % (len(rest), "more " if hot else "strong leads " if len(rest) > 1 else "strong lead "))
+        blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(parts)}]})
     buttons = []
     if page_url:
         buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open Buyer Radar"}, "url": page_url})
@@ -439,7 +496,7 @@ def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, she
     if buttons:
         blocks.append({"type": "actions", "elements": buttons})
     first = {"text": "Buyer Radar: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
-    return [first] + [_slack_card(i, len(leads), lead) for i, lead in enumerate(leads, 1)]
+    return [first] + [_slack_card(i, len(hot), lead) for i, lead in enumerate(hot, 1)] + _slack_thread(rest)
 
 
 SLACK_PAUSE_S = 0.6             # a channel takes about a message a second in bursts; 429s are waited out by gads_digest.post
@@ -447,8 +504,9 @@ SLACK_PAUSE_S = 0.6             # a channel takes about a message a second in bu
 
 def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=None, total=None, daily=False, sheet_url="",
                 by_source=None, sleep=time.sleep, posted=None):
-    """(ok, why). Every strong lead is posted, one message each, after the headline. Never raises.
-    A lead whose message Slack refused is said in `why` (the others still go out). `posted`, a list,
+    """(ok, why). The headline, then every hot lead as a message of its own, then the other strong leads as a
+    list in a thread under the headline (see slack_messages). Never raises. A message Slack refused is said
+    in `why` (the others still go out). `posted`, a list,
     gets {"channel", "ts"} for every message that went out, so the run can delete them if it is sent again."""
     from . import gads_digest
     token = slack_token()
@@ -459,27 +517,30 @@ def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=No
     posted = [] if posted is None else posted
     url = page_url or (base_url() + "/strategic-agents/buyer-radar")
 
-    def send_one(msg):
+    def send_one(msg, thread_ts=""):
+        msg = {k: v for k, v in msg.items() if k != "thread"}
+        if thread_ts:
+            msg["thread_ts"] = thread_ts
         ok, err, ts = post(token, channel, msg)
         if ok and ts:
             posted.append({"channel": meta.get("channel") or channel, "ts": ts})
-        return ok, err
+        return ok, err, ts
 
     try:
         messages = slack_messages(owner_label, leads, url, total=total, daily=daily, sheet_url=sheet_url,
                                   by_source=by_source)
-        ok, err = send_one(messages[0])
+        ok, err, head_ts = send_one(messages[0])
         if not ok:
             return False, err or "failed"
         failed, last = 0, ""
         for msg in messages[1:]:
             sleep(SLACK_PAUSE_S)
-            ok, err = send_one(msg)
+            ok, err, _ = send_one(msg, head_ts if msg.get("thread") else "")
             if not ok:
                 failed, last = failed + 1, err or "failed"
     except Exception as e:
         return False, "%s" % type(e).__name__
-    return (True, "") if not failed else (False, "%d of %d leads not posted (%s)" % (failed, len(messages) - 1, last))
+    return (True, "") if not failed else (False, "%d of %d messages not posted (%s)" % (failed, len(messages) - 1, last))
 
 
 def delete_messages(messages, *, delete=None, sleep=time.sleep):
