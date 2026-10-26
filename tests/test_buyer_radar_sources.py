@@ -494,7 +494,7 @@ def test_finding_one_email_needs_a_yes_and_saleshandy_and_picks_the_person(mem, 
 
 def test_a_client_never_finds_emails(seeded, mem, monkeypatch):
     monkeypatch.setenv("SALESHANDY_API_KEY", "k")
-    T._invite("lumina", **{"tool:buyer-radar": True})
+    T._invite("lumina", **{"tool:lead-finder": True})
     r = T._client(T.CLIENT).post(BASE + "/api/leads/7/find-email", json={"confirm": True}, headers=XA)
     assert r.status_code in (302, 403, 404) and mem["leads"][7]["email"] is None, "not a client's to spend"
 
@@ -523,13 +523,14 @@ def test_a_hiring_company_and_a_comment_show_where_they_came_from_and_escape_eve
     assert query == "?source=comment"
 
 
-def test_the_settings_form_holds_the_new_sources():
-    s = br.merged({"job_locations": ["India"]})
+def test_the_settings_form_holds_the_sources_and_nothing_about_job_ads():
     form = run_js("const s = %s; return BR.renderSettings(s, {callvibe: {label: 'CallVibe', site: 'x', queries: ['a'], jobs: ['j']}}, {}, {});"
-                  % json.dumps(s))
-    for id_ in ("brSrc-posts", "brSrc-comments", "brSrc-jobs", "brJ-callvibe", "brJobLoc", "brJobDays", "brJobPer", "brComPosts"):
+                  % json.dumps(br.merged({})))
+    for id_ in ("brSrc-posts", "brSrc-comments", "brSrc-icp", "brSrc-rfps", "brSrc-reddit", "brComPosts"):
         assert 'id="%s"' % id_ in form, id_
-    assert 'value="India"' in form and "Where to look" in form
+    for gone in ("brSrc-jobs", "brJ-callvibe", "brJobLoc", "brJobDays", "brJobPer", "Job ads", "Job titles"):
+        assert gone not in form, "job ads are switched off: " + gone
+    assert "Where to look" in form
 
 
 def test_job_ads_are_switched_off_for_every_workspace(monkeypatch):

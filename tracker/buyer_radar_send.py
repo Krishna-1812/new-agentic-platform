@@ -520,7 +520,7 @@ def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=No
     meta = {}
     post = post or (lambda t, c, m: gads_digest.post(t, c, m, meta=meta))
     posted = [] if posted is None else posted
-    url = page_url or (base_url() + "/strategic-agents/buyer-radar")
+    url = page_url or (base_url() + "/strategic-agents/lead-finder")
 
     def send_one(msg, thread_ts=""):
         msg = {k: v for k, v in msg.items() if k != "thread"}

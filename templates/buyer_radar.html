@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    LEAD FINDER (/strategic-agents/buyer-radar) — the team; listed as Building
+    LEAD FINDER (/strategic-agents/lead-finder; the old address, /strategic-agents/buyer-radar, redirects) — the team; listed as Building
 
     People and companies showing they need what we sell (CallVibe's call
     analytics, Markify's marketing services): LinkedIn posts asking for it,
     people in those posts' comments saying they need it too, companies
-    whose job ads are the work, people who fit a customer profile, open RFPs
+    (their job ads were switched off 2026-10-25), people who fit a customer profile, open RFPs
     and tenders, and Reddit threads asking for it. Read by Claude, kept as leads with an email
     and a LinkedIn note written for each. Sent from here, or automatically where the workspace switches
     it on. Drawn by static/js/buyer_radar.js from the JSON routes in app.py;
@@ -35,11 +35,11 @@
         <span class="sa-ln"><span><span class="sa-mk">You answer</span> <em class="sa-it">first.</em></span></span>
       </h1>
       <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency, others
-        say &ldquo;we need this too&rdquo; in the comments, companies advertise jobs for the work, and people who fit your
+        say &ldquo;we need this too&rdquo; in the comments, and people who fit your
         customers start new roles or raise money, organisations publish RFPs, and people ask Reddit who to hire. Lead Finder finds them all, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
         an email and a LinkedIn note, and sends them for you if you want{% endif %}.</p>
       <ol class="br-steps">
-        <li><b>1</b><span>Searches LinkedIn, Saleshandy and the web<small>posts, comments, job ads, customer profiles, RFPs and Reddit</small></span></li>
+        <li><b>1</b><span>Searches LinkedIn, Saleshandy and the web<small>posts, comments, customer profiles, RFPs and Reddit</small></span></li>
         <li><b>2</b><span>Claude keeps the buyers<small>not vendors or job seekers</small></span></li>
         <li><b>3</b><span>{% if client %}See who to talk to{% else %}Message ready to send<small>email and LinkedIn</small>{% endif %}</span></li>
       </ol>
@@ -73,7 +73,7 @@
     <div class="br-top">
       <section class="card mr-card br-inbox" aria-label="Leads">
         <header class="br-inbox-h">
-          <div><h3>Leads</h3><p>Newest first. Each one is a post, a comment, a company's job ads, a person who fits a customer profile, an RFP or a Reddit thread that Claude read as someone looking to buy.</p></div>
+          <div><h3>Leads</h3><p>Newest first. Each one is a post, a comment, a person who fits a customer profile, an RFP or a Reddit thread that Claude read as someone looking to buy.</p></div>
           <div class="br-inbox-tools">
             <div class="br-filters" id="brFilters" role="group" aria-label="Show"></div>
             <button type="button" class="mr-btn ghost br-export" id="brExport" title="Download the leads shown, as a spreadsheet (CSV)">

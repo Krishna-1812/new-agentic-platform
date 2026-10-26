@@ -95,7 +95,7 @@ def _state(status):
 AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-intelligence": "Social Media Intelligence",
                "event-conference-intelligence": "Event & Conference Intelligence",
                "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder",
-               "market-radar": "Market Radar", "people-signals": "People & Signals", "buyer-radar": "Lead Finder"}
+               "market-radar": "Market Radar", "people-signals": "People & Signals", "lead-finder": "Lead Finder"}
 AGENT_NAMES.update(paid_catalog.NAMES)
 
 
@@ -221,8 +221,8 @@ def _br(acct):
             bits.append("%d found in several places" % sm["multi"])
         if sm.get("emailed") or sm.get("messaged"):
             bits.append("%d written to" % ((sm.get("emailed") or 0) + (sm.get("messaged") or 0)))
-        out.append(_agent(acct, "buyer-radar", title, " \u00b7 ".join(bits), r.get("started_by"), r.get("created_at"),
-                          r.get("status"), "/%s/agents/buyer-radar#run-%d" % (acct["slug"], r["id"])))
+        out.append(_agent(acct, "lead-finder", title, " \u00b7 ".join(bits), r.get("started_by"), r.get("created_at"),
+                          r.get("status"), "/%s/agents/lead-finder#run-%d" % (acct["slug"], r["id"])))
     return out
 
 
@@ -252,7 +252,7 @@ def _seo(acct):
 
 AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr), ("market-radar", _mr),
-               ("people-signals", _ps), ("buyer-radar", _br)) + tuple((a["slug"], _paid(a["slug"])) for a in paid_catalog.WORKSPACE)
+               ("people-signals", _ps), ("lead-finder", _br)) + tuple((a["slug"], _paid(a["slug"])) for a in paid_catalog.WORKSPACE)
 
 
 def entries(acct, library=None, limit=SHOWN, extra=()):

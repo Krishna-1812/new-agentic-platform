@@ -458,7 +458,7 @@ def test_claudes_suggestion_needs_a_yes_and_its_cost_is_recorded(mem, monkeypatc
 
 
 def test_a_client_never_reaches_sequences_or_profiles(seeded, mem, monkeypatch):
-    T._invite("lumina", **{"tool:buyer-radar": True})
+    T._invite("lumina", **{"tool:lead-finder": True})
     cl = T._client(T.CLIENT)
     for method, path in (("get", "/api/sequences"), ("post", "/api/leads/7/sequence"), ("post", "/api/icps/suggest")):
         r = getattr(cl, method)(BASE + path, json={"confirm": True, "offer": "markify"}, headers=XA)

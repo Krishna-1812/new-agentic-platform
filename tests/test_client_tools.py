@@ -398,14 +398,14 @@ TEAM_ONLY = {
     "/strategic-agents/market-radar/api/tidy-suggestions": "a one-off tidy for the team",
     "/strategic-agents/market-radar/report/<int:client_id>": "inside an account it is /<account>/agents/market-radar/report/<id>",
     "/strategic-agents/people-signals/api/runs/<int:run_id>/reveal": "spends the agency's Saleshandy credits",
-    "/strategic-agents/buyer-radar/api/settings": "what to search, the caps and automatic sending are the team's",
-    "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/send": "writes to people for the agency",
-    "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/find-email": "spends the agency's Saleshandy credits",
-    "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/sequence": "writes to people for the agency",
-    "/strategic-agents/buyer-radar/api/sequences": "the agency's Saleshandy sequences",
-    "/strategic-agents/buyer-radar/api/icps/suggest": "the customer profiles are the team's settings",
-    "/strategic-agents/buyer-radar/api/sheet": "the Google Sheet is the team's setting, and holds the drafted messages",
-    "/strategic-agents/buyer-radar/api/runs/<int:run_id>/slack": "posts to the agency's Slack channel",
+    "/strategic-agents/lead-finder/api/settings": "what to search, the caps and automatic sending are the team's",
+    "/strategic-agents/lead-finder/api/leads/<int:lead_id>/send": "writes to people for the agency",
+    "/strategic-agents/lead-finder/api/leads/<int:lead_id>/find-email": "spends the agency's Saleshandy credits",
+    "/strategic-agents/lead-finder/api/leads/<int:lead_id>/sequence": "writes to people for the agency",
+    "/strategic-agents/lead-finder/api/sequences": "the agency's Saleshandy sequences",
+    "/strategic-agents/lead-finder/api/icps/suggest": "the customer profiles are the team's settings",
+    "/strategic-agents/lead-finder/api/sheet": "the Google Sheet is the team's setting, and holds the drafted messages",
+    "/strategic-agents/lead-finder/api/runs/<int:run_id>/slack": "posts to the agency's Slack channel",
 }
 
 

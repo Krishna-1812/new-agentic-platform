@@ -7554,7 +7554,7 @@ ACCT_AGENTS = (
      "Their rivals' moves, new places nearby and their industry's news", (("#mrAddUrl", "website"),)),
     ("people-signals", "admin_account_mapper", "/strategic-agents/people-signals", "People & Signals",
      "The right people at their target accounts, and what each account is doing", ()),
-    ("buyer-radar", "buyer_radar_page", "/strategic-agents/buyer-radar", "Lead Finder",
+    ("lead-finder", "buyer_radar_page", "/strategic-agents/lead-finder", "Lead Finder",
      "People and companies on LinkedIn showing they need what we sell, with a message ready", ()),
 )
 # Every agent on the agents page (templates/b2b_agents.html) is in ACCT_AGENTS, so it opens inside every
@@ -7754,7 +7754,7 @@ CLIENT_TOOL_ROUTES = {
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
     "people-signals": (r"people-signals/api/(status|estimate|chat|runs(/\d+(/export\.csv)?)?)",),
     # Searching and reading the leads; never the settings or a send, which write to people for the agency.
-    "buyer-radar": (r"buyer-radar/api/(status|runs(/\d+)?|leads(/\d+|/export)?)",),
+    "lead-finder": (r"lead-finder/api/(status|runs(/\d+)?|leads(/\d+|/export)?)",),
 }
 # The Paid Marketing Agents read the workspace's own ad accounts only (_pm_scope). Several share a route (the
 # account list): a request is granted when ANY agent it belongs to is shared (_acct_client_grant).
@@ -7769,7 +7769,7 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "thought-leader-pr": (r"thought-leader-pr/resolve",),
     "market-radar": (r"market-radar/api/runs", r"market-radar/api/clients/\d+/collect"),
     "people-signals": (r"people-signals/api/(runs|chat)",),
-    "buyer-radar": (r"buyer-radar/api/runs",),
+    "lead-finder": (r"lead-finder/api/runs",),
 }
 CLIENT_RUN_ROUTES.update({a["slug"]: a["runs"] for a in paid_catalog.WORKSPACE})
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
@@ -8021,7 +8021,7 @@ ACCT_TOOL_COLOURS = {
     "page-watch": "#8CCBFF", "video-studio": "#FF6022", "social-media-intelligence": "#8CCBFF",
     "local-business-radar": "#FF6022", "event-conference-intelligence": "#FFB500",
     "company-people-intelligence": "#121213", "thought-leader-pr": "#FF3B30", "market-radar": "#121213",
-    "people-signals": "#8CCBFF", "buyer-radar": "#FFB500", "seo-geo-audit": "#34D399",
+    "people-signals": "#8CCBFF", "lead-finder": "#FFB500", "seo-geo-audit": "#34D399",
     "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
     "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
     "content-architect": "#121213", "market-potential": "#C6F432"}
@@ -10063,9 +10063,11 @@ _PAGE_LABEL_ALIASES = (
     ("/strategic-agents/42-north-dental-slot-checker", SLOT_CHECKER),
     ("Gentle Dental Slot Checker", "Slot Checker Agent"),
     ("42 North Dental Slot Checker", "Slot Checker Agent"),
-    # Buyer Radar -> Lead Finder, 2026-10-26 (the address, /strategic-agents/buyer-radar, stays). Safe to fold
-    # forward: nothing else was ever called Buyer Radar.
+    # Buyer Radar -> Lead Finder, 2026-10-26: the name, and the address (both pages: the team's and an
+    # account's). Safe to fold forward: nothing else was ever called Buyer Radar or lived at those addresses.
     ("Buyer Radar", "Lead Finder"),
+    ("/strategic-agents/buyer-radar", "/strategic-agents/lead-finder"),
+    ("/agents/buyer-radar", "/agents/lead-finder"),
     # "Social Creative Intelligence Analyst" -> "Social Media Intelligence",
     # 2026-09-08, on the grounds that the agent had grown well past creative
     # analysis, with the slug moved to match. Both axes are aliased, because
@@ -14452,7 +14454,26 @@ def admin_account_mapper_reveal(run_id):
 # (_mr_email). A client the workspace shares it with may search and read the leads; settings and sending stay
 # with the team, and a client's run never sends.
 
-BR = "/strategic-agents/buyer-radar"
+BR = "/strategic-agents/lead-finder"
+BR_OLD = "/strategic-agents/buyer-radar"      # its address until 2026-10-26 (it was called Buyer Radar): bookmarks, mail
+
+
+@app.route(BR_OLD, defaults={"rest": ""}, methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
+@app.route(BR_OLD + "/<path:rest>", methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
+def buyer_radar_old_address(rest):
+    """The old address, and everything under it, sent to the new one; 308 keeps a POST a POST."""
+    target = BR + ("/" + rest if rest else "")
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=301 if request.method == "GET" else 308)
+
+
+@app.route("/<acct:slug>/agents/buyer-radar")
+def buyer_radar_old_account_address(slug):
+    target = "/%s/agents/lead-finder" % slug
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=301)
 
 
 def _br_team_only():
@@ -14666,7 +14687,7 @@ def buyer_radar_leads_export():
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     tag = status or offer or source or ("min%d" % min_score if min_score else "")
-    name = "buyer-radar-leads-%s%s.csv" % (datetime.now(timezone.utc).strftime("%Y-%m-%d"), "-" + tag if tag else "")
+    name = "lead-finder-leads-%s%s.csv" % (datetime.now(timezone.utc).strftime("%Y-%m-%d"), "-" + tag if tag else "")
     return Response(br.leads_csv(leads, drafts=not viewer_is_client()), mimetype="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="%s"' % name, "Cache-Control": "no-store"})
 
