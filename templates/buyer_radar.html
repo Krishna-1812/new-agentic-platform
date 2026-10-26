@@ -16,7 +16,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Lead Finder", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=10"]) }}
+{{ head("Lead Finder", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=11"]) }}
 </head>
 <body class="sa"{% if client %} data-br-client{% endif %}>
 
@@ -80,7 +80,7 @@
               <svg class="br-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Export CSV</button>
           </div>
         </header>
-        <div id="brLeads" class="br-leads"><div class="mr-empty">Loading&hellip;</div></div>
+        <div id="brLeads" class="br-leads" tabindex="0" role="region" aria-label="Leads, scrolls"><div class="mr-empty">Loading&hellip;</div></div>
       </section>
 
       <aside class="br-side">
@@ -94,7 +94,7 @@
         </section>
         <section class="card mr-card br-runs" aria-label="Recent searches">
           <header class="mr-card-h"><div><h3>Recent searches</h3></div></header>
-          <div class="mr-card-b" id="brRuns"><div class="mr-empty">Loading&hellip;</div></div>
+          <div class="mr-card-b" id="brRuns" tabindex="0" role="region" aria-label="Recent searches, scrolls"><div class="mr-empty">Loading&hellip;</div></div>
         </section>
       </aside>
     </div>
