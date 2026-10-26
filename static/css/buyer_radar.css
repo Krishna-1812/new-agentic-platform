@@ -244,3 +244,27 @@
 .br-icp-f span { font-size: 11.5px; font-weight: 600; color: var(--tx3); }
 .br-icp-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .mr .br-icp-acts input { flex: 1; min-width: 200px; }
+
+/* ── Each section scrolls inside its own card, so the page stays short ───────────────────────────────────
+   The leads, the recent searches and the settings each have a height of their own and a thin scrollbar of
+   their own (the card's heading, with the filters, stays where it is above the list). Like the other
+   agents' pages: the slim WebKit one for Chrome, Edge and Safari, and the standard thin one in Firefox. */
+.br-leads { max-height: min(78vh, 860px); }
+.br-runs .mr-card-b { max-height: min(46vh, 420px); }
+.br-set-b { max-height: min(72vh, 760px); }
+.br-leads, .br-runs .mr-card-b, .br-set-b { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+.br-runs .mr-card-b { padding-right: 10px; }
+.br-leads:focus-visible, .br-runs .mr-card-b:focus-visible, .br-set-b:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+.br-leads::-webkit-scrollbar, .br-runs .mr-card-b::-webkit-scrollbar, .br-set-b::-webkit-scrollbar { width: 10px; height: 10px; }
+.br-leads::-webkit-scrollbar-track, .br-runs .mr-card-b::-webkit-scrollbar-track, .br-set-b::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+.br-leads::-webkit-scrollbar-thumb, .br-runs .mr-card-b::-webkit-scrollbar-thumb, .br-set-b::-webkit-scrollbar-thumb {
+  border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; min-height: 44px;
+  background-color: rgba(120, 114, 106, .42); transition: background-color 150ms ease, border-width 150ms ease; }
+.br-leads::-webkit-scrollbar-thumb:hover, .br-runs .mr-card-b::-webkit-scrollbar-thumb:hover, .br-set-b::-webkit-scrollbar-thumb:hover {
+  border-width: 2px; background-color: #FF8B5D; background-image: linear-gradient(180deg, #FF6022, #FFB500); }
+.br-leads::-webkit-scrollbar-thumb:active, .br-runs .mr-card-b::-webkit-scrollbar-thumb:active, .br-set-b::-webkit-scrollbar-thumb:active { background-image: linear-gradient(180deg, #E8501A, #FFB500); }
+@-moz-document url-prefix() {
+  .br-leads, .br-runs .mr-card-b, .br-set-b { scrollbar-width: thin; scrollbar-color: rgba(120, 114, 106, .5) transparent; }
+}
+@media (max-width: 1080px) { .br-leads { max-height: min(70vh, 760px); } .br-runs .mr-card-b { max-height: 40vh; } }
+@media (max-width: 640px) { .br-leads::-webkit-scrollbar, .br-runs .mr-card-b::-webkit-scrollbar, .br-set-b::-webkit-scrollbar { width: 6px; } }
