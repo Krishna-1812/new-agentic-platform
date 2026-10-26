@@ -13,7 +13,7 @@
 (function (root) {
   'use strict';
 
-  var API = '/strategic-agents/buyer-radar/api';
+  var API = '/strategic-agents/lead-finder/api';
   var DOC = typeof document !== 'undefined' ? document : null;
   var CLIENT = !!(DOC && DOC.body && DOC.body.hasAttribute('data-br-client'));
   var STATUS = { 'new': ['acc', 'New'], contacted: ['ok', 'Contacted'], replied: ['ok', 'Replied'], dismissed: ['', 'Dismissed'] };
@@ -34,7 +34,6 @@
     rfp: ['RFP', 'They published a request for proposals', 'RFPs'], reddit: ['Reddit', 'They asked on Reddit', 'Reddit'] };
   var LEAD_SOURCES = { posts: ['LinkedIn posts', 'People posting that they need it.'],
     comments: ['Their comments', 'People under those posts saying they need it too. Read through Unipile.'],
-    jobs: ['Job ads', 'Companies whose LinkedIn job ads are the work, and who decides there. Read through Unipile; people found by Saleshandy, free.'],
     icp: ['Customer profiles', 'People who fit your customers at a moment that matters: new in their role, recently funded, hiring, using a rival. From Saleshandy, free to search.'],
     rfps: ['RFPs and tenders', 'Open requests for proposals on the web, found by Claude\'s web search. About $0.03 a search, run once every few days.'],
     reddit: ['Reddit', 'Threads asking for recommendations, answered in the thread by you. Free; needs a Reddit app\'s keys on the service.'] };
@@ -446,15 +445,12 @@
     var o = Object.keys(offers).map(function (k) {
       var on = (s.offers || []).indexOf(k) >= 0;
       var qs = ((s.queries || {})[k] || (defaults || {})[k] || offers[k].queries || []).join('\n');
-      var js = ((s.job_queries || {})[k] || (jobDefaults || {})[k] || offers[k].jobs || []).join('\n');
       var rs = ((s.rfp_queries || {})[k] || ((extra && extra.rfpDefaults) || {})[k] || []).join('\n');
       var ds = ((s.reddit_queries || {})[k] || ((extra && extra.redditDefaults) || {})[k] || []).join('\n');
       var snd = (s.senders || {})[k] || {};
       return '<fieldset class="br-offer-set"><legend>' + sw('brOn-' + k, on, offers[k].label, offers[k].site) + '</legend>' +
         '<label class="mr-k" for="brQ-' + esc(k) + '">Post searches, one a line</label><textarea id="brQ-' + esc(k) + '" rows="5" data-offer="' + esc(k) + '">' + esc(qs) + '</textarea>' +
         '<div class="mr-hint">LinkedIn search words. Quotes for a phrase, AND / OR / NOT (5 at most a line). Clear the box to go back to the defaults.</div>' +
-        '<label class="mr-k" for="brJ-' + esc(k) + '">Job titles that mean they need it, one a line</label><textarea id="brJ-' + esc(k) + '" rows="4">' + esc(js) + '</textarea>' +
-        '<div class="mr-hint">A company advertising these jobs is doing the work in house. Clear the box to go back to the defaults.</div>' +
         '<label class="mr-k" for="brR-' + esc(k) + '">RFP searches, one a line</label><textarea id="brR-' + esc(k) + '" rows="3">' + esc(rs) + '</textarea>' +
         '<div class="mr-hint">Web searches for open RFPs and tenders; {year} is this year. About $0.03 each. Clear the box to go back to the defaults.</div>' +
         '<label class="mr-k" for="brRd-' + esc(k) + '">Reddit searches, one a line</label><textarea id="brRd-' + esc(k) + '" rows="3">' + esc(ds) + '</textarea>' +
@@ -479,9 +475,6 @@
       '<h4 class="br-set-t">What to look for</h4>' + o +
       '<div class="br-grid3"><div><label class="mr-k" for="brPosted">Posts: how far back</label><select id="brPosted">' + posted + '</select></div>' +
         numIn('brPer', 'Posts per search', s.per_query, 5, 100, 5) + numIn('brKeep', 'Keep leads scoring at least', s.keep_score, 0, 100, 5) + '</div>' +
-      '<div class="br-grid3"><div><label class="mr-k" for="brJobLoc">Job ads in</label><input type="text" id="brJobLoc" value="' + esc((s.job_locations || []).join(', ')) + '" placeholder="Anywhere">' +
-          '<div class="mr-hint">Up to 5 places, with commas: India, Dubai, London.</div></div>' +
-        numIn('brJobDays', 'Job ads posted in the last (days)', s.jobs_days, 1, 30, 1) + numIn('brJobPer', 'Job ads per title', s.jobs_per_query, 5, 100, 5) + '</div>' +
       '<div class="br-grid3">' + numIn('brComPosts', 'Read the comments of the best', s.comment_posts, 0, 30, 1, 'posts kept in each search.') +
         numIn('brIcpN', 'People from customer profiles a search', s.icp_per_run, 0, 100, 5, 'All profiles together. Free to find; a message is written for each.') +
         numIn('brRfpDays', 'Search for RFPs every (days)', s.rfp_days, 1, 30, 1, 'An RFP stays open for weeks; each search is paid.') + '</div>' +
@@ -520,14 +513,12 @@
   }
 
   function readSettings($, offers) {
-    var body = { offers: [], queries: {}, job_queries: {}, rfp_queries: {}, reddit_queries: {}, senders: {}, sources: [], icps: {}, sequences: {} };
+    var body = { offers: [], queries: {}, rfp_queries: {}, reddit_queries: {}, senders: {}, sources: [], icps: {}, sequences: {} };
     Object.keys(LEAD_SOURCES).forEach(function (k) { if ($('brSrc-' + k).checked) body.sources.push(k); });
     Object.keys(offers).forEach(function (k) {
       if ($('brOn-' + k).checked) body.offers.push(k);
       var q = $('brQ-' + k).value.trim();
       body.queries[k] = q ? q.split('\n') : [];
-      var j = $('brJ-' + k).value.trim();
-      body.job_queries[k] = j ? j.split('\n') : [];
       if ($('brR-' + k)) { var r = $('brR-' + k).value.trim(); body.rfp_queries[k] = r ? r.split('\n') : []; }
       if ($('brRd-' + k)) { var rd = $('brRd-' + k).value.trim(); body.reddit_queries[k] = rd ? rd.split('\n') : []; }
       if ($('brIcps-' + k)) body.icps[k] = readIcps($('brIcps-' + k));
@@ -537,9 +528,6 @@
     });
     body.posted = $('brPosted').value;
     body.per_query = $('brPer').value;
-    body.job_locations = $('brJobLoc').value;
-    body.jobs_days = $('brJobDays').value;
-    body.jobs_per_query = $('brJobPer').value;
     body.comment_posts = $('brComPosts').value;
     body.icp_per_run = $('brIcpN').value;
     body.daily_hour = $('brHour').value;
@@ -727,7 +715,7 @@
         return r.blob().then(function (b) {
           var a = DOC.createElement('a');
           a.href = URL.createObjectURL(b);
-          a.download = m ? m[1] : 'buyer-radar-leads.csv';
+          a.download = m ? m[1] : 'lead-finder-leads.csv';
           DOC.body.appendChild(a); a.click(); a.remove();
           setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
         });

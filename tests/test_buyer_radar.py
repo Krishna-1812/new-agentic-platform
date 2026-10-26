@@ -39,7 +39,7 @@ from tracker import contact_lab_search as cls  # noqa: E402
 
 EVIL = '<img src=x onerror=alert(1)>"\'&'
 STAFF = "kris@markifydigital.com"
-BASE = "/strategic-agents/buyer-radar"
+BASE = "/strategic-agents/lead-finder"
 
 
 def raw_post(n, text="We are looking for a call analytics tool for our sales team. Demos welcome.", **author):
@@ -743,7 +743,7 @@ def test_emails_are_found_by_linkedin_profile_and_credits_counted():
 
 def test_the_slack_message_names_each_strong_lead_and_links_the_page():
     leads = [dict(lead(), score=90 + i, verdict={"need": EVIL, "intent_label": "Looking for a vendor"}) for i in range(12)]
-    msgs = send.slack_messages("Lumina", leads, "https://x.example/strategic-agents/buyer-radar")
+    msgs = send.slack_messages("Lumina", leads, "https://x.example/strategic-agents/lead-finder")
     assert msgs[0]["text"] == "Lead Finder: 12 new leads" and len(msgs) == 13, "the headline, then every lead: none left out"
     text = json.dumps(msgs)
     assert "<img" not in text and "more" not in text and "Open Lead Finder" in text
@@ -891,7 +891,7 @@ def test_the_leads_export_as_a_spreadsheet_with_the_lists_filters(mem):
                            sends=[{"channel": "linkedin", "status": "sent", "at": "2026-10-18T08:00:00+00:00"}])
     r = _client(STAFF).get(BASE + "/api/leads/export?offer=markify&min=70")
     assert r.status_code == 200 and r.mimetype == "text/csv"
-    assert r.headers["Content-Disposition"].startswith('attachment; filename="buyer-radar-leads-') and r.headers["Content-Disposition"].endswith('-markify.csv"')
+    assert r.headers["Content-Disposition"].startswith('attachment; filename="lead-finder-leads-') and r.headers["Content-Disposition"].endswith('-markify.csv"')
     assert mem["asked"][-1] == (STAFF, {"status": None, "offer": "markify", "source": None, "min_score": 70, "limit": 5000})
     import csv as csvmod
     import io
@@ -991,7 +991,7 @@ def test_inside_a_workspace_the_work_is_the_workspaces(seeded, mem, monkeypatch)
     assert T._client(T.RAJ).post(BASE + "/api/runs", json={"confirm_spend": True}, headers=XA).status_code == 202
     assert T._client(T.RAJ).post(BASE + "/api/settings", json={"daily": True}, headers=XA).status_code == 200
     assert mem["runs"][0][0] == space and mem["runs"][0][2] == T.RAJ and mem["settings"][space]["daily"] is True
-    html = T._client(T.RAJ).get("/lumina/agents/buyer-radar").get_data(as_text=True)
+    html = T._client(T.RAJ).get("/lumina/agents/lead-finder").get_data(as_text=True)
     assert 'data-acct="lumina"' in html and "They ask." in html
 
 
@@ -999,12 +999,12 @@ def test_a_client_searches_and_reads_but_never_sends_or_sees_costs(seeded, mem, 
     monkeypatch.setenv("APIFY_API_TOKEN", "t")
     monkeypatch.setenv("UNIPILE_API_KEY", "u")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
-    T._invite("lumina", **{"tool:buyer-radar": True})
+    T._invite("lumina", **{"tool:lead-finder": True})
     space = T._acct("lumina")["space"]
     mem["settings"][space] = br.merged({"auto_email": True, "auto_linkedin": True, "find_emails": True, "slack_channel": "#x",
                                         "auto_sequence": True})
     c = T._client(T.CLIENT)
-    page = c.get("/lumina/agents/buyer-radar").get_data(as_text=True)
+    page = c.get("/lumina/agents/lead-finder").get_data(as_text=True)
     assert "data-br-client" in page and 'id="brSettings"' not in page
     st = c.get(BASE + "/api/status", headers=XA).get_json()
     assert st["client"] is True and "estimate" not in st and "month" not in st and "senders" not in st["settings"]
@@ -1037,10 +1037,10 @@ def test_its_runs_show_in_the_workspaces_history(seeded, monkeypatch):
         {"id": 9, "status": "ready", "trigger": "daily", "started_by": "", "created_at": at,
          "summary": {"kept": 4, "strong": 2, "emailed": 1, "messaged": 1}},
         {"id": 8, "status": "running", "trigger": "manual", "started_by": T.RAJ, "created_at": at, "summary": None}])
-    rows = [r for r in account_history.entries(acct) if r.get("agent") == "buyer-radar"]
+    rows = [r for r in account_history.entries(acct) if r.get("agent") == "lead-finder"]
     assert seen == [acct["space"]]
     assert rows[0]["title"] == "Daily LinkedIn search for buyers" and rows[0]["detail"] == "4 leads · 2 strong · 2 written to"
-    assert rows[0]["href"] == "/lumina/agents/buyer-radar#run-9" and rows[0]["state"] == "ready"
+    assert rows[0]["href"] == "/lumina/agents/lead-finder#run-9" and rows[0]["state"] == "ready"
     assert rows[1]["title"] == "Searched LinkedIn for buyers" and rows[1]["who"] == T.RAJ and rows[1]["state"] == "running"
 
 

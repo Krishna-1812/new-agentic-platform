@@ -40,6 +40,21 @@ def test_slugs_are_stored_renamed_and_redirected(tag):
     assert "lumina-%s" % tag not in out["retired"], "a slug taken back is live again, not retired"
 
 
+def test_what_was_shared_and_visited_under_the_old_agent_slug_carries_over(tag):
+    """Buyer Radar became Lead Finder (2026-10-26), slug and all: a client shared it keeps it, and its visits stay."""
+    a = _acct("cid:%sz" % tag, "Renamed %s" % tag)
+    store.sync([a], set())
+    store.set_share(a["key"], "buyer-radar", True, "kris@x.com")
+    store.set_share(a["key"], "market-radar", True, "kris@x.com")
+    store.record(a["key"], "c@x.com", "tool", tool="buyer-radar", path="/p")
+    store.record(a["key"], "c@x.com", "tool", tool="market-radar", path="/q")
+    store._READY = False                       # a new process starts: the schema step runs again
+    assert store.shares(a["key"]) == {"lead-finder": True, "market-radar": True}
+    assert sorted(e["tool"] for e in store.events(a["key"])) == ["lead-finder", "market-radar"]
+    store._READY = False
+    assert store.shares(a["key"]) == {"lead-finder": True, "market-radar": True}, "a second start changes nothing"
+
+
 def test_an_account_that_gains_google_ads_keeps_its_row(tag):
     doc = _acct("doc:bloom %s" % tag, "Bloom %s" % tag)
     store.sync([doc], set())

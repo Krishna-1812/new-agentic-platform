@@ -127,6 +127,12 @@ def _ensure(conn):
                     path TEXT NOT NULL DEFAULT '',
                     at TIMESTAMPTZ NOT NULL DEFAULT now())""")
             cur.execute("CREATE INDEX IF NOT EXISTS client_account_events_key ON client_account_events (key, at DESC)")
+            # The agent became Lead Finder on 2026-10-26 and its slug (buyer-radar) with it: what clients were
+            # shared and what they opened under the old slug carries over.
+            cur.execute("""UPDATE client_account_shares
+                           SET shares = (shares - 'buyer-radar') || jsonb_build_object('lead-finder', shares->'buyer-radar')
+                           WHERE shares ? 'buyer-radar'""")
+            cur.execute("UPDATE client_account_events SET tool = 'lead-finder' WHERE tool = 'buyer-radar'")
         conn.commit()
         _READY = True
 
