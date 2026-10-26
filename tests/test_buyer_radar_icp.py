@@ -1,4 +1,4 @@
-"""Buyer Radar's customer profiles (tracker/buyer_radar_icp.py) and Saleshandy sequences (2026-10-21).
+"""Lead Finder's customer profiles (tracker/buyer_radar_icp.py) and Saleshandy sequences (2026-10-21).
 
 What is held here:
   * a profile: checked, its triggers turned into Saleshandy's own filters (a new role, funding, executive
@@ -305,7 +305,7 @@ def test_a_lead_with_an_email_is_imported_with_the_message_in_its_field(monkeypa
     assert got == {"ok": True, "detail": "added to the Saleshandy sequence “Markify intro”", "stop": False}
     assert c.calls == [("import", "P1", [{"First Name": "Meera", "Last Name": "Shah7", "Email": "meera@acme.com",
                                           "Company": "Acme", "Job Title": "VP Marketing",
-                                          "BR message": "Hi Meera,\n\nCongrats on the new role."}], ["Buyer Radar", "Markify Digital"])]
+                                          "BR message": "Hi Meera,\n\nCongrats on the new role."}], ["Lead Finder", "Markify Digital"])]
     assert st.records == [("o", 3, "email", "meera@acme.com", "sh/7", "sent", got["detail"], "mia@x.com")], \
         "counted as an email: nobody is written to twice"
 
@@ -316,7 +316,7 @@ def test_without_an_email_saleshandy_adds_them_only_on_a_yes(monkeypatch):
     got = send.sequence_lead("o", lead_for(email=None), SEQ, client=c, store=st)
     assert not got["ok"] and "no email address" in got["detail"] and c.calls == []
     got = send.sequence_lead("o", lead_for(email=None), SEQ, client=c, store=st, reveal=True)
-    assert got["ok"] and c.calls == [("leads", "S1", "P1", ["7"], ["Buyer Radar", "Markify Digital"])]
+    assert got["ok"] and c.calls == [("leads", "S1", "P1", ["7"], ["Lead Finder", "Markify Digital"])]
     got = send.sequence_lead("o", lead_for(email=None), dict(SEQ, find_emails=True), auto=True, client=SeqClient(), store=SendStore())
     assert got["ok"], "the automatic send may when Find work emails is on"
 
@@ -367,14 +367,14 @@ def test_the_sequence_calls_are_saleshandys_documented_routes():
     c = sh.Client("k", session=s, sleep=lambda x: None)
     assert c.sequences() == [{"id": "S1", "title": "Intro", "active": True, "steps": [{"id": "P1", "name": "Step 1"}]}]
     s.payload = {"payload": {"requestId": "r9"}}
-    assert c.import_to_sequence("P1", [{"Email": "a@b.co"}], tags=["Buyer Radar"]) == "r9"
+    assert c.import_to_sequence("P1", [{"Email": "a@b.co"}], tags=["Lead Finder"]) == "r9"
     s.payload = {"payload": {"message": "1 Lead(s) will be added to Sequence."}}
-    assert "1 Lead" in c.add_leads_to_sequence("S1", "P1", [7], tags=["Buyer Radar"])
+    assert "1 Lead" in c.add_leads_to_sequence("S1", "P1", [7], tags=["Lead Finder"])
     assert s.sent[0][:2] == ("GET", sh.BASE_URL + "/sequences")
     assert s.sent[1] == ("POST", sh.BASE_URL + "/sequences/prospects/import-with-field-name",
-                         {"prospectList": [{"Email": "a@b.co"}], "stepId": "P1", "conflictAction": "noUpdate", "tags": ["Buyer Radar"]})
+                         {"prospectList": [{"Email": "a@b.co"}], "stepId": "P1", "conflictAction": "noUpdate", "tags": ["Lead Finder"]})
     assert s.sent[2] == ("POST", sh.BASE_URL + "/leads/bulk-actions/add-to-sequence",
-                         {"leadIds": [7], "sequenceId": "S1", "stepId": "P1", "newTags": ["Buyer Radar"]})
+                         {"leadIds": [7], "sequenceId": "S1", "stepId": "P1", "newTags": ["Lead Finder"]})
 
 
 # == Claude writes to them, and suggests profiles ==============================================================

@@ -95,7 +95,7 @@ def _state(status):
 AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-intelligence": "Social Media Intelligence",
                "event-conference-intelligence": "Event & Conference Intelligence",
                "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder",
-               "market-radar": "Market Radar", "people-signals": "People & Signals", "buyer-radar": "Buyer Radar"}
+               "market-radar": "Market Radar", "people-signals": "People & Signals", "buyer-radar": "Lead Finder"}
 AGENT_NAMES.update(paid_catalog.NAMES)
 
 
@@ -194,7 +194,7 @@ def _ps(acct):
 
 
 def _br(acct):
-    """Buyer Radar: owned by the account's space too. A daily search has nobody's name on it."""
+    """Lead Finder: owned by the account's space too. A daily search has nobody's name on it."""
     from tracker import buyer_radar_store
     out = []
     for r in buyer_radar_store.space_runs(acct["space"], limit=LIMIT):

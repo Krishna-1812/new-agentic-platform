@@ -1,4 +1,4 @@
-"""Buyer Radar: every lead in a Google Sheet, one detailed row each, never twice, kept up to date.
+"""Lead Finder: every lead in a Google Sheet, one detailed row each, never twice, kept up to date.
 
 A workspace names a Google Sheet in Settings and shares it with the platform's service account (its
 address is on the page) as an Editor. After every run (and on "Update the sheet now"):
@@ -77,7 +77,7 @@ def why(e):
     """A Google error in words the team can act on."""
     status = getattr(getattr(e, "resp", None), "status", None) or getattr(e, "status_code", None)
     if str(status) == "403":
-        return "Buyer Radar may not open the sheet: share it with %s as an Editor" % (service_email() or "the service account")
+        return "Lead Finder may not open the sheet: share it with %s as an Editor" % (service_email() or "the service account")
     if str(status) == "404":
         return "there is no Google Sheet at that link"
     if str(status) == "429":
@@ -305,7 +305,7 @@ def _remove_retired(svc, sheet_id, headers):
 
 
 def check(sheet_id, service=None):
-    """(ok, message): can Buyer Radar write to the sheet? Sets up its Leads and Runs tabs and headers."""
+    """(ok, message): can Lead Finder write to the sheet? Sets up its Leads and Runs tabs and headers."""
     if not sheet_id:
         return False, "No Google Sheet is set in Settings."
     try:
@@ -315,7 +315,7 @@ def check(sheet_id, service=None):
         _headers(svc, sheet_id, RUNS, RUN_HEADERS)
     except Exception as e:
         return False, "The Google Sheet could not be used: %s." % why(e)
-    return True, "Connected: Buyer Radar writes to the Leads and Runs tabs."
+    return True, "Connected: Lead Finder writes to the Leads and Runs tabs."
 
 
 def _lock(owner):

@@ -1,4 +1,4 @@
-"""Buyer Radar: people who fit an offer's ideal customer profile (ICP), at the moment something changed for
+"""Lead Finder: people who fit an offer's ideal customer profile (ICP), at the moment something changed for
 them, from Saleshandy's lead database.
 
 A post, a comment or a job ad is someone showing a need. An ICP finds the people likely to have it before
@@ -235,7 +235,7 @@ def score(icp, person):
 
 
 def signal(icp, offer, person, company=None):
-    """A person found by an ICP, in a post's shape, so the rest of Buyer Radar keeps and writes to them as
+    """A person found by an ICP, in a post's shape, so the rest of Lead Finder keeps and writes to them as
     it does a post's author. Their key is Saleshandy's id: once a person, never again."""
     co = person.get("company") or (company or {}).get("name") or ""
     reason = why_now(icp, company)

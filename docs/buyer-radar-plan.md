@@ -1,4 +1,4 @@
-# Buyer Radar
+# Lead Finder
 
 People and companies on LinkedIn showing they need what we sell, in one place, with a message ready to send.
 Built 2026-10-17; job ads, comments, customer profiles, RFPs and Reddit added 2026-10-21. On the agents page as **Building**. Page:
@@ -35,7 +35,7 @@ three letters are never matched. Slack and the spreadsheet (column "Also found i
 1. **Searches LinkedIn posts** for each offer switched on. "Search with" at the top of the page picks who
    runs LinkedIn's own post search:
    - **Unipile** (the default, `tracker/buyer_radar_unipile.py`): free per post, from the connected LinkedIn
-     account (the one Buyer Radar sends from). LinkedIn's filter goes back a month at most, so "Last 3
+     account (the one Lead Finder sends from). LinkedIn's filter goes back a month at most, so "Last 3
      months" reads the last month. Unipile advises about 1,000 search results a day for a standard
      account and warns that more risks the account; `DAY_MAX` (900) holds every workspace together under
      it (`buyer_radar_store.unipile_results_today`), and the requests are spaced 2 to 5 seconds apart.
@@ -175,12 +175,12 @@ A single email gets one chance. A Saleshandy sequence sends a series and follows
 - In Settings, each offer can name one of the account's sequences, listed from `GET /v1/sequences`. Leads go
   into its first step.
 - A lead with an email address is imported with it, through `POST /v1/sequences/prospects/import-with-field-name`.
-  The fields are First Name, Last Name, Email, Company and Job Title, plus the tags "Buyer Radar" and the
+  The fields are First Name, Last Name, Email, Company and Job Title, plus the tags "Lead Finder" and the
   offer. An existing prospect is left unchanged (`noUpdate`).
 - "Saleshandy field for the message written" names a custom prospect field that carries Claude's email, so
   the sequence's first email can use it. Make the field in Saleshandy first: an unknown field fails the import.
 - A lead known only by Saleshandy's id is added as a lead (`POST /v1/leads/bulk-actions/add-to-sequence`).
-  Saleshandy reveals their email itself, for one credit. Buyer Radar allows that only after the team's yes,
+  Saleshandy reveals their email itself, for one credit. Lead Finder allows that only after the team's yes,
   or automatically when "Find work emails" is on.
 - Adding someone counts as an email (`br_sends`, channel email). The same opt-outs, nobody-twice rule and
   daily caps apply.
@@ -270,7 +270,7 @@ steps instead of the raw error.
 ## What it costs
 
 Every paid call is recorded in `br_spend`, with who ran it and the workspace. It shows in the admin panel
-(`tracker/admin_spend.py` `SOURCES`: "Buyer Radar" in dollars, "Buyer Radar (Saleshandy)" in credits).
+(`tracker/admin_spend.py` `SOURCES`: "Lead Finder" in dollars, "Lead Finder (Saleshandy)" in credits).
 
 | What | Price |
 |---|---|
@@ -399,7 +399,7 @@ not in it yet. After every search, the sheet is updated by itself:
 - **Kept up to date**: a lead that changed (status, email, messages, a send) has those cells rewritten
   in its own row, wherever sorting moved it.
 - **The team's own columns**: columns are found by their header; a column of the team's own is never
-  written, and a Buyer Radar header that was deleted is added back at the end.
+  written, and a Lead Finder header that was deleted is added back at the end.
 - **Runs**: one row per search, once: new leads by place, the number aimed for, repeats skipped, strong,
   read, cost, when the Slack message goes out, notes.
 - Written as plain values (RAW): a post starting with "=" stays text.

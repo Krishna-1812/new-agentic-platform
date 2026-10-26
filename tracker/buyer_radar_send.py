@@ -1,4 +1,4 @@
-"""Buyer Radar: writing to a lead (email, LinkedIn), finding their email, and posting leads to Slack.
+"""Lead Finder: writing to a lead (email, LinkedIn), finding their email, and posting leads to Slack.
 
 Every send, from the page or automatic, goes through the same checks first (can_send):
 
@@ -236,7 +236,7 @@ def sequence_lead(owner, lead, settings, *, by="", auto=False, client=None, stor
     if not sh.configured():
         return {"ok": False, "detail": "Saleshandy needs SALESHANDY_API_KEY on this service", "stop": True}
     client = client or sh.Client()
-    tags = ["Buyer Radar", br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])]
+    tags = ["Lead Finder", br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])]
     title = seq.get("title") or "the sequence"
     try:
         if email:
@@ -400,7 +400,6 @@ def _slack_card(i, n, lead):
         headline += (" · " if headline else "") + "also found by %s" % ", ".join(
             SLACK_KIND.get(x, x).lower() for x in v["signals"] if x != kind)
     url = p.get("url") or ""
-    link = ("\n<%s|%s>" % (url, SLACK_LINK.get(kind, "Open the post"))) if url.startswith(("https://", "http://")) else ""
     offer = esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"]))
     text = "*%d of %d · %s*%s\n%s · %s · for *%s* · score *%d*" % (
         i, n, name, (" — " + esc(headline)) if headline else "", SLACK_KIND.get(kind, "Post"),
@@ -410,8 +409,14 @@ def _slack_card(i, n, lead):
     details = _slack_details(lead, kind)
     if details:
         text += "\n" + details
-    return {"text": "Buyer Radar lead %d of %d: %s, score %d" % (i, n, a.get("name") or "Someone", lead["score"]),
-            "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": text[:2900] + link}}]}
+    # One message after another from the same sender runs together in Slack (no name or picture between
+    # them), so each card starts with a line and ends with a button: room round it, and the link easy to hit.
+    blocks = [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": text[:2900]}}]
+    if url.startswith(("https://", "http://")):
+        blocks.append({"type": "actions", "elements": [{"type": "button", "url": url, "text": {
+            "type": "plain_text", "text": SLACK_LINK.get(kind, "Open the post")}}]})
+    return {"text": "Lead Finder: lead %d of %d, %s, score %d" % (i, n, a.get("name") or "Someone", lead["score"]),
+            "blocks": blocks}
 
 
 SLACK_HOT_SCORE = 85            # a lead this strong gets a message of its own; the others share one list in a thread
@@ -454,7 +459,7 @@ def _slack_thread(rest):
     out = []
     for i, lines in enumerate(messages):
         title = "*The other %d strong lead%s*" % (len(rest), "" if len(rest) == 1 else "s") if i == 0 else "*…and more*"
-        out.append({"text": "Buyer Radar: the other %d strong leads" % len(rest), "thread": True,
+        out.append({"text": "Lead Finder: the other %d strong leads" % len(rest), "thread": True,
                     "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": title + "\n" + "\n".join(lines)}}]})
     return out
 
@@ -474,10 +479,10 @@ def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, she
     rest = leads[len(hot):]
     who = (" for " + esc(owner_label)) if owner_label else ""
     if leads:
-        head = "*Buyer Radar: %d new lead%s%s*" % (len(leads), "" if len(leads) == 1 else "s", who)
+        head = "*Lead Finder: %d new lead%s%s*" % (len(leads), "" if len(leads) == 1 else "s", who)
     else:
-        head = "*Buyer Radar%s: no strong leads today*" % who if total else "*Buyer Radar%s: nothing new today*" % who
-    blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": head}}]
+        head = "*Lead Finder%s: no strong leads today*" % who if total else "*Lead Finder%s: nothing new today*" % who
+    blocks = [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": head}}]
     if total is not None and (daily or total > len(leads)):
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": _slack_summary(
             total, leads, daily, sheet_url, by_source)}]})
@@ -490,12 +495,12 @@ def slack_messages(owner_label, leads, page_url, *, total=None, daily=False, she
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(parts)}]})
     buttons = []
     if page_url:
-        buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open Buyer Radar"}, "url": page_url})
+        buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open Lead Finder"}, "url": page_url})
     if sheet_url:
         buttons.append({"type": "button", "text": {"type": "plain_text", "text": "Open the Google Sheet"}, "url": sheet_url})
     if buttons:
         blocks.append({"type": "actions", "elements": buttons})
-    first = {"text": "Buyer Radar: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
+    first = {"text": "Lead Finder: %d new lead%s" % (len(leads), "" if len(leads) == 1 else "s"), "blocks": blocks}
     return [first] + [_slack_card(i, len(hot), lead) for i, lead in enumerate(hot, 1)] + _slack_thread(rest)
 
 
@@ -544,7 +549,7 @@ def slack_leads(channel, owner, leads, *, post=None, owner_label="", page_url=No
 
 
 def delete_messages(messages, *, delete=None, sleep=time.sleep):
-    """Deletes messages Buyer Radar posted: [{"channel", "ts"}]. (how many are gone, those still there).
+    """Deletes messages Lead Finder posted: [{"channel", "ts"}]. (how many are gone, those still there).
     Never raises."""
     from . import gads_digest
     token = slack_token()

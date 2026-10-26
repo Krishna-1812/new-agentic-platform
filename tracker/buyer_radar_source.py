@@ -1,4 +1,4 @@
-"""Buyer Radar: LinkedIn posts that match a search, through Apify.
+"""Lead Finder: LinkedIn posts that match a search, through Apify.
 
 The actor is HarvestAPI's LinkedIn Post Search (apify.com/harvestapi/linkedin-post-search). It needs no
 LinkedIn cookie or account, and takes the same queries as LinkedIn's own search bar, Boolean operators

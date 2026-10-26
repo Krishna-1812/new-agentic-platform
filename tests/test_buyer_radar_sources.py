@@ -1,4 +1,4 @@
-"""Buyer Radar's other places to find buyers (2026-10-21): companies whose LinkedIn job ads are the work
+"""Lead Finder's other places to find buyers (2026-10-21): companies whose LinkedIn job ads are the work
 (tracker/buyer_radar_jobs.py), with who decides there found by Saleshandy's free search, and people in the
 comments of a buyer's post who need the same (tracker/buyer_radar_comments.py).
 

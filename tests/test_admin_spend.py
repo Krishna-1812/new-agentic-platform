@@ -170,7 +170,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     am.update_run(amr, spent=0.30)
     clr = cl.create_run("kris@x.com", {}, 1.0)
     cl.update_run(clr, spent=0.05)
-    # Buyer Radar: dollars (Apify, Claude) and Saleshandy credits in one ledger, inside a client account
+    # Lead Finder: dollars (Apify, Claude) and Saleshandy credits in one ledger, inside a client account
     brr = br.create_run("acct:8", {}, 2.0, "mia@x.com")
     br.add_spend(brr, "acct:8", "mia@x.com", "apify", "post-search", usd=0.40)
     br.add_spend(brr, "acct:8", "mia@x.com", "saleshandy", "email-reveal", credits=2)

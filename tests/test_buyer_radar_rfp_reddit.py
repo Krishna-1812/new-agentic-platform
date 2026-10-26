@@ -1,4 +1,4 @@
-"""Buyer Radar's RFP finder, Reddit search and the boost for a company found in several places, without
+"""Lead Finder's RFP finder, Reddit search and the boost for a company found in several places, without
 the network (tracker/buyer_radar_rfp.py, tracker/buyer_radar_reddit.py, buyer_radar.multi_signal)."""
 import json
 import os
@@ -275,7 +275,7 @@ def test_slack_names_the_places_and_never_links_nowhere():
     r = {"post": _rfp_signal(), "offer": "callvibe", "score": 90, "verdict": {"intent_label": "Looking", "need": "y"}}
     msg = json.dumps(send.slack_messages("", [icp, r], "https://app/br"))
     assert "<|" not in msg and "(customer profile)" in msg and "also found by hiring" in msg
-    assert "<https://acme.example/rfp|Open the RFP>" in msg
+    assert '"url": "https://acme.example/rfp"' in msg and '"text": "Open the RFP"' in msg, "the link is a button"
 
 
 def test_a_reddit_lead_never_goes_to_a_sequence():

@@ -1,4 +1,4 @@
-"""Buyer Radar: its runs, leads, sends, settings, opt-outs and cost ledger, in Postgres.
+"""Lead Finder: its runs, leads, sends, settings, opt-outs and cost ledger, in Postgres.
 
 Work is kept by owner, as Market Radar's and People & Signals' is (app.py _mr_email): inside a client
 workspace the owner is the workspace's space ("acct:<id>"), shared by the whole team, with who started

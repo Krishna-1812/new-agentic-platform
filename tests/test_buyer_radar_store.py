@@ -1,4 +1,4 @@
-"""Buyer Radar's store on a real Postgres (tracker/buyer_radar_store.py): settings per owner, a post kept once
+"""Lead Finder's store on a real Postgres (tracker/buyer_radar_store.py): settings per owner, a post kept once
 per owner, nobody written to twice from any workspace, opt-outs for everyone, the daily caps' counts, the
 month's spend and the runs a workspace's History reads."""
 import os

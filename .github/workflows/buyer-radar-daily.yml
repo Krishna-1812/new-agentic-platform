@@ -1,6 +1,6 @@
-name: Buyer Radar daily search
+name: Lead Finder daily search
 
-# Every hour, asks the live site to look after Buyer Radar's daily searches (app.py buyer_radar_daily):
+# Every hour, asks the live site to look after Lead Finder's daily searches (app.py buyer_radar_daily):
 # it starts each workspace's search in the hour before its time (Settings, India time), tries a failed
 # one once more, and posts each finished search's Slack message when its time comes. A late or skipped
 # call is made up by the next one. The site does the work and keeps to each workspace's run and monthly

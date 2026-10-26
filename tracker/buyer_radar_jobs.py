@@ -1,4 +1,4 @@
-"""Buyer Radar: companies whose job ads show they need what we sell, from LinkedIn's job search (Unipile).
+"""Lead Finder: companies whose job ads show they need what we sell, from LinkedIn's job search (Unipile).
 
 A company hiring a performance marketing manager or an SEO executive is building marketing it could
 hand to an agency (Markify); one hiring call quality analysts is paying people to listen to calls
@@ -153,7 +153,7 @@ def collect(queries, *, days=14, per_query=20, room=None, location_ids=None, acc
 
 def by_company(jobs, month):
     """The jobs, one signal a company: its open roles together, newest first, under a key that is new
-    each month. The signal has a post's shape (key, url, text, author), so the rest of Buyer Radar
+    each month. The signal has a post's shape (key, url, text, author), so the rest of Lead Finder
     reads, keeps and drafts it as it does a post."""
     groups = {}
     for j in jobs:
