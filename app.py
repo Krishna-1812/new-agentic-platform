@@ -6643,6 +6643,8 @@ def _gads_digest_base_url():
     base = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
     if base:
         return base
+    if not _has_request_context():    # the site's own clock posts it (_daily_gads_digest): no request to read
+        return SITE_URL
     if (request.host or "").split(":")[0].lower().endswith(".up.railway.app"):
         return SITE_URL   # called at the old address: the links still go to the custom domain
     root = request.url_root.rstrip("/")
@@ -7063,6 +7065,20 @@ def _page_watch_slack_feedback(payload):
                 except requests.RequestException:
                     pass
             threading.Thread(target=tell, daemon=True).start()
+
+
+def _daily_gads_digest():
+    """The digest, posted by the site itself at its time of day (tracker/daily_jobs.py): the scheduled GitHub
+    Action it replaced reached Slack 4 to 6 hours after the time asked for. True when it went (or there is
+    nothing to send to), False to be tried again."""
+    if not (os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN") and os.environ.get("GOOGLE_ADS_SLACK_CHANNEL")):
+        return True
+    with app.app_context():
+        results = _gads_digest_run(dry_run=False, force=False)
+    for r in results:
+        if r["status"] == "failed":
+            app.logger.warning("gads_digest: %s not posted: %s", r["account"], r["error"])
+    return bool(results) and not any(r["status"] == "failed" for r in results)
 
 
 @app.route(GADS_DIGEST, methods=["POST"])
@@ -26323,6 +26339,23 @@ def refresh_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+# Jobs the site starts itself at a time of day, India time (tracker/daily_jobs.py). GOOGLE_ADS_DIGEST_AT moves
+# the digest ("11:30" by default); DAILY_JOBS=off in the environment stops them all at once, with no deploy.
+def _daily_jobs():
+    from tracker import daily_jobs
+    return [daily_jobs.Job("google-ads-digest", os.environ.get("GOOGLE_ADS_DIGEST_AT") or "11:30", _daily_gads_digest)]
+
+
+def _start_daily_jobs():
+    import sys
+    if "pytest" in sys.modules or (os.environ.get("DAILY_JOBS") or "on").strip().lower() in ("off", "0", "false", "no"):
+        return None
+    from tracker import daily_jobs
+    return daily_jobs.start(_daily_jobs())
+
+
+_start_daily_jobs()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

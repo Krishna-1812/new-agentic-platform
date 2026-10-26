@@ -1,8 +1,11 @@
 name: Google Ads Slack digest
 
-# Each day at about 13:00 India time, asks the live site to post one Slack message per Google Ads account (yesterday
-# against the 7 days before, month-to-date pacing, what needs attention). The site does the work
-# (tracker/gads_digest.py); this only calls it, so the figures never pass through this log.
+# The daily digest (one Slack message per Google Ads account: yesterday against the 7 days before, month-to-date
+# pacing, what needs attention) is posted by the site itself at 11:30 India time (tracker/daily_jobs.py,
+# GOOGLE_ADS_DIGEST_AT to change it). It used to be started from here on a schedule, but GitHub starts scheduled
+# runs 4 to 6 hours late, so the message reached Slack in the evening. What is left is the manual run (Actions >
+# Run workflow), which posts what has not been posted today, or everything again with "force".
+# The site does the work (tracker/gads_digest.py); this only calls it, so the figures never pass through this log.
 # The reply holds counts and Slack error codes only.
 #
 # Needs the repository secret GOOGLE_ADS_DIGEST_TOKEN (the same value as the Railway variable).
@@ -15,11 +18,6 @@ on:
         description: "Post again even if today's digest was already posted"
         type: boolean
         default: false
-  schedule:
-    # 07:25 UTC = 12:55 India time. GitHub starts scheduled runs a few minutes late, more so on
-    # the hour and half hour, so this lands at about 13:00, when accounts on US time have also
-    # finished yesterday.
-    - cron: '25 7 * * *'
 
 permissions: {}
 
