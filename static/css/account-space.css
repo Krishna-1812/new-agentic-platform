@@ -560,7 +560,7 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--thought-leader-pr, .sh-tool--thought-leader-pr { --c: var(--clay); --c-dim: var(--clay-dim); --c-tx: var(--clay-tx); }
 .rx-ag--market-radar, .sh-tool--market-radar { --c: var(--ink); --c-dim: var(--s2); --c-tx: var(--tx); --c-on: var(--tx-on-ink); }
 .rx-ag--people-signals, .sh-tool--people-signals { --c: var(--sky); --c-dim: var(--sky-dim); --c-tx: var(--sky-tx); }
-.rx-ag--buyer-radar, .sh-tool--buyer-radar { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--lead-finder, .sh-tool--lead-finder { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 /* The Paid Marketing agents: amber, the Paid marketing group's hue (tracker/paid_catalog.py COLOUR). */
 .rx-ag--performance-summarizer, .sh-tool--performance-summarizer,
 .rx-ag--product-analysis, .sh-tool--product-analysis { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
