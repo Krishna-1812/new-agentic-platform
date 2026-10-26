@@ -1,11 +1,11 @@
-"""Buyer Radar: LinkedIn posts that match a search, through Unipile.
+"""Lead Finder: LinkedIn posts that match a search, through Unipile.
 
 Unipile runs LinkedIn's own post search ("Classic - POSTS", POST /api/v1/linkedin/search) from the
 connected LinkedIn account, so it costs nothing per post (Unipile is paid per connected account). It is
 the same search Apify's actor runs, with two differences:
 
 - `date_posted` is past_day, past_week or past_month only: "Last 3 months" reads the last month.
-- It runs as a real LinkedIn account, the one Buyer Radar sends from. Unipile advises about 1,000 search
+- It runs as a real LinkedIn account, the one Lead Finder sends from. Unipile advises about 1,000 search
   results a day for a standard account and warns that more risks the account; DAY_MAX keeps every
   workspace together under that, and the searches are spaced out (PAUSE_S).
 

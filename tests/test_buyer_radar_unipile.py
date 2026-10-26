@@ -1,4 +1,4 @@
-"""Buyer Radar's search through Unipile (tracker/buyer_radar_unipile.py): a Unipile post read as the same
+"""Lead Finder's search through Unipile (tracker/buyer_radar_unipile.py): a Unipile post read as the same
 post Apify would give, page by page up to each search's count, never past the day's limit, stopping at
 LinkedIn's first refusal, and the request it sends (tracker/unipile_client.search_posts_filtered)."""
 import os

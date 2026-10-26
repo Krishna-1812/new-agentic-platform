@@ -7554,7 +7554,7 @@ ACCT_AGENTS = (
      "Their rivals' moves, new places nearby and their industry's news", (("#mrAddUrl", "website"),)),
     ("people-signals", "admin_account_mapper", "/strategic-agents/people-signals", "People & Signals",
      "The right people at their target accounts, and what each account is doing", ()),
-    ("buyer-radar", "buyer_radar_page", "/strategic-agents/buyer-radar", "Buyer Radar",
+    ("buyer-radar", "buyer_radar_page", "/strategic-agents/buyer-radar", "Lead Finder",
      "People and companies on LinkedIn showing they need what we sell, with a message ready", ()),
 )
 # Every agent on the agents page (templates/b2b_agents.html) is in ACCT_AGENTS, so it opens inside every
@@ -10063,6 +10063,9 @@ _PAGE_LABEL_ALIASES = (
     ("/strategic-agents/42-north-dental-slot-checker", SLOT_CHECKER),
     ("Gentle Dental Slot Checker", "Slot Checker Agent"),
     ("42 North Dental Slot Checker", "Slot Checker Agent"),
+    # Buyer Radar -> Lead Finder, 2026-10-26 (the address, /strategic-agents/buyer-radar, stays). Safe to fold
+    # forward: nothing else was ever called Buyer Radar.
+    ("Buyer Radar", "Lead Finder"),
     # "Social Creative Intelligence Analyst" -> "Social Media Intelligence",
     # 2026-09-08, on the grounds that the agent had grown well past creative
     # analysis, with the slug moved to match. Both axes are aliased, because
@@ -14442,7 +14445,7 @@ def admin_account_mapper_reveal(run_id):
     return jsonify(started=True, check=check), 202
 
 
-# == Buyer Radar (the team; on the agents page, still Building) ======================
+# == Lead Finder (the team; on the agents page, still Building) ======================
 # LinkedIn posts from people asking for what we sell (CallVibe, Markify), read by Claude, in one list with an
 # email and a LinkedIn note written for each; sent from here, or automatically where a workspace has switched
 # that on. tracker/buyer_radar*.py; docs/buyer-radar-plan.md. Inside a workspace its work is the workspace's
@@ -14587,7 +14590,7 @@ def buyer_radar_run(run_id):
 @app.route(BR + "/api/runs/<int:run_id>/slack", methods=["POST"])
 @position2_required
 def buyer_radar_run_slack(run_id):
-    """Sends a finished search's Slack message again in today's format, deleting the messages Buyer Radar
+    """Sends a finished search's Slack message again in today's format, deleting the messages Lead Finder
     posted for it before. Free; the team's only (a client's workspace posts nothing to Slack)."""
     from tracker import buyer_radar as br, buyer_radar_store as store
     refused = _mr_guard_post() or _br_team_only()
@@ -14914,7 +14917,7 @@ def buyer_radar_daily():
 @app.route(BR + "/api/sheet", methods=["POST"])
 @position2_required
 def buyer_radar_sheet():
-    """The team's Google Sheet: {"action": "check"} sets up its tabs and says whether Buyer Radar may
+    """The team's Google Sheet: {"action": "check"} sets up its tabs and says whether Lead Finder may
     write to it; {"action": "sync"} sends every lead not in it yet, and the changed ones, now. Free."""
     from tracker import buyer_radar_sheet as sheet, buyer_radar_store as store
     refused = _mr_guard_post() or _br_team_only()
@@ -14941,7 +14944,7 @@ def buyer_radar_sheet():
 
 @app.route("/buyer-radar/opt-out/<token>", methods=["GET", "POST"])
 def buyer_radar_opt_out(token):
-    """The opt-out link in every Buyer Radar email. A GET shows a button (mail scanners follow links); a
+    """The opt-out link in every Lead Finder email. A GET shows a button (mail scanners follow links); a
     POST, from the button or from a mail app's one-click unsubscribe (RFC 8058), opts the address out
     for good, from every workspace."""
     from tracker import buyer_radar_send as send, buyer_radar_store as store

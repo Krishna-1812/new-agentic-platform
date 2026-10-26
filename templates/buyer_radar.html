@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    BUYER RADAR (/strategic-agents/buyer-radar) — the team; listed as Building
+    LEAD FINDER (/strategic-agents/buyer-radar) — the team; listed as Building
 
     People and companies showing they need what we sell (CallVibe's call
     analytics, Markify's marketing services): LinkedIn posts asking for it,
@@ -16,11 +16,11 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=10"]) }}
+{{ head("Lead Finder", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=10"]) }}
 </head>
 <body class="sa"{% if client %} data-br-client{% endif %}>
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Buyer Radar", none)]) }}
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Lead Finder", none)]) }}
 
 <main class="sa-shell">
 
@@ -36,7 +36,7 @@
       </h1>
       <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency, others
         say &ldquo;we need this too&rdquo; in the comments, companies advertise jobs for the work, and people who fit your
-        customers start new roles or raise money, organisations publish RFPs, and people ask Reddit who to hire. Buyer Radar finds them all, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
+        customers start new roles or raise money, organisations publish RFPs, and people ask Reddit who to hire. Lead Finder finds them all, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
         an email and a LinkedIn note, and sends them for you if you want{% endif %}.</p>
       <ol class="br-steps">
         <li><b>1</b><span>Searches LinkedIn, Saleshandy and the web<small>posts, comments, job ads, customer profiles, RFPs and Reddit</small></span></li>

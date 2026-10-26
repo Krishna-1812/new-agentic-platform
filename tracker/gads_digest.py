@@ -640,6 +640,8 @@ def post(token, channel, msg, session=None, sleep=time.sleep, meta=None):
             "unfurl_links": False, "unfurl_media": False}
     if msg.get("attachments"):
         body["attachments"] = msg["attachments"]
+    if msg.get("thread_ts"):
+        body["thread_ts"] = msg["thread_ts"]           # a reply under that message
     headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json; charset=utf-8"}
     for attempt in range(2):
         try:

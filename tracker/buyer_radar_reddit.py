@@ -1,4 +1,4 @@
-"""Buyer Radar: Reddit threads from people asking for what we sell.
+"""Lead Finder: Reddit threads from people asking for what we sell.
 
 Founders and managers ask Reddit what nobody on LinkedIn sees them ask: "Any PPC agency you would
 recommend for a small SaaS?" in r/PPC, "Gong is too expensive, what else?" in r/sales. Reddit's own

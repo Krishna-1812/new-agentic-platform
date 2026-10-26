@@ -1,4 +1,4 @@
-"""Buyer Radar: Claude reads each post and says whether its author wants to buy, then writes to them.
+"""Lead Finder: Claude reads each post and says whether its author wants to buy, then writes to them.
 
     judge_posts(posts, offers, budget=, model=) -> {post key: verdict}
     judge_posts(signals, offers, ..., system=JOB_SYSTEM, text_of=job_text)          companies hiring

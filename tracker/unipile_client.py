@@ -404,7 +404,7 @@ def search_posts(account_id: str, keywords: str | None = None,
 def search_posts_filtered(account_id: str, keywords: str, *, date_posted: str | None = None,
                           sort_by: str | None = None, cursor: str | None = None,
                           limit: int = 25) -> tuple[Any, dict | None]:
-    """search_posts with LinkedIn's date and order filters, for Buyer Radar. Per Unipile's reference
+    """search_posts with LinkedIn's date and order filters, for Lead Finder. Per Unipile's reference
     (linkedincontroller_search, read 2026-10-18): `date_posted` is past_day, past_week or past_month;
     `sort_by` is relevance (the default) or date; a post search returns up to 49 a page; the next page
     is the same request with the `cursor` the last one returned. Not yet confirmed against a live
@@ -423,7 +423,7 @@ def search_posts_filtered(account_id: str, keywords: str, *, date_posted: str | 
 def search_jobs(account_id: str, keywords: str, *, date_posted_days: int | None = None,
                 location_ids: list[str] | None = None, cursor: str | None = None,
                 limit: int = 25) -> tuple[Any, dict | None]:
-    """LinkedIn's job search ("Classic - JOBS"), for Buyer Radar's hiring signal. Per Unipile's reference
+    """LinkedIn's job search ("Classic - JOBS"), for Lead Finder's hiring signal. Per Unipile's reference
     (linkedincontroller_search, read 2026-10-21): `date_posted` is a number of days back; `location` is
     a list of LOCATION ids (search_parameters below); a jobs page holds up to 50; each item is a
     SearchResult of type JOB with id, title, location, posted_at, reposted, url and company {id,

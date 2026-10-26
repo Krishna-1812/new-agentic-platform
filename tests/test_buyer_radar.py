@@ -1,4 +1,4 @@
-"""Buyer Radar: LinkedIn posts from people asking for what we sell (tracker/buyer_radar*.py).
+"""Lead Finder: LinkedIn posts from people asking for what we sell (tracker/buyer_radar*.py).
 
 What is held here:
   * the search: the actor's input, every shape of its output read the same, a person one key however
@@ -744,9 +744,9 @@ def test_emails_are_found_by_linkedin_profile_and_credits_counted():
 def test_the_slack_message_names_each_strong_lead_and_links_the_page():
     leads = [dict(lead(), score=90 + i, verdict={"need": EVIL, "intent_label": "Looking for a vendor"}) for i in range(12)]
     msgs = send.slack_messages("Lumina", leads, "https://x.example/strategic-agents/buyer-radar")
-    assert msgs[0]["text"] == "Buyer Radar: 12 new leads" and len(msgs) == 13, "the headline, then every lead: none left out"
+    assert msgs[0]["text"] == "Lead Finder: 12 new leads" and len(msgs) == 13, "the headline, then every lead: none left out"
     text = json.dumps(msgs)
-    assert "<img" not in text and "more" not in text and "Open Buyer Radar" in text
+    assert "<img" not in text and "more" not in text and "Open Lead Finder" in text
     assert "*12 of 12 · " in json.dumps(msgs[-1], ensure_ascii=False)
     posted = []
     ok, why = send.slack_leads("#c", "o", leads[:1], post=lambda t, c, m: posted.append(c) or (True, None, "1"))

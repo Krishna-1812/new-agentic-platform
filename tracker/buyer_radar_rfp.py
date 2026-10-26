@@ -1,4 +1,4 @@
-"""Buyer Radar: requests for proposals and tenders on the open web, found by Claude's web search.
+"""Lead Finder: requests for proposals and tenders on the open web, found by Claude's web search.
 
 An organisation that publishes an RFP for digital marketing, SEO or a call recording system has a
 budget, a scope and a deadline, and is asking vendors to write to it. Governments, universities,

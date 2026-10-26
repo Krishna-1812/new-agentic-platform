@@ -243,7 +243,7 @@ someone's own list stay theirs; adding the site again inside the account starts 
 for free. Claude's paid steps are turned off for them, the reveal is not open to them because it spends the
 agency's Saleshandy credits, and they see no credits or balances. The team reveals as before.
 
-**Buyer Radar** (2026-10-17): inside an account, its searches, leads, settings and spend belong to the account's
+**Lead Finder** (2026-10-17): inside an account, its searches, leads, settings and spend belong to the account's
 space. A client the account shares it with can search and read the leads, but sees no drafts, settings or costs.
 Their search never sends, finds emails or posts to Slack. Sending and settings stay with the team.
 docs/buyer-radar-plan.md.

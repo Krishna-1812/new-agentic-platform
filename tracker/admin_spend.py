@@ -16,7 +16,7 @@ account's work under the account alone and kept no name.
 
 What is counted is what each agent's own page shows as its cost. Market Radar counts a call it could not
 measure at its reservation (see tracker/market_radar_ledger.py), so this does too.
-Apollo, Event Intelligence and Buyer Radar's email finding (Saleshandy) spend credits, not dollars; they are kept apart (`unit` = "credits") and are
+Apollo, Event Intelligence and Lead Finder's email finding (Saleshandy) spend credits, not dollars; they are kept apart (`unit` = "credits") and are
 never added to a dollar total.
 """
 from __future__ import annotations
@@ -51,7 +51,7 @@ SOURCES = (
     ("account-mapper", "Account Mapper", "usd", """
         SELECT owner_email, to_jsonb(am_runs)->>'started_by', NULL::text, spent_usd, created_at
           FROM am_runs WHERE created_at >= %(since)s AND spent_usd > 0"""),
-    ("buyer-radar", "Buyer Radar", "usd", """
+    ("buyer-radar", "Lead Finder", "usd", """
         SELECT owner, started_by, NULL::text, usd, created_at
           FROM br_spend WHERE created_at >= %(since)s AND usd > 0"""),
     ("contact-lab", "Contact Lab", "usd", """
@@ -108,7 +108,7 @@ SOURCES = (
     ("event-intelligence", "Event & Conference Intelligence", "credits", """
         SELECT email, NULL::text, to_jsonb(evi_runs)->>'space', credits_spent, created_at
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),
-    ("buyer-radar-emails", "Buyer Radar (Saleshandy)", "credits", """
+    ("buyer-radar-emails", "Lead Finder (Saleshandy)", "credits", """
         SELECT owner, started_by, NULL::text, credits, created_at
           FROM br_spend WHERE created_at >= %(since)s AND credits > 0"""),
     ("contact-finder", "Contact Finder", "credits", """

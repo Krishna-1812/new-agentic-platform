@@ -83,7 +83,7 @@ def test_a_real_client_sends_the_header(monkeypatch):
         client = Anthropic(api_key="test", base_url="http://127.0.0.1:%d" % server.server_port, max_retries=0)
         client.messages.create(model="claude-haiku-5-5", max_tokens=10, messages=[{"role": "user", "content": "hi"}])
         assert seen.pop("workspace") == "wrkspc_test1"
-        # The call Buyer Radar and Market Radar make: the beta endpoint with server-side fallbacks.
+        # The call Lead Finder and Market Radar make: the beta endpoint with server-side fallbacks.
         from tracker import market_radar_llm
         market_radar_llm._request(client, "claude-haiku-5-5", 10, "s", "u", {"type": "object"}, True)
         assert seen["workspace"] == "wrkspc_test1"

@@ -1,4 +1,4 @@
-/* Buyer Radar page (templates/buyer_radar.html).
+/* Lead Finder page (templates/buyer_radar.html).
  *
  * The render* functions are pure: data in, HTML out, every value escaped
  * (post text, names and headlines come from LinkedIn, needs and drafts from
@@ -495,7 +495,7 @@
         numIn('brDailyN', 'New leads a search, about', s.daily_leads, 0, 100, 5, 'Customer profiles fill what the other places leave, so every day brings about this many. 0: no filling.') + '</div>' +
       '<h4 class="br-set-t">Google Sheet</h4>' +
       '<label class="mr-k" for="brSheet">Sheet link</label><input type="text" id="brSheet" value="' + esc(s.sheet_id ? 'https://docs.google.com/spreadsheets/d/' + s.sheet_id + '/edit' : '') + '" placeholder="https://docs.google.com/spreadsheets/d/...">' +
-      '<div class="mr-hint">Every lead gets one row, never twice, with everything Buyer Radar knows; status, email and who was written to are kept up to date. ' +
+      '<div class="mr-hint">Every lead gets one row, never twice, with everything Lead Finder knows; status, email and who was written to are kept up to date. ' +
         (((extra || {}).sheet || {}).email ? 'Share the sheet with <b>' + esc(extra.sheet.email) + '</b> as an Editor first.' : 'The service account (GOOGLE_SA_JSON) is not set on the service.') + '</div>' +
       '<div class="br-dr-acts"><button type="button" class="mr-btn small ghost" data-sheet="check">Check the sheet</button>' +
         '<button type="button" class="mr-btn small ghost" data-sheet="sync">Update the sheet now</button>' +
@@ -685,7 +685,7 @@
     });
   });
 
-  // The run's messages are posted again: its old ones deleted first (those Buyer Radar remembers).
+  // The run's messages are posted again: its old ones deleted first (those Lead Finder remembers).
   $('brRuns').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-resend]');
     if (!b) return;

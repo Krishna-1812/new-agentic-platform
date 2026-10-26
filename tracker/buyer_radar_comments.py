@@ -1,4 +1,4 @@
-"""Buyer Radar: people in the comments of a buyer's post who want the same thing.
+"""Lead Finder: people in the comments of a buyer's post who want the same thing.
 
 Under "Can anyone recommend a call analytics tool?" most comments are vendors pitching, but some say
 "we are looking for the same", "following" or "interested, please share". Those people have the need

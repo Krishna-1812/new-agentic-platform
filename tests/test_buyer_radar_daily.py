@@ -1,4 +1,4 @@
-"""Buyer Radar every day: nobody twice, about the same number of new leads each day, the profile search
+"""Lead Finder every day: nobody twice, about the same number of new leads each day, the profile search
 going on where it stopped, the daily run at the workspace's hour with its Slack message at that hour, and
 every lead in a Google Sheet once (tracker/buyer_radar.py, buyer_radar_icp.find, buyer_radar_sheet.py)."""
 import json
@@ -273,7 +273,7 @@ def test_the_daily_slack_message_says_how_the_day_went_even_with_nothing_strong(
     msg = send.slack_messages("", [], "https://app/br", total=27, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
     text = json.dumps(msg)
     assert "no strong leads today" in text and "27 new leads today, 0 strong, all in the Google Sheet" in text
-    assert "Open the Google Sheet" in text and "Open Buyer Radar" in text
+    assert "Open the Google Sheet" in text and "Open Lead Finder" in text
     assert "nothing new today" in json.dumps(send.slack_messages("", [], "", total=0, daily=True))
     manual = json.dumps(send.slack_messages("", [{"post": {"url": "https://x.co/p", "author": {"name": "A"}}, "offer": "callvibe",
                                                  "score": 90, "verdict": {}}], "", total=5))
@@ -468,10 +468,10 @@ def test_a_sheet_buyer_radar_may_not_open_says_who_to_share_it_with(monkeypatch)
         resp = type("R", (), {"status": 403})()
     monkeypatch.setenv("GOOGLE_SA_JSON", json.dumps({"client_email": "radar@proj.iam.gserviceaccount.com"}))
     got = sheet.sync("acct:1", {"sheet_id": "x" * 30}, store=SheetStore([_lead(1)]), service=FakeSheets(fail=E()))
-    assert got == {"error": "Buyer Radar may not open the sheet: share it with radar@proj.iam.gserviceaccount.com as an Editor"}
+    assert got == {"error": "Lead Finder may not open the sheet: share it with radar@proj.iam.gserviceaccount.com as an Editor"}
     ok, msg = sheet.check("x" * 30, service=FakeSheets(fail=E()))
     assert not ok and "radar@proj.iam.gserviceaccount.com" in msg
-    assert sheet.check("x" * 30, service=FakeSheets()) == (True, "Connected: Buyer Radar writes to the Leads and Runs tabs.")
+    assert sheet.check("x" * 30, service=FakeSheets()) == (True, "Connected: Lead Finder writes to the Leads and Runs tabs.")
 
 
 def test_after_a_run_its_row_goes_on_the_runs_tab_once():
@@ -534,31 +534,105 @@ def _rich_lead(**kw):
 
 def test_the_daily_slack_message_shows_what_decides_whether_to_act(monkeypatch):
     monkeypatch.setattr(send, "_ago", lambda iso, now=None: "2 days ago" if iso else "")
-    leads = [_rich_lead(), _rich_lead(id=2, offer="callvibe", score=84, email="cmo@acme.com",
-                                      verdict={"need": "Call QA", "intent_label": "Asking for recommendations"})]
+    leads = [_rich_lead(id=2, offer="callvibe", score=84, email="cmo@acme.com",
+                        verdict={"need": "Call QA", "intent_label": "Asking for recommendations"}), _rich_lead()]
     msgs = send.slack_messages("", leads, "https://app/br", total=84, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit",
                                by_source={"post": 50, "comment": 24, "jobs": 10})
-    assert len(msgs) == 3, "the headline, then one message for each strong lead"
-    text = json.dumps(msgs, ensure_ascii=False)
-    assert "84 new leads today, 2 strong (50 posts, 24 comments, 10 job ads), all in the Google Sheet\\nStrong by offer: " in text
-    assert "CallVibe 1" in text
-    assert "*1 of 2 · Tahiti Tourisme* — Tourism board" in text and "*2 of 2 · " in text and "score *90*" in text and "for *Markify Digital*" in text
-    assert "*Wants:* A digital agency for Instagram and TikTok" in text
-    assert "Why it fits" not in text and "Names the service" not in text
-    assert "🏢 Tahiti Tourisme Board" in text and "📍 French Polynesia" in text and "⏰ due Nov 6" in text and "🕒 2 days ago" in text
-    assert "🔗 LinkedIn profile" in text and "✉️ email known" in text
-    assert "Open Buyer Radar" in json.dumps(msgs[0]) and "Open the Google Sheet" in json.dumps(msgs[0])
-    assert "Tahiti" not in json.dumps(msgs[0]) and "1 of 2" in msgs[1]["text"] and "2 of 2" in msgs[2]["text"]
+    assert len(msgs) == 3, "the headline, the hot lead as a card, the other strong one in the thread's list"
+    head, card, thread = (json.dumps(m, ensure_ascii=False) for m in msgs)
+    assert "84 new leads today, 2 strong (50 posts, 24 comments, 10 job ads), all in the Google Sheet\\nStrong by offer: " in head
+    assert "CallVibe 1" in head and "🔥 1 hot below · 1 more in the thread" in head
+    assert "Open Lead Finder" in head and "Open the Google Sheet" in head and "Tahiti" not in head
+    assert "*1 of 1 · Tahiti Tourisme* — Tourism board" in card and "score *90*" in card and "for *Markify Digital*" in card
+    assert "*Wants:* A digital agency for Instagram and TikTok" in card
+    assert "Why it fits" not in card and "Names the service" not in card
+    assert "🏢 Tahiti Tourisme Board" in card and "📍 French Polynesia" in card and "⏰ due Nov 6" in card and "🕒 2 days ago" in card
+    assert "🔗 LinkedIn profile" in card and "Open the post" in card
+    assert msgs[2]["thread"] is True and not msgs[1].get("thread") and not msgs[0].get("thread")
+    assert "*The other 1 strong lead*" in thread and "• *84* · *Tahiti Tourisme*, Tourism board · CallVibe" in thread
+    assert "✉️ email known" in thread and "🕒 2 days ago" in thread and "|Open>" in thread
 
 
 def test_the_slack_message_leaves_out_what_a_lead_does_not_have_and_escapes_the_rest():
     bare = {"id": 3, "offer": "markify", "score": 75, "post": {"kind": "reddit", "url": "https://www.reddit.com/r/x/1",
-                                                                   "author": {"name": "<b>u/x</b>"}},
-            "verdict": {"need": "<!channel> an agency"}}
-    text = json.dumps(send.slack_messages("", [bare], "", total=1), ensure_ascii=False)
-    assert "Wants" in text and "📍" not in text and "⏰" not in text
-    assert "💬 answer in the thread" in text and "<!channel>" not in text and "&lt;!channel&gt;" in text
-    assert "Strong by offer" not in text and "divider" not in text and len(send.slack_messages("", [bare], "", total=1)) == 2
+                                                                   "author": {"name": "<!channel>u/x"}},
+            "verdict": {"need": "an agency"}}
+    msgs = send.slack_messages("", [bare], "", total=1)
+    text = json.dumps(msgs, ensure_ascii=False)
+    assert len(msgs) == 2 and msgs[1]["thread"] and "1 strong lead in the thread" in json.dumps(msgs[0])
+    assert "📍" not in text and "⏰" not in text and "(Reddit)" in text and "💬 answer in the thread" in text
+    assert "<!channel>" not in text and "&lt;!channel&gt;u/x" in text and "Strong by offer" not in text
+    assert "hot below" not in text
+
+
+def test_the_best_leads_are_cards_and_the_rest_one_list_in_a_thread():
+    leads = [_rich_lead(id=i, score=70 + i % 15, verdict={"need": "n", "intent_label": "x"}) for i in range(1, 31)]
+    leads += [_rich_lead(id=100 + i, score=85 + i) for i in range(3)]
+    msgs = send.slack_messages("", leads, "u", total=90, daily=True)
+    cards = [m for m in msgs[1:] if not m.get("thread")]
+    threads = [m for m in msgs[1:] if m.get("thread")]
+    assert len(cards) == 3 and [b["text"]["text"].split("*")[1][:6] for m in cards for b in m["blocks"] if b["type"] == "section"] == ["1 of 3", "2 of 3", "3 of 3"]
+    assert [m["text"] for m in msgs[1:4]] != [] and all(not m.get("thread") for m in msgs[1:4]), "cards first, best first"
+    assert "score *87*" in json.dumps(cards[0]) and "score *85*" in json.dumps(cards[2])
+    assert "🔥 3 hot below · 30 more in the thread" in json.dumps(msgs[0], ensure_ascii=False)
+    assert len(threads) == 2, "30 lines are two messages of 25 at most"
+    assert all(len(b["text"]["text"]) <= 3000 and len(m["blocks"]) == 1 for m in threads for b in m["blocks"])
+    lines = [ln for m in threads for ln in m["blocks"][0]["text"]["text"].split("\n") if ln.startswith("•")]
+    assert len(lines) == 30 and [int(ln.split("*")[1]) for ln in lines] == sorted((int(ln.split("*")[1]) for ln in lines), reverse=True)
+    assert "*The other 30 strong leads*" in threads[0]["blocks"][0]["text"]["text"] and "*…and more*" in threads[1]["blocks"][0]["text"]["text"]
+
+
+def test_with_no_hot_lead_every_strong_one_is_in_the_thread_and_a_lower_bar_makes_more_cards():
+    leads = [_rich_lead(id=i, score=70 + i) for i in range(1, 5)]
+    msgs = send.slack_messages("", leads, "u")
+    assert len(msgs) == 2 and msgs[1]["thread"] and "4 strong leads in the thread" in json.dumps(msgs[0])
+    assert "hot below" not in json.dumps(msgs[0])
+    msgs = send.slack_messages("", leads, "u", hot_score=73)
+    assert len(msgs) == 4 and [bool(m.get("thread")) for m in msgs] == [False, False, False, True]
+    assert send.SLACK_HOT_SCORE == 85
+    assert len(send.slack_messages("", [], "u", total=3, daily=True)) == 1, "nothing strong: the headline alone"
+
+
+def test_each_message_is_set_apart_so_they_do_not_run_together_in_slack():
+    msgs = send.slack_messages("", [_rich_lead(id=1), _rich_lead(id=2, score=95), _rich_lead(id=3, score=70)], "u", total=5, daily=True)
+    assert msgs[0]["blocks"][0]["type"] == "divider", "the headline starts with a line"
+    for card in msgs[1:3]:
+        kinds = [b["type"] for b in card["blocks"]]
+        assert kinds == ["divider", "section", "actions"], "a line above, a button below"
+        button = card["blocks"][2]["elements"][0]
+        assert button["url"].startswith("https://") and button["text"]["text"] == "Open the post"
+        assert "<https://" not in card["blocks"][1]["text"]["text"], "the link is the button, not a line of text"
+    assert [b["type"] for b in msgs[3]["blocks"]] == ["section"], "the list in the thread needs no line"
+    nolink = send.slack_messages("", [_rich_lead(post={"url": ""})], "u")[1]
+    assert [b["type"] for b in nolink["blocks"]] == ["divider", "section"], "no address, no button"
+
+
+def test_the_list_goes_under_the_headline_as_replies_and_the_cards_do_not(monkeypatch):
+    monkeypatch.setenv("BUYER_RADAR_SLACK_BOT_TOKEN", "xoxb")
+    leads = [_rich_lead(id=1, score=90), _rich_lead(id=2, score=75), _rich_lead(id=3, score=72)]
+    sent, posted = [], []
+
+    def post(token, channel, msg):
+        sent.append(msg)
+        return True, "", "100.%d" % len(sent)
+    ok, why = send.slack_leads("#c", "o", leads, post=post, sleep=lambda s: None, posted=posted)
+    assert (ok, why) == (True, "") and len(sent) == 3
+    assert "thread_ts" not in sent[0] and "thread_ts" not in sent[1], "the headline and the card are in the channel"
+    assert sent[2]["thread_ts"] == "100.1" and "thread" not in sent[2] and "thread" not in sent[1]
+    assert [m["ts"] for m in posted] == ["100.1", "100.2", "100.3"], "the replies are remembered for deleting too"
+    sent.clear()
+    send.slack_leads("#c", "o", leads, post=lambda t, c, m: sent.append(m) or (True, "", ""), sleep=lambda s: None)
+    assert all("thread_ts" not in m for m in sent), "with no timestamp for the headline, the list is posted plainly"
+
+
+def test_a_reply_is_posted_into_its_thread():
+    from tracker import gads_digest
+    s = _SlackSession([(200, {"ok": True, "ts": "1.6"}, {})])
+    gads_digest.post("t", "C0", {"text": "x", "blocks": [], "thread_ts": "1.5"}, session=s)
+    assert s.calls[0][1]["thread_ts"] == "1.5"
+    s = _SlackSession([(200, {"ok": True, "ts": "1.6"}, {})])
+    gads_digest.post("t", "C0", {"text": "x", "blocks": []}, session=s)
+    assert "thread_ts" not in s.calls[0][1]
 
 
 def test_a_long_run_posts_every_strong_lead_one_message_each_inside_slacks_limits():
@@ -566,7 +640,7 @@ def test_a_long_run_posts_every_strong_lead_one_message_each_inside_slacks_limit
     msgs = send.slack_messages("", leads, "u", total=90, daily=True, sheet_url="https://docs.google.com/spreadsheets/d/x/edit")
     assert len(msgs) == 51 and "50 new leads" in msgs[0]["text"]
     assert all(len(m["blocks"]) <= 50 for m in msgs)
-    assert all(len(b["text"]["text"]) <= 3000 for m in msgs[1:] for b in m["blocks"])
+    assert all(len(b["text"]["text"]) <= 3000 for m in msgs[1:] for b in m["blocks"] if b["type"] == "section")
     assert "*50 of 50 · " in json.dumps(msgs[-1], ensure_ascii=False) and "more" not in json.dumps(msgs)
 
 
@@ -580,7 +654,7 @@ def test_every_lead_is_posted_a_second_apart_and_one_refused_does_not_stop_the_r
         return (False, "msg_too_long", "") if "lead 3 of 5" in msg["text"] else (True, "", "1")
     ok, why = send.slack_leads("#c", "o", leads, post=post, sleep=naps.append)
     assert len(sent) == 6 and naps == [send.SLACK_PAUSE_S] * 5
-    assert (ok, why) == (False, "1 of 5 leads not posted (msg_too_long)")
+    assert (ok, why) == (False, "1 of 5 messages not posted (msg_too_long)")
     sent.clear()
     assert send.slack_leads("#c", "o", leads, post=lambda t, c, m: sent.append(m) or (False, "channel_not_found", ""),
                             sleep=naps.append) == (False, "channel_not_found")

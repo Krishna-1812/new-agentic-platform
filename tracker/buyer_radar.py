@@ -1,4 +1,4 @@
-"""Buyer Radar: people and companies showing they need what we sell, in one place, with a message ready.
+"""Lead Finder: people and companies showing they need what we sell, in one place, with a message ready.
 
 Each run looks for every offer switched on (CallVibe's call analytics and Markify's marketing services)
 in these places, each switched on in Settings ("sources"):
@@ -565,7 +565,7 @@ GENERIC_COMPANIES = {"", "self employed", "self", "freelance", "freelancer", "st
 
 
 def lead_company(lead):
-    """The lead's company as Buyer Radar compares it (buyer_radar_jobs.company_norm), or ''."""
+    """The lead's company as Lead Finder compares it (buyer_radar_jobs.company_norm), or ''."""
     from . import buyer_radar_jobs as jobs_src
     p, v = lead.get("post") or {}, lead.get("verdict") or {}
     name = v.get("company") or (p.get("company") or {}).get("name") or ""
@@ -1203,7 +1203,7 @@ def deliver_waiting(*, now=None, store=None, post=None):
 
 
 def resend_slack(owner, run_id, *, store=None, post=None, delete=None):
-    """Sends a finished search's Slack message again, in today's format: the messages Buyer Radar posted for it
+    """Sends a finished search's Slack message again, in today's format: the messages Lead Finder posted for it
     are deleted first (those it remembers; older ones are the team's to delete), then the headline and every
     strong lead are posted. {"ok", "posted", "deleted", "still_there"} or {"ok": False, "error", "status"}."""
     from . import buyer_radar_send as send, buyer_radar_store
