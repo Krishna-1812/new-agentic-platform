@@ -444,10 +444,13 @@ def test_the_preview_names_the_listed_accounts_it_could_not_find(site, monkeypat
     assert by["Acme"] == "preview" and by["Ghost Co"] == "not_found"
 
 
-def test_the_schedule_is_1pm_india_time_and_the_log_shows_no_figures():
+def test_the_workflow_is_manual_only_and_the_log_shows_no_figures():
+    """The site posts the digest itself at 11:30 India time (tracker/daily_jobs.py): the scheduled run this
+    replaced reached Slack 4 to 6 hours late, in the evening."""
     with open(os.path.join(ROOT, ".github", "workflows", "google-ads-slack-digest.yml")) as f:
         wf = f.read()
-    assert "cron: '25 7 * * *'" in wf, "07:25 UTC = 12:55 IST, posting at about 13:00 after GitHub's usual delay"
+    assert "cron:" not in wf and "schedule:" not in wf.split("jobs:")[0].split("#")[-1], "no schedule: GitHub starts it hours late"
+    assert "workflow_dispatch:" in wf and "force" in wf
     assert "secrets.GOOGLE_ADS_DIGEST_TOKEN" in wf and "/api/dashboards/google-ads/slack-digest" in wf
     assert "permissions: {}" in wf
 
