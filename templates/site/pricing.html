@@ -1,0 +1,117 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">Pricing</span>
+  <h1 class="display">A fixed monthly fee. <em>A promised number of meetings.</em></h1>
+  <p class="lead">You pay for meetings with your buyers, not for our hours or our software. If we book fewer than we promised, the difference comes off your next bill.</p>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="price-cards">
+    <article class="price">
+      <span class="eyebrow">GTM Engineering</span>
+      <div class="price-amt">{{ site.GTM_FEE }}<small>a month</small></div>
+      <p class="lead" style="font-size:17px">The number of meetings is agreed on the call and promised in writing. Each missing meeting is credited on your next bill.</p>
+      <ul class="ticks">
+        <li>Customer profile, plays and messages</li>
+        <li>Email and LinkedIn outreach in your name</li>
+        <li>Replies handled, meetings booked into your calendar</li>
+        <li>Every lead in your workspace, Slack and a Google Sheet</li>
+      </ul>
+      <a class="btn btn-ink" href="/book" data-cta="pricing-gtm">Get your meeting plan {{ ui.arrow() }}</a>
+    </article>
+    <article class="price is-sky">
+      <span class="eyebrow is-sky">Performance Marketing</span>
+      <div class="price-amt">Paid on results</div>
+      <p class="lead" style="font-size:17px">What counts as a result, and the rate, are set with each client after the free audit, because a sale, a call and a form are worth different amounts to different businesses.</p>
+      <ul class="ticks is-sky">
+        <li>A free audit of about 50 checks</li>
+        <li>Google Ads and Meta, run by our team</li>
+        <li>16 agents checking the account every day</li>
+        <li>An Ads insight in Slack every morning</li>
+      </ul>
+      <a class="btn btn-ink" href="/book?for=performance" data-cta="pricing-perf">Get a free account audit {{ ui.arrow() }}</a>
+    </article>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">What counts as a meeting</span>
+    <h2 class="h2">Three checks, <em>every time.</em></h2>
+  </div>
+  <ol class="counts">
+    <li><b>The person fits</b><p>They match the customer profile we agreed on the call.</p></li>
+    <li><b>They said yes</b><p>They accepted a meeting with you and it is on your calendar.</p></li>
+    <li><b>It took place</b><p>A no-show doesn&rsquo;t count towards the promise.</p></li>
+  </ol>
+</section>
+
+<section class="band sec">
+  <div class="wrap split" style="align-items:start">
+    <div>
+      <span class="eyebrow">A worked example</span>
+      <h2 class="h2" style="margin-top:18px">What a shortfall <em>looks like.</em></h2>
+      <p class="lead" style="margin-top:20px">A software company selling to HR leaders in the US. On the call we promise 6 meetings a month for {{ site.GTM_FEE }}, so each meeting is worth about $167 against the fee. The numbers are illustrative.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl tbl-sm">
+        <thead><tr><th scope="col">Month</th><th scope="col">Promised</th><th scope="col">Took place</th><th scope="col">Bill</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Month 1</th><td class="num">6</td><td class="num">5</td><td class="num">$1,000</td></tr>
+          <tr><th scope="row">Month 2</th><td class="num">6</td><td class="num">8</td><td class="num">$833</td></tr>
+          <tr><th scope="row">Month 3</th><td class="num">6</td><td class="num">7</td><td class="num">$1,000</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted" style="padding:12px 18px 16px">Month 2&rsquo;s bill is $1,000 less the $167 credit for the meeting missed in month 1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="split" style="align-items:start">
+    <div>
+      <span class="eyebrow">What sets the number</span>
+      <h2 class="h2" style="margin-top:18px">Your market <em>decides it.</em></h2>
+      <ul class="ticks" style="margin-top:24px">
+        <li>How narrow your audience is, and where it is</li>
+        <li>How often its buyers show signs in public</li>
+        <li>How often they reply</li>
+        <li>Your deal size, and how much a meeting is worth to you</li>
+      </ul>
+    </div>
+    <div>
+      <span class="eyebrow">Against the alternatives</span>
+      <h2 class="h2" style="margin-top:18px">What others <em>charge.</em></h2>
+      <ul class="ticks" style="margin-top:24px">
+        <li>A first sales hire: about $108,600 in year one, salary and overheads included.</li>
+        <li>Pay-per-meeting agencies: commonly quoted at $75 to $500 a meeting.</li>
+        <li>Retainer plus meetings: commonly $2,000 to $4,000 a month plus $150 to $400 a meeting.</li>
+      </ul>
+      <p class="small muted" style="margin-top:14px">Ranges are from the providers&rsquo; own published guides, so treat them as ranges, not quotes.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="faq-grid">
+    <div class="shead" style="margin-bottom:0">
+      <span class="eyebrow">Questions</span>
+      <h2 class="h2">About <em>the bill.</em></h2>
+    </div>
+    {{ ui.faq([
+      ("Is there a contract or minimum term?", "We agree the terms on the call and put them in your meeting plan, along with the number and the price."),
+      ("What if you book fewer meetings than promised?", "Each missing meeting is credited on your next bill, at the monthly fee divided by the number of meetings promised."),
+      ("What if a meeting doesn't happen?", "It doesn't count. Only meetings that take place, with someone who fits the agreed profile, count towards the promise."),
+      ("Can I ask for more meetings?", "Yes. Tell us on the monthly review and we'll set a new number and price for the next month."),
+      ("Do you guarantee sales?", "No. We promise meetings with the right people. Winning the deal is yours."),
+      ("How is Performance Marketing priced?", "On results. What counts as a result, and the rate, are agreed with each client after the free audit."),
+    ]) }}
+  </div>
+</section>
+
+{{ ui.cta("Get your number.", "On a 30-minute call we'll work out how many meetings we can promise you each month.", "Get your meeting plan") }}
+
+{% endblock %}

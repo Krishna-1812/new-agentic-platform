@@ -1,4 +1,4 @@
-"""The home hero's card deck sits beside the headline, and its sticker reads cleanly.
+"""The previous site's home hero (now at /old-site): its card deck sits beside the headline, and its sticker reads cleanly.
 
 The deck used to be pinned to the right margin at a fixed top, so at common laptop
 widths it crowded the headline and at wide ones it floated in empty space.
@@ -19,7 +19,7 @@ def _read(rel):
 
 
 def test_sticker_text_fits_its_circle():
-    html = app_module.app.test_client().get("/").get_data(as_text=True)
+    html = app_module.app.test_client().get("/old-site").get_data(as_text=True)
     m = re.search(r'<textPath href="#stk"([^>]*)>([^<]*)</textPath>', html)
     assert m, "sticker text missing"
     # Fitted to the path, so the loop never runs one phrase into the next

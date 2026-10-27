@@ -21,8 +21,10 @@ sys.path.insert(0, ROOT)
 
 import app as appmod  # noqa: E402
 
-PUBLIC = ["/", "/agents", "/platform", "/signals", "/solutions", "/why-intelligence", "/integrations",
-          "/resources", "/industries"]
+# The previous site, kept at /old-site since the October 2026 rebuild. The new site asks for a call
+# instead (tests/test_new_site.py).
+PUBLIC = ["/old-site", "/old-site/agents", "/old-site/platform", "/old-site/signals", "/old-site/solutions",
+          "/old-site/why-intelligence", "/old-site/integrations", "/old-site/resources", "/old-site/industries"]
 
 
 def _page(path):
@@ -52,14 +54,14 @@ def test_the_google_sign_up_pop_up_is_gone(path):
 
 
 def test_the_demo_form_opens_on_book_a_demo():
-    body = _page("/")
+    body = _page("/old-site")
     assert 'id="leadOv"' in body
     assert '<button type="button" class="f-pill on" data-interest="Book a demo">Book a demo</button>' in body
 
 
 def test_an_agent_page_offers_a_demo_and_its_custom_version():
     slug = appmod.AGENTS[0]["slug"]
-    body = _page("/agents/" + slug)
+    body = _page("/old-site/agents/" + slug)
     assert "data-signup" not in body
     assert 'data-interest="Build a custom agent"' in body and ">Book a demo</button>" in body
 

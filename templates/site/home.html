@@ -1,0 +1,176 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap hero">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">GTM engineering and performance marketing, run with AI agents</span>
+      <h1 class="display">Meetings with your buyers, <em>promised</em> every month.</h1>
+      <p class="lead">On one call we agree who you want to meet and how many meetings we will book. We find them, write to them in your name, and put the meetings in your calendar. Book fewer, and you don&rsquo;t pay for the shortfall.</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="/book" data-cta="hero">Get your meeting plan {{ ui.arrow() }}</a>
+        <a class="btn btn-line" href="/pricing">See how pricing works</a>
+      </div>
+      <ul class="promise">
+        <li>{{ ui.tick() }}{{ site.GTM_FEE }} a month</li>
+        <li>{{ ui.tick() }}Meetings promised in writing</li>
+        <li>{{ ui.tick() }}Shortfall credited on your next bill</li>
+      </ul>
+    </div>
+    <div class="feed" aria-label="Sample leads, as they arrive each morning">
+      <p class="feed-cap"><b aria-hidden="true"></b>This morning&rsquo;s leads &middot; sample</p>
+      {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l, loop.index0) }}{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wrap" aria-label="How we work, in numbers">
+  <div class="facts">
+    <div class="fact"><b>{{ site.GTM_FEE }}</b><span>a month, with the number of meetings promised</span></div>
+    <div class="fact"><b>0</b><span>meetings you pay for that didn&rsquo;t take place</span></div>
+    <div class="fact"><b>16</b><span>agents checking your ad accounts every day</span></div>
+    <div class="fact"><b>11:30</b><span>your Ads insight in Slack, every morning</span></div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">What we do</span>
+    <h2 class="h2">The people searching for you, <em>and the people who should be.</em></h2>
+  </div>
+  <div class="pillars">
+    <article class="pillar">
+      <span class="tag">For buyers who aren&rsquo;t searching yet</span>
+      <h3 class="h3">GTM Engineering</h3>
+      <p>We find the people showing they need what you sell, write to them in your name, and book the interested ones into your calendar.</p>
+      <ul class="ticks">
+        <li>Buying signs found every day: posts, comments, tenders, news</li>
+        <li>Email and LinkedIn outreach, written in your voice</li>
+        <li>{{ site.GTM_FEE }} a month, with the number of meetings promised</li>
+      </ul>
+      <a class="link-arrow" href="/gtm-engineering">How GTM Engineering works {{ ui.arrow() }}</a>
+    </article>
+    <article class="pillar is-sky">
+      <span class="tag">For buyers who already are</span>
+      <h3 class="h3">Performance Marketing</h3>
+      <p>Google Ads and Meta run by our team, with 16 agents checking every account every day, and paid on results.</p>
+      <ul class="ticks">
+        <li>An audit of about 50 checks before any change</li>
+        <li>Search terms, ads, places and budgets checked daily</li>
+        <li>Paid on results, with the terms set for your business</li>
+      </ul>
+      <a class="link-arrow" href="/performance-marketing">How Performance Marketing works {{ ui.arrow() }}</a>
+    </article>
+  </div>
+</section>
+
+<section class="band sec">
+  <div class="wrap">
+    <p class="statement">Agencies bill for hours. Software bills for seats. <span>We bill for</span> <span class="mark">meetings.</span></p>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">How it works</span>
+    <h2 class="h2">From a call to <em>a calendar</em> that fills itself.</h2>
+  </div>
+  <ol class="steps">
+    <li class="step"><span class="step-n">01</span><h3>A 30-minute call</h3><p>What you sell, who you want to meet, and what you&rsquo;ve tried so far.</p></li>
+    <li class="step"><span class="step-n">02</span><h3>Your meeting plan</h3><p>Who we&rsquo;ll reach, what counts as a meeting, how many we promise, and the price. In writing, within 3 working days.</p></li>
+    <li class="step"><span class="step-n">03</span><h3>We build and write</h3><p>We set up the plays that find your buyers and write the messages. You approve them before anything is sent.</p></li>
+    <li class="step"><span class="step-n">04</span><h3>Meetings land</h3><p>Interested replies get your calendar link. Each missing meeting is credited on your next bill.</p></li>
+  </ol>
+  <p style="margin-top:32px"><a class="link-arrow" href="/how-it-works">The whole process, step by step {{ ui.arrow() }}</a></p>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">From sign to meeting</span>
+    <h2 class="h2">Every meeting starts <em>with a reason.</em></h2>
+    <p class="lead">One lead, followed end to end. Sample data, but the same cards and messages our clients get.</p>
+  </div>
+  <ol class="journey">
+    <li class="jstep"><span class="jstep-l">1 &middot; The sign</span><div class="jcard"><b>A LinkedIn post</b>&ldquo;Our cost per lead on paid social has doubled this year. How are others handling it?&rdquo;<span class="chip">Head of Marketing &middot; HR software</span></div></li>
+    <li class="jstep"><span class="jstep-l">2 &middot; The lead</span><div class="jcard"><b>Lead card, score 91</b>Matches your profile: B2B software, 50 to 200 people, marketing leader. Email checked.<span class="chip">In Slack at 9:00</span></div></li>
+    <li class="jstep"><span class="jstep-l">3 &middot; The message</span><div class="jcard"><b>An email in your name</b>&ldquo;Saw your post on paid social costs. Would it help to compare notes on where your best leads come from now?&rdquo;</div></li>
+    <li class="jstep"><span class="jstep-l">4 &middot; The reply</span><div class="jcard"><b>&ldquo;Sure, send me some times.&rdquo;</b>We reply with your calendar link, and you see the whole thread in your workspace.</div></li>
+    <li class="jstep"><span class="jstep-l">5 &middot; The meeting</span><div class="jcard"><b>Thursday, 11:00</b>On your calendar with the post, the lead card and the conversation so far.<span class="chip chip-meet">Counts when it takes place</span></div></li>
+  </ol>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">Where we find buyers</span>
+    <h2 class="h2">Your buyers are already <em>telling someone.</em></h2>
+    <p class="lead">Each of these is a play our agents run every day. On the call we pick the ones that suit your market.</p>
+  </div>
+  <div class="tiles">
+    {% for p in site.PLAYS[:8] %}<div class="tile"><b>{{ p.name }}</b><p>{{ p.sign }}</p></div>{% endfor %}
+  </div>
+  <p style="margin-top:28px"><a class="link-arrow" href="/gtm-engineering#plays">All the plays we run {{ ui.arrow() }}</a></p>
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow is-sky">Performance Marketing</span>
+      <h2 class="h2" style="margin-top:18px">Your ad account, checked <em>every morning.</em></h2>
+      <p class="lead" style="margin-top:20px">Sixteen agents read every campaign, search term and landing page daily and flag what to change before budget leaks. A person on our team decides and makes every change. You see it all in Slack at 11:30.</p>
+      <div class="btns" style="margin-top:28px">
+        <a class="btn btn-ink" href="/book?for=performance" data-cta="audit">Get a free account audit {{ ui.arrow() }}</a>
+        <a class="btn btn-line" href="/performance-marketing">What the agents check</a>
+      </div>
+    </div>
+    <div>{{ ui.slack_digest() }}</div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">Both together</span>
+    <h2 class="h2">Each side makes <em>the other</em> better.</h2>
+  </div>
+  <div class="loop">
+    <div class="loop-box is-acc"><b>The buyers our plays find</b><p>can be shown your ads, so the name in their inbox is one they have already seen.</p></div>
+    <div class="loop-arrows" aria-hidden="true">
+      <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h50M44 3l8 7-8 7"/></svg>
+      <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M54 10H4M12 3l-8 7 8 7"/></svg>
+    </div>
+    <div class="loop-box is-sky"><b>The searches that convert</b><p>tell our plays which problems your buyers name, so we listen for them in public.</p></div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">Compare</span>
+    <h2 class="h2">Hire, retain, subscribe, <em>or be promised meetings.</em></h2>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th scope="col">Option</th><th scope="col">You pay for</th><th scope="col">Who does the work</th><th scope="col">First meetings</th><th scope="col">If it doesn&rsquo;t work</th></tr></thead>
+      <tbody>
+        {% for o, pay, who, first, fail in site.COMPARE %}
+        <tr{% if loop.last %} class="us"{% endif %}><th scope="row">{{ o }}</th><td>{{ pay }}</td><td>{{ who }}</td><td>{{ first }}</td><td>{{ fail }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted" style="margin-top:14px">A first sales hire&rsquo;s cost is a published estimate for a US business development rep, salary and overheads included.</p>
+</section>
+
+<section class="wrap sec">
+  <div class="faq-grid">
+    <div class="shead" style="margin-bottom:0">
+      <span class="eyebrow">Questions</span>
+      <h2 class="h2">The short <em>answers.</em></h2>
+      <p class="lead">Anything else, ask us on the call.</p>
+    </div>
+    {{ ui.faq(site.FAQ_MEETINGS) }}
+  </div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise, and what it costs, within 3 working days of the call.", "Get your meeting plan") }}
+
+{% endblock %}

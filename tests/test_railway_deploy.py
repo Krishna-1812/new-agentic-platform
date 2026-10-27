@@ -92,10 +92,16 @@ def _allowed(path, rules):
 
 def test_the_public_marketing_pages_can_be_indexed():
     rules = _rules()
-    for path in ("/", "/agents", "/agents/signal-tracker", "/industries/health-tech",
-                 "/platform", "/signals", "/solutions", "/why-intelligence",
-                 "/integrations", "/resources", "/static/css/press.css"):
+    for path in ("/", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book",
+                 "/agents", "/industries/health-tech", "/privacy", "/static/css/site.css"):
         assert _allowed(path, rules), path
+
+
+def test_the_previous_site_is_not_indexed():
+    """Kept at /old-site for anyone to see, but not for search engines (its pages say noindex too)."""
+    rules = _rules()
+    for path in ("/old-site", "/old-site/platform", "/old-site/agents/signal-tracker"):
+        assert not _allowed(path, rules), path
 
 
 def test_signed_in_internal_and_client_areas_cannot():

@@ -1,0 +1,57 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero" style="padding-bottom:var(--sec)">
+  <div class="split" style="align-items:start">
+    <div>
+      <span class="eyebrow">Book a call</span>
+      <h1 class="display" style="max-width:12ch">Tell us who you want <em>to meet.</em></h1>
+      <p class="lead">A few lines about your business, and we&rsquo;ll come to the call with a first idea of the plays and the number.</p>
+      <h2 class="h3" style="margin:40px 0 20px">What happens next</h2>
+      <ol class="next">
+        <li><div><b>We read your answers</b><p>And look at your market before we speak.</p></div></li>
+        <li><div><b>A 30-minute call</b><p>What you sell, who you want to meet, and what you&rsquo;ve tried.</p></div></li>
+        <li><div><b>Your plan in writing</b><p>Within 3 working days: the profile, the number of meetings, and the price. Or, for your ads, the free audit.</p></div></li>
+      </ol>
+    </div>
+    <div class="card" style="padding:clamp(22px,3vw,36px)">
+      <form class="form" id="bookForm" novalidate>
+        <div class="two">
+          <div class="field" id="f-name"><label for="in-name">Your name</label><input id="in-name" name="name" autocomplete="name" required></div>
+          <div class="field" id="f-email"><label for="in-email">Work email</label><input id="in-email" name="email" type="email" autocomplete="email" required></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="in-company">Company <span class="opt">(optional)</span></label><input id="in-company" name="company" autocomplete="organization"></div>
+          <div class="field"><label for="in-website">Website <span class="opt">(optional)</span></label><input id="in-website" name="website" inputmode="url" placeholder="example.com"></div>
+        </div>
+        <fieldset class="field">
+          <legend>What are you after?</legend>
+          <div class="choice">
+            <label><input type="radio" name="pillar" value="GTM Engineering"{% if want != 'performance' %} checked{% endif %}> Meetings with buyers</label>
+            <label><input type="radio" name="pillar" value="Performance Marketing"{% if want == 'performance' %} checked{% endif %}> Better ads</label>
+            <label><input type="radio" name="pillar" value="Both"> Both</label>
+          </div>
+        </fieldset>
+        <div class="field"><label for="in-sells">What do you sell? <span class="opt">(optional)</span></label><input id="in-sells" name="sells" placeholder="One line is plenty"></div>
+        <div class="field"><label for="in-meet">Who do you want to meet? <span class="opt">(optional)</span></label><input id="in-meet" name="meet" placeholder="For example: heads of HR at 200 to 2,000-person companies in the US"></div>
+        <div class="two">
+          <div class="field" id="f-spend" hidden><label for="in-spend">Monthly ad spend <span class="opt">(optional)</span></label>
+            <select id="in-spend" name="spend"><option value="">Choose one</option><option>Not advertising yet</option><option>Under $5,000</option><option>$5,000 to $20,000</option><option>$20,000 to $100,000</option><option>Over $100,000</option></select></div>
+          <div class="field"><label for="in-country">Where are your buyers? <span class="opt">(optional)</span></label><input id="in-country" name="country" placeholder="Countries or regions"></div>
+        </div>
+        <div class="field"><label for="in-message">Anything else? <span class="opt">(optional)</span></label><textarea id="in-message" name="message"></textarea></div>
+        <p class="form-err" id="formErr" role="alert"></p>
+        <div><button class="btn btn-ink" id="formSend" type="submit">Send</button></div>
+        <p class="small muted">We use your answers to prepare for the call and nothing else. <a href="/privacy">Privacy</a></p>
+      </form>
+      <div class="form-done" id="formDone" role="status">
+        <h2 class="h3">Thanks. We&rsquo;ll be in touch within one working day.</h2>
+        <p class="lead" style="font-size:17px">We&rsquo;ll reply to the email you gave with a few times for the call.</p>
+        <p><a class="link-arrow" href="/pricing">Meanwhile, see how pricing works {{ ui.arrow() }}</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
