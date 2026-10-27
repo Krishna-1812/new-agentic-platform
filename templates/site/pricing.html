@@ -101,14 +101,7 @@
   <span class="rule rv"></span>
   <div class="faq-grid">
     {% call ui.head("06", "Questions") %}<span class="ln"><span>About</span></span> <span class="ln"><span><span class="it">the bill.</span></span></span>{% endcall %}
-    {{ ui.faq([
-      ("Is there a contract or minimum term?", "We agree the terms on the call and put them in your meeting plan, along with the number and the price."),
-      ("What if you book fewer meetings than promised?", "Each missing meeting is credited on your next bill, at the monthly fee divided by the number of meetings promised."),
-      ("What if a meeting doesn't happen?", "It doesn't count. Only meetings that take place, with someone who fits the agreed profile, count towards the promise."),
-      ("Can I ask for more meetings?", "Yes. Tell us on the monthly review and we'll set a new number and price for the next month."),
-      ("Do you guarantee sales?", "No. We promise meetings with the right people. Winning the deal is yours."),
-      ("How is Performance Marketing priced?", "On results. What counts as a result, and the rate, are agreed with each client after the free audit."),
-    ]) }}
+    {{ ui.faq(faqs) }}
   </div>
 </section>
 

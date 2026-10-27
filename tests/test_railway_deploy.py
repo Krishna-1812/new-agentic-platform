@@ -97,18 +97,24 @@ def test_the_public_marketing_pages_can_be_indexed():
         assert _allowed(path, rules), path
 
 
-def test_the_previous_site_is_not_indexed():
-    """Kept at /old-site for anyone to see, but not for search engines (its pages say noindex too)."""
+def test_the_previous_site_and_the_sign_in_page_are_not_indexed():
+    """Kept at /old-site for anyone to see, but not for search engines. They may be crawled only so their
+    noindex is read: a crawler cannot read the noindex of a page robots.txt blocks, and the footer links to
+    both from every page, so blocked they could still be listed as bare addresses."""
     rules = _rules()
-    for path in ("/old-site", "/old-site/platform", "/old-site/agents/signal-tracker"):
-        assert not _allowed(path, rules), path
+    client = appmod.app.test_client()
+    for path in ("/old-site", "/old-site/platform", "/old-site/agents/signal-tracker", "/login"):
+        assert _allowed(path, rules), path
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert '<meta name="robots" content="noindex, follow">' in r.get_data(as_text=True), path
 
 
 def test_signed_in_internal_and_client_areas_cannot():
     rules = _rules()
     client = "acme"   # a client workspace lives at /<account>
     for path in ("/hub", "/admin/members", "/app", "/app/settings", "/api/whoami",
-                 "/auth/google", "/login", "/logout", "/ppc", "/dashboard/healthcare",
+                 "/auth/google", "/logout", "/ppc", "/dashboard/healthcare",
                  "/" + client, "/" + client + "/agents/x"):
         assert not _allowed(path, rules), path
 

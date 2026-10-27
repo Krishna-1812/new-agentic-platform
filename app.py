@@ -923,52 +923,83 @@ SIGNAL_GROUPS = [{"name": _gname, "items": [s for s in SIGNALS if s["group"] == 
 # GTM engineering, where we promise a number of booked meetings each month for a fixed fee, and
 # performance marketing run with our agents and paid on results. templates/site/*.html, in the previous
 # site's look and motion (static/css/press.css, static/js/press-play.js) with static/css/site.css on top;
-# content that repeats across pages is in site_pages.py. The site before it is kept whole at /old-site
-# (below).
-def _site(template, page, title, description, **kw):
-    return render_template("site/" + template, page=page, title=title, description=description,
-                           site=site_pages, site_url=SITE_URL, year=datetime.now(IST).year, **kw)
+# content that repeats across pages is in site_pages.py, and what search engines and AI assistants read
+# about each page (titles, structured data, the sitemap, llms.txt) in site_seo.py. The site before it is
+# kept whole at /old-site (below).
+import site_seo  # noqa: E402
+
+SITE_HOME_TITLE = BRAND["name"] + " · GTM engineering and performance marketing agency"
+
+
+def _verification_code(name):
+    """A Google Search Console or Bing Webmaster Tools verification code, from Railway → web → Variables.
+    Pasting the whole <meta> tag the tool shows works too: only its content is kept."""
+    raw = (os.environ.get(name) or "").strip()
+    m = re.search(r"""content\s*=\s*["']([^"']+)""", raw)
+    code = (m.group(1) if m else raw).strip()
+    return code if re.fullmatch(r"[A-Za-z0-9_\-]{1,200}", code) else ""
+
+
+def _site(template, page, title, description, crumbs=(), faqs=(), noindex=False, **kw):
+    """A page of the public site. title is what search results list it as (with the brand after it; the
+    home page has its own), crumbs its place in the site as (name, path) below Home, and faqs the
+    questions it shows, which its structured data marks up too."""
+    title = (title + " · " + BRAND["name"]) if title else SITE_HOME_TITLE
+    schema = None if noindex else site_seo.graph(SITE_URL, page, SITE_URL + request.path, title, description,
+                                                 crumbs=crumbs, faqs=faqs)
+    verify = {"google-site-verification": _verification_code("GOOGLE_SITE_VERIFICATION"),
+              "msvalidate.01": _verification_code("BING_SITE_VERIFICATION")}
+    return render_template("site/" + template, page=page, title=title, description=description, faqs=faqs,
+                           schema=schema, noindex=noindex, verify=verify, site=site_pages, site_url=SITE_URL,
+                           year=datetime.now(IST).year, **kw)
 
 
 @app.route("/gtm-engineering")
 def gtm_engineering_page():
-    return _site("gtm.html", "gtm", "GTM Engineering",
-                 "We find the people showing they need what you sell, write to them in your name and book "
-                 "the interested ones into your calendar. %s a month, with the meetings promised." % site_pages.GTM_FEE)
+    return _site("gtm.html", "gtm", "GTM engineering agency: B2B meetings, promised monthly",
+                 "We find buyers showing they need what you sell, write to them in your name and book meetings "
+                 "in your calendar. %s a month, meetings promised." % site_pages.GTM_FEE,
+                 crumbs=[("GTM Engineering", "/gtm-engineering")], faqs=site_pages.FAQ_GTM)
 
 
 @app.route("/performance-marketing")
 def performance_marketing_page():
-    return _site("performance.html", "performance", "Performance Marketing",
-                 "Google Ads and Meta run by our team, with 16 agents checking every account every day. "
-                 "Paid on results, starting with a free account audit.")
+    return _site("performance.html", "performance", "Performance marketing agency, paid on results",
+                 "Google Ads and Meta management, checked every day by 16 agents and changed by a person. "
+                 "Paid on results, starting with a free account audit.",
+                 crumbs=[("Performance Marketing", "/performance-marketing")], faqs=site_pages.FAQ_PERFORMANCE)
 
 
 @app.route("/how-it-works")
 def how_it_works_page():
-    return _site("how.html", "how", "How it works",
-                 "Six steps from the first call to meetings on your calendar, with what you do and what we do.")
+    return _site("how.html", "how", "How our B2B appointment setting works",
+                 "Six steps from the first call to booked meetings on your calendar: what you do, what we do, "
+                 "and how the monthly promise and the shortfall credit work.",
+                 crumbs=[("How it works", "/how-it-works")])
 
 
 @app.route("/pricing")
 def pricing_page():
-    return _site("pricing.html", "pricing", "Pricing",
-                 "%s a month with a promised number of meetings; each missing meeting is credited on your next "
-                 "bill. Performance marketing is paid on results." % site_pages.GTM_FEE)
+    return _site("pricing.html", "pricing", "Pricing: %s a month for promised B2B meetings" % site_pages.GTM_FEE,
+                 "%s a month for a promised number of B2B meetings; each missing meeting is credited on your "
+                 "next bill. Performance marketing is paid on results." % site_pages.GTM_FEE,
+                 crumbs=[("Pricing", "/pricing")], faqs=site_pages.FAQ_PRICING)
 
 
 @app.route("/book")
 def book_page():
     want = "performance" if request.args.get("for") == "performance" else ""
-    return _site("book.html", "book", "Book a call",
+    return _site("book.html", "book", "Book a call: get your meeting plan",
                  "Tell us who you want to meet. A 30-minute call, then your meeting plan in writing within "
-                 "3 working days.", want=want)
+                 "3 working days.", crumbs=[("Book a call", "/book")], want=want)
 
 
 @app.route("/plays")
 def plays_page():
-    return _site("plays.html", "plays", "Plays",
-                 "The buying signs we watch for every morning, and what we do when each one shows.")
+    return _site("plays.html", "plays", "Buying signals we turn into B2B meetings: %d plays" % len(site_pages.PLAYS),
+                 "The %d buying signs we watch for every morning, from posts and tenders to new leaders and "
+                 "visits to your website, and how each one becomes a meeting." % len(site_pages.PLAYS),
+                 crumbs=[("Plays", "/plays")])
 
 
 @app.route("/plays/<slug>")
@@ -979,15 +1010,20 @@ def play_page(slug):
     group = dict(site_pages.PLAY_GROUPS)[play["group"]]
     others = [p for p in site_pages.PLAYS if p["slug"] != slug]
     related = ([p for p in others if p["group"] == play["group"]] + [p for p in others if p["group"] != play["group"]])[:3]
-    return _site("play.html", "play", play["name"] + " · Plays", play["sign"] + " " + play["finds"].split(". ")[0] + ".",
+    return _site("play.html", "play", site_seo.PLAY_TITLES.get(slug, play["name"]),
+                 site_seo.clip(play["finds"].split(". ")[0] + ". We look every morning and write to them in "
+                               "your name."),
+                 crumbs=[("Plays", "/plays"), (play["name"], "/plays/" + slug)],
                  play=play, group_label=group, related=related,
                  industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in play["fits"]])
 
 
 @app.route("/industries")
 def industries_page():
-    return _site("industries.html", "industries", "Industries",
-                 "Who we book meetings with in each market, the plays that suit it, and sample leads.")
+    return _site("industries.html", "industries", "Lead generation and appointment setting by industry",
+                 "Booked meetings in software, agencies, professional services, IT, fintech, healthcare, real "
+                 "estate, education and e-commerce, with plays and sample leads.",
+                 crumbs=[("Industries", "/industries")])
 
 
 @app.route("/industries/<slug>")
@@ -996,36 +1032,74 @@ def industry_page(slug):
     if not ind:
         # An industry only the previous site had: its page is kept there.
         return redirect(OLD_SITE + request.path if slug in INDUSTRIES_BY_SLUG else "/industries")
-    return _site("industry.html", "industry", ind["name"] + " · Industries", ind["lead"],
+    search_title, search_description = site_seo.INDUSTRY_META.get(slug, (ind["name"], site_seo.clip(ind["lead"])))
+    return _site("industry.html", "industry", search_title, search_description,
+                 crumbs=[("Industries", "/industries"), (ind["name"], "/industries/" + slug)],
+                 faqs=tuple(ind["faq"]) + site_pages.FAQ_MEETINGS[:2],
                  ind=ind, plays=[site_pages.PLAYS_BY_SLUG[p] for p in ind["plays"]],
                  others=[i for i in site_pages.INDUSTRIES if i["slug"] != slug])
 
 
 @app.route("/agents")
 def agents_page():
-    return _site("agents.html", "agents", "The agents behind the work",
-                 "The agents that find buyers and check ad accounts every morning, and the team that decides "
-                 "what to do with what they find.", paid=paid_catalog.WORKSPACE)
+    total = len(site_pages.GTM_AGENTS) + len(paid_catalog.WORKSPACE) + len(site_pages.SEARCH_AGENTS)
+    return _site("agents.html", "agents", "AI agents for B2B lead generation and Google Ads",
+                 "%d agents find buyers and check Google Ads and Meta accounts every morning, each doing one "
+                 "job. Our team decides what to do with what they find." % total,
+                 crumbs=[("The agents", "/agents")], paid=paid_catalog.WORKSPACE)
 
 
 @app.route("/compare")
 def compare_page():
-    return _site("compare.html", "compare", "Compare",
-                 "A first sales hire, a retainer agency, a pay-per-meeting agency, a self-serve GTM tool and "
-                 "Northaxis, side by side.")
+    return _site("compare.html", "compare", "SDR hire vs agency vs pay-per-meeting vs GTM tools",
+                 "A first sales hire, a retainer agency, a pay-per-meeting agency, a GTM tool and %s compared: "
+                 "the cost, who does the work, and the first meetings." % BRAND["name"],
+                 crumbs=[("Compare", "/compare")])
 
 
 @app.route("/about")
 def about_page():
-    return _site("about.html", "about", "About",
-                 "We get paid when you get buyers: a promised number of meetings, and ads paid on results.")
+    return _site("about.html", "about", "About %s: paid when you get buyers" % BRAND["name"],
+                 "%s is a GTM engineering and performance marketing team working with AI agents. We're paid "
+                 "when you get buyers: promised meetings, ads paid on results." % BRAND["name"],
+                 crumbs=[("About", "/about")])
 
 
 @app.route("/outreach-policy")
 def outreach_policy_page():
-    return _site("outreach.html", "outreach", "How we contact people",
+    return _site("outreach.html", "outreach", "Outreach policy: how we contact people",
                  "Who we write to on our clients' behalf, where the information comes from, and how anyone "
-                 "can say no.")
+                 "can say no.", crumbs=[("How we contact people", "/outreach-policy")])
+
+
+@app.errorhandler(404)
+def not_found(e):
+    """An address that does not exist: the site's own page with the way back, for a person opening it. API
+    calls, files and form posts keep the plain answer."""
+    if request.method not in ("GET", "HEAD") or "/api/" in request.path or request.path.startswith("/static/"):
+        return e
+    return _site("404.html", "404", "Page not found", "There is no page at this address.", noindex=True), 404
+
+
+# ── What search engines and AI assistants read first ────────────────────────────
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    from flask import Response
+    legal = datetime.strptime(LEGAL_UPDATED, "%d %B %Y").strftime("%Y-%m-%d")
+    urls = [(SITE_URL + path, legal if page in ("privacy", "terms") else site_seo.UPDATED)
+            for path, page in site_seo.pages()]
+    return Response(render_template("site/sitemap.xml", urls=urls), mimetype="application/xml")
+
+
+@app.route("/llms.txt")
+@app.route("/llms-full.txt")
+def llms_txt():
+    """The plain-text summary AI assistants read (llmstxt.org), and the whole site's content in one file."""
+    from flask import Response
+    full = request.path == "/llms-full.txt"
+    return Response(render_template("site/llms-full.txt" if full else "site/llms.txt", site=site_pages,
+                                    seo=site_seo, site_url=SITE_URL, paid=paid_catalog.WORKSPACE),
+                    mimetype="text/plain")
 
 
 # The previous site's addresses. Those whose content has a new home move there for good; the rest
@@ -1375,16 +1449,21 @@ def auth_google():
 # allow-list rather than a block-list: signed-in areas, the internal staff app,
 # the API and every client workspace (each lives at its own /<slug>)
 # stay out without having to be named here. "$" anchors "/" to the home page
-# alone; each other entry covers its page and everything under it.
+# alone; each other entry covers its page and everything under it. The sitemap
+# and the llms.txt files are what search engines and AI assistants read first.
 ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
                        "/book", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
-                       "/privacy", "/terms", "/static/", "/favicon"]
+                       "/privacy", "/terms", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
+# Crawled but never listed: every page under these says noindex, and a crawler can only read that on a page
+# it may fetch. Blocked instead, the footer's links to them could still be listed as bare addresses.
+ROBOTS_NOINDEX_PATHS = ["/old-site", "/login"]
 
 
 @app.route("/robots.txt")
 def robots_txt():
     from flask import Response
-    lines = ["User-agent: *"] + ["Allow: " + p for p in ROBOTS_PUBLIC_PATHS] + ["Disallow: /"]
+    lines = (["User-agent: *"] + ["Allow: " + p for p in ROBOTS_PUBLIC_PATHS + ROBOTS_NOINDEX_PATHS]
+             + ["Disallow: /", "", "Sitemap: " + SITE_URL + "/sitemap.xml"])
     return Response("\n".join(lines) + "\n", mimetype="text/plain")
 
 @app.route("/favicon.ico")
@@ -1404,8 +1483,9 @@ def index():
         # Staff go straight to the internal hub; a client to their account; everyone else to the public home.
         return redirect("/hub" if _is_staff(u.get("email", "")) else _acct_landing(u.get("email", "")))
     return _site("home.html", "home", None,
-                 "GTM engineering and performance marketing, run with AI agents. %s a month for a promised number "
-                 "of meetings with your buyers; each missing meeting is credited on your next bill." % site_pages.GTM_FEE)
+                 "GTM engineering and performance marketing agency: %s a month for a promised number of B2B "
+                 "meetings, and Google Ads and Meta paid on results." % site_pages.GTM_FEE,
+                 faqs=site_pages.FAQ_HOME)
 
 # ── Public agents on the signed-in home (/app) ───────────────────────────────────
 # These are the SAME SEO tools embedded internally at /seo-aeo/<seo_slug> (served by
@@ -3337,10 +3417,12 @@ def _legal_page(page):
     contact = (os.environ.get("LEGAL_CONTACT_EMAIL") or "").strip()
     if "@" not in contact or any(c.isspace() for c in contact):
         contact = ""
-    return _site("legal.html", page, "Privacy Policy" if page == "privacy" else "Terms of Service",
-                 "How %s handles personal information." % BRAND["name"] if page == "privacy"
-                 else "The terms for using %s." % BRAND["name"],
-                 legal_updated=LEGAL_UPDATED, contact_email=contact)
+    name = "Privacy Policy" if page == "privacy" else "Terms of Service"
+    return _site("legal.html", page, name,
+                 "How %s collects, uses and protects personal information, and the choices you have."
+                 % BRAND["name"] if page == "privacy"
+                 else "The terms for using the %s website and app." % BRAND["name"],
+                 crumbs=[(name, "/" + page)], legal_updated=LEGAL_UPDATED, contact_email=contact)
 
 
 @app.route("/privacy")
