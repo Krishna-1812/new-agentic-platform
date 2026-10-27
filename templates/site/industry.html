@@ -1,0 +1,92 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<div class="wrap" style="padding-top:28px"><a class="link-arrow" href="/industries" style="border:0">&larr; All industries</a></div>
+
+<section class="wrap hero" style="padding-top:clamp(24px,4vw,48px)">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">{{ ind.name }}</span>
+      <h1 class="display" style="font-size:clamp(40px,5.6vw,80px)">{{ ind.headline }}</h1>
+      <p class="lead">{{ ind.lead }}</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="/book" data-cta="industry">Get your meeting plan {{ ui.arrow() }}</a>
+        <a class="btn btn-line" href="/pricing">See pricing</a>
+      </div>
+    </div>
+    <div class="pair" aria-label="A sample lead in {{ ind.name }}, and the first message">
+      <p class="feed-cap"><b aria-hidden="true"></b>A sample lead &middot; {{ ind.name }}</p>
+      {{ ui.lead_card(ind.samples[0].lead) }}
+      {{ ui.message_card(ind.samples[0].lead, ind.samples[0].message) }}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="split" style="align-items:start">
+    <div>
+      <span class="eyebrow">Who we book you in with</span>
+      <ul class="ticks" style="margin-top:22px">{% for b in ind.buyers %}<li>{{ b }}</li>{% endfor %}</ul>
+    </div>
+    <div>
+      <span class="eyebrow">The plays that suit it</span>
+      <div class="tiles" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:22px">
+        {% for p in plays %}{{ ui.play_tile(p, False) }}{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">Sample leads</span>
+    <h2 class="h2">What arrives <em>each morning.</em></h2>
+    <p class="lead">Sample data, written the way our clients receive it: who, why now, and the first message in your name.</p>
+  </div>
+  <div class="grid-3">
+    {% for s in ind.samples[1:] %}
+    <div class="pair">{{ ui.lead_card(s.lead) }}{{ ui.message_card(s.lead, s.message) }}</div>
+    {% endfor %}
+    <div class="card" style="align-self:start">
+      <h3>Every lead is checked</h3>
+      <ul class="ticks" style="margin-top:12px">
+        <li>Matches the profile we agree</li>
+        <li>Contact verified</li>
+        <li>Never contacted twice</li>
+        <li>Linked to the sign that found it</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow is-sky">Performance Marketing</span>
+      <h2 class="h2" style="margin-top:18px">And for <em>your ads.</em></h2>
+      <p class="lead" style="margin-top:20px">{{ ind.perf }}</p>
+      <div class="btns" style="margin-top:28px"><a class="btn btn-ink" href="/book?for=performance" data-cta="audit">Get a free account audit {{ ui.arrow() }}</a></div>
+    </div>
+    <div>{{ ui.slack_digest() }}</div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="faq-grid">
+    <div class="shead" style="margin-bottom:0">
+      <span class="eyebrow">Questions</span>
+      <h2 class="h2">The short <em>answers.</em></h2>
+    </div>
+    {{ ui.faq(ind.faq + site.FAQ_MEETINGS[:2]) }}
+  </div>
+</section>
+
+<section class="wrap sec-tight">
+  <h2 class="group-h">Other industries</h2>
+  <div class="chips">{% for o in others %}<a href="/industries/{{ o.slug }}">{{ o.name }}</a>{% endfor %}</div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise in your market, and what it costs.", "Get your meeting plan") }}
+
+{% endblock %}

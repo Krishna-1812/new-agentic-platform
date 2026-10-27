@@ -91,6 +91,7 @@ def test_robots_lets_crawlers_read_the_legal_pages(client):
 
 
 @pytest.mark.parametrize("path", ["/", "/gtm-engineering", "/performance-marketing", "/how-it-works",
+                                  "/plays", "/plays/lookalikes", "/industries", "/industries/education",
                                   "/pricing", "/book", "/privacy", "/terms", "/old-site", "/old-site/agents",
                                   "/old-site/resources", "/old-site/platform", "/old-site/signals",
                                   "/old-site/solutions", "/old-site/why-intelligence", "/old-site/integrations",

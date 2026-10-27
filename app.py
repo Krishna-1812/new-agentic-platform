@@ -964,9 +964,46 @@ def book_page():
                  "3 working days.", want=want)
 
 
+@app.route("/plays")
+def plays_page():
+    return _site("plays.html", "plays", "Plays",
+                 "The buying signs we watch for every morning, and what we do when each one shows.")
+
+
+@app.route("/plays/<slug>")
+def play_page(slug):
+    play = site_pages.PLAYS_BY_SLUG.get(slug)
+    if not play:
+        return redirect("/plays")
+    group = dict(site_pages.PLAY_GROUPS)[play["group"]]
+    others = [p for p in site_pages.PLAYS if p["slug"] != slug]
+    related = ([p for p in others if p["group"] == play["group"]] + [p for p in others if p["group"] != play["group"]])[:3]
+    return _site("play.html", "play", play["name"] + " · Plays", play["sign"] + " " + play["finds"].split(". ")[0] + ".",
+                 play=play, group_label=group, related=related,
+                 industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in play["fits"]])
+
+
+@app.route("/industries")
+def industries_page():
+    return _site("industries.html", "industries", "Industries",
+                 "Who we book meetings with in each market, the plays that suit it, and sample leads.")
+
+
+@app.route("/industries/<slug>")
+def industry_page(slug):
+    ind = site_pages.INDUSTRIES_BY_SLUG.get(slug)
+    if not ind:
+        # An industry only the previous site had: its page is kept there.
+        return redirect(OLD_SITE + request.path if slug in INDUSTRIES_BY_SLUG else "/industries")
+    return _site("industry.html", "industry", ind["name"] + " · Industries", ind["lead"],
+                 ind=ind, plays=[site_pages.PLAYS_BY_SLUG[p] for p in ind["plays"]],
+                 others=[i for i in site_pages.INDUSTRIES if i["slug"] != slug])
+
+
 # The previous site's addresses. Those whose content has a new home move there for good; those that
-# get new pages later in the rebuild (agents, industries, resources) show the previous site meanwhile.
-_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/gtm-engineering#plays",
+# get new pages later in the rebuild (agents, resources, the old per-industry agent pages) show the
+# previous site meanwhile.
+_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/plays",
                "/solutions": "/gtm-engineering", "/integrations": "/how-it-works"}
 
 
@@ -985,10 +1022,9 @@ def why_intelligence_page():
 
 @app.route("/agents")
 @app.route("/agents/<path:rest>")
-@app.route("/industries")
-@app.route("/industries/<path:rest>")
+@app.route("/industries/<islug>/agents/<path:rest>")
 @app.route("/resources")
-def old_address_for_now(rest=None):
+def old_address_for_now(rest=None, islug=None):
     return redirect(OLD_SITE + request.path, code=302)
 
 
@@ -1318,7 +1354,7 @@ def auth_google():
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
-                       "/book", "/agents", "/industries", "/privacy", "/terms", "/static/", "/favicon"]
+                       "/book", "/plays", "/industries", "/agents", "/privacy", "/terms", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")

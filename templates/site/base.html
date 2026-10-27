@@ -42,7 +42,7 @@
   <div class="wrap hd-in">
     <a class="brand" href="/" aria-label="{{ brand.name }} home"><i aria-hidden="true"></i>{{ brand.name }}</a>
     <nav class="hd-nav" aria-label="Main">
-      {% for href, label in site.NAV %}<a href="{{ href }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+      {% for href, label in site.NAV %}<a href="{{ href }}"{% if request.path == href or request.path.startswith(href ~ "/") %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
     </nav>
     <div class="hd-cta">
       <a class="hd-login" href="/login">Log in</a>
@@ -75,6 +75,13 @@
         <ul>
           <li><a href="/gtm-engineering">GTM Engineering</a></li>
           <li><a href="/performance-marketing">Performance Marketing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Explore</h2>
+        <ul>
+          <li><a href="/plays">Plays</a></li>
+          <li><a href="/industries">Industries</a></li>
         </ul>
       </div>
       <div>

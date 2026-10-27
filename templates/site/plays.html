@@ -1,0 +1,40 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">Plays</span>
+  <h1 class="display">The plays <em>we run.</em></h1>
+  <p class="lead">A play is a buying sign we watch for every morning, and what we do when it shows. On the call we choose the plays that suit your market; together they feed the meetings we promise.</p>
+  <div class="btns"><a class="btn btn-ink" href="/book" data-cta="hero">Get your meeting plan {{ ui.arrow() }}</a></div>
+</section>
+
+<section class="wrap sec-tight">
+  {% for key, label in site.PLAY_GROUPS %}
+  <div class="group">
+    <h2 class="group-h">{{ label }}</h2>
+    <div class="tiles">
+      {% for p in site.PLAYS if p.group == key %}{{ ui.play_tile(p) }}{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">Every play, every lead</span>
+      <h2 class="h2" style="margin-top:18px">Checked before <em>it reaches you.</em></h2>
+    </div>
+    <ul class="ticks">
+      <li>Matched against the customer profile we agree on the call</li>
+      <li>Contact details verified, duplicates removed</li>
+      <li>Nobody contacted twice, across every play</li>
+      <li>A link to the sign that found them, so you can see why</li>
+    </ul>
+  </div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll pick the plays that suit your market and tell you how many meetings we can promise.", "Get your meeting plan") }}
+
+{% endblock %}

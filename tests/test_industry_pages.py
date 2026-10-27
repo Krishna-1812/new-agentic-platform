@@ -1,7 +1,7 @@
 """The Industries pages are live, linked, and lead with Healthcare, Real Estate and Education.
 
 Since the October 2026 rebuild these pages belong to the previous site, kept at /old-site; the new
-site's own industry pages come later in the rebuild, and until then /industries opens the old ones."""
+site has its own industry pages at /industries (site_pages.INDUSTRIES)."""
 import html as _html
 import re
 
@@ -69,8 +69,10 @@ def test_industries_is_linked_from_nav_menu_and_footer(client, path):
         assert 'href="/old-site/industries/%s"' % slug in html
 
 
-def test_the_industry_addresses_open_the_old_pages_until_the_new_ones_exist(client):
-    for path in ("/industries", "/industries/healthcare", "/industries/education/agents/applicant-intent-radar"):
+def test_the_old_industry_addresses_still_reach_the_old_pages(client):
+    """/industries and the industries the new site has open new pages (tests/test_new_site.py); an
+    industry only the old site had, and every old per-industry agent page, open at /old-site."""
+    for path in ("/industries/health-tech", "/industries/education/agents/applicant-intent-radar"):
         r = client.get(path)
         assert r.status_code == 302 and r.headers["Location"].endswith(OLD + path), path
 

@@ -20,7 +20,7 @@
     };
     burger.addEventListener("click", function () { setMenu(!root.classList.contains("menu-open")); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
-    window.addEventListener("resize", function () { if (window.innerWidth > 960) setMenu(false); });
+    window.addEventListener("resize", function () { if (window.innerWidth > 1120) setMenu(false); });
   }
 
   // The booking form (/book). Posts to the same intake as before (Sheet, Slack, email).

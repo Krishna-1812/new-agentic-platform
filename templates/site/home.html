@@ -107,9 +107,9 @@
     <p class="lead">Each of these is a play our agents run every day. On the call we pick the ones that suit your market.</p>
   </div>
   <div class="tiles">
-    {% for p in site.PLAYS[:8] %}<div class="tile"><b>{{ p.name }}</b><p>{{ p.sign }}</p></div>{% endfor %}
+    {% for p in site.PLAYS[:8] %}{{ ui.play_tile(p, False) }}{% endfor %}
   </div>
-  <p style="margin-top:28px"><a class="link-arrow" href="/gtm-engineering#plays">All the plays we run {{ ui.arrow() }}</a></p>
+  <p style="margin-top:28px"><a class="link-arrow" href="/plays">All the plays we run {{ ui.arrow() }}</a></p>
 </section>
 
 <section class="band sec">

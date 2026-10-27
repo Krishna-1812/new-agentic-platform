@@ -1,0 +1,58 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<div class="wrap" style="padding-top:28px"><a class="link-arrow" href="/plays" style="border:0">&larr; All plays</a></div>
+
+<section class="wrap hero" style="padding-top:clamp(24px,4vw,48px)">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">Play &middot; {{ group_label }}</span>
+      <h1 class="display" style="font-size:clamp(40px,5.6vw,80px)">{{ play.name }}</h1>
+      <p class="lead">{{ play.finds }}</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="/book" data-cta="play">Run this play for us {{ ui.arrow() }}</a>
+        <a class="btn btn-line" href="/pricing">See pricing</a>
+      </div>
+    </div>
+    <div class="pair" aria-label="A sample lead from this play, and the first message">
+      <p class="feed-cap"><b aria-hidden="true"></b>A sample lead from this play</p>
+      {{ ui.lead_card(play.lead) }}
+      {{ ui.message_card(play.lead, play.message) }}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Where we look</h3>
+      <ul class="ticks" style="margin-top:12px">{% for w in play.where %}<li>{{ w }}</li>{% endfor %}</ul>
+      <p class="small muted" style="margin-top:16px">Run every morning by our {{ play.agent }} agent.</p>
+    </div>
+    <div class="card">
+      <h3>How it runs</h3>
+      <ol class="next" style="margin-top:14px">
+        <li><div><b>We agree the sign</b><p>The words, rivals, regions or events to watch, on the call.</p></div></li>
+        <li><div><b>Leads every morning</b><p>Each one checked against your profile, with a verified contact.</p></div></li>
+        <li><div><b>A message in your name</b><p>Interested replies get your calendar link.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-tight">
+  <h2 class="group-h">Suits</h2>
+  <div class="chips">{% for i in industries %}<a href="/industries/{{ i.slug }}">{{ i.name }}</a>{% endfor %}</div>
+</section>
+
+<section class="wrap sec-tight">
+  <h2 class="group-h">Plays that work well with it</h2>
+  <div class="tiles" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
+    {% for p in related %}{{ ui.play_tile(p) }}{% endfor %}
+  </div>
+</section>
+
+{{ ui.cta("Want this play running for you?", "We'll pick it with the others that suit your market, and promise the number of meetings they'll bring.", "Get your meeting plan") }}
+
+{% endblock %}
