@@ -194,6 +194,6 @@ def test_the_stylesheet_and_script_exist():
     css = open(os.path.join(root, "static", "css", "site.css"), encoding="utf-8").read()
     js = open(os.path.join(root, "static", "js", "site.js"), encoding="utf-8").read()
     assert "--acc:" in css and "--sky:" in css
-    # Motion only runs when the visitor allows it.
-    assert "html.js.motion .feed .lc" in css
+    # Motion only runs when the visitor allows it, and the feed arrives as one object.
+    assert "html.js.motion .feed {" in css and "var(--i)" not in css
     assert "/api/demo-request" in js and 'source: "book page"' in js

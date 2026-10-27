@@ -20,7 +20,7 @@
     </div>
     <div class="feed" aria-label="Sample leads, as they arrive each morning">
       <p class="feed-cap"><b aria-hidden="true"></b>This morning&rsquo;s leads &middot; sample</p>
-      {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l, loop.index0) }}{% endfor %}
+      {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l) }}{% endfor %}
     </div>
   </div>
 </section>

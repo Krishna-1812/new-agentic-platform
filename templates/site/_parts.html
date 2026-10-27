@@ -10,8 +10,8 @@
 {%- endmacro %}
 
 {#- The lead card, as clients get it in Slack each morning. Sample data only. -#}
-{% macro lead_card(l, i=0) -%}
-<article class="lc" style="--i:{{ i }}">
+{% macro lead_card(l) -%}
+<article class="lc">
   <div class="lc-top">
     <div class="lc-who"><b>{{ l.who }}</b><span>{{ l.where }}</span></div>
     <span class="lc-score" aria-label="Fit score {{ l.score }} out of 100">{{ l.score }}</span>

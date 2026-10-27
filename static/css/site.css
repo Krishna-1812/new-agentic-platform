@@ -184,8 +184,10 @@ h1, h2, h3, h4 { margin: 0; font-weight: 500; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: var(--paper); color: var(--ink2); }
 .chip svg { width: 13px; height: 13px; }
 .chip-meet { background: var(--sky-soft); color: var(--sky-tx); font-weight: 600; }
-html.js.motion .feed .lc { opacity: 0; transform: translateY(14px); animation: lc-in .6s var(--ease) forwards; animation-delay: calc(.35s + var(--i) * .55s); }
-html.js.motion .feed .chip-meet { opacity: 0; animation: lc-fade .5s var(--ease) forwards; animation-delay: 2.4s; }
+/* The feed arrives as one object, never card by card (the house rule against staggered entrances,
+   tests/test_outcomes_language.py); only the booked meeting appears after it. */
+html.js.motion .feed { opacity: 0; transform: translateY(14px); animation: lc-in .7s var(--ease) .25s forwards; }
+html.js.motion .feed .chip-meet { opacity: 0; animation: lc-fade .5s var(--ease) 1.6s forwards; }
 @keyframes lc-in { to { opacity: 1; transform: none; } }
 @keyframes lc-fade { to { opacity: 1; } }
 
