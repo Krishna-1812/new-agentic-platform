@@ -1,0 +1,50 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">The agents behind the work</span>
+  <h1 class="display">Agents do the checking. <em>People do the thinking.</em></h1>
+  <p class="lead">{{ site.GTM_AGENTS|length + paid|length + site.SEARCH_AGENTS|length }} agents watch, check and explain every morning, each doing one job thoroughly. Our team decides what to do with what they find, writes to your buyers and runs your ads. You buy the meetings and the results, not the software.</p>
+  <div class="btns"><a class="btn btn-ink" href="/book" data-cta="hero">Book a call {{ ui.arrow() }}</a></div>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="group">
+    <h2 class="group-h">Finding buyers &middot; GTM Engineering</h2>
+    <div class="tiles">
+      {% for name, does in site.GTM_AGENTS %}<div class="tile"><b>{{ name }}</b><p>{{ does }}</p></div>{% endfor %}
+    </div>
+  </div>
+  <div class="group">
+    <h2 class="group-h" style="color:var(--sky-tx)">Running ads &middot; Performance Marketing</h2>
+    <div class="tiles tiles-sky">
+      {% for a in paid %}<div class="tile"><b>{{ a.name }}</b><p>{{ a.about }}</p></div>{% endfor %}
+    </div>
+  </div>
+  <div class="group">
+    <h2 class="group-h" style="color:var(--sky-tx)">Search beyond ads, creative and reporting</h2>
+    <div class="tiles tiles-sky">
+      {% for name, does in site.SEARCH_AGENTS %}<div class="tile"><b>{{ name }}</b><p>{{ does }}</p></div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">How they work with us</span>
+      <h2 class="h2" style="margin-top:18px">Every finding <em>has a person behind it.</em></h2>
+    </div>
+    <ul class="ticks">
+      <li>Agents run every morning and explain what they found and why.</li>
+      <li>A person on our team reviews it before anything reaches you or your buyers.</li>
+      <li>You approve the messages before sending starts, and every change to your ads is made by your account lead.</li>
+      <li>You see the work in your client workspace, in Slack and in a shared sheet.</li>
+    </ul>
+  </div>
+</section>
+
+{{ ui.cta("Put them to work for you.", "Tell us who you want to meet and what your ads should bring in. We'll tell you what we can promise.") }}
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">Compare</span>
+  <h1 class="display">Hire, retain, subscribe, <em>or be promised meetings.</em></h1>
+  <p class="lead">Five ways to get more meetings with buyers, side by side. Each one fits some businesses better than the others, and the last row says which.</p>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="tbl-wrap">
+    <table class="tbl tbl-compare">
+      <thead><tr><th scope="col"><span class="sr">Question</span></th>{% for o in site.COMPARE_OPTIONS %}<th scope="col"{% if loop.last %} class="us"{% endif %}>{{ o }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for q, answers in site.COMPARE_ROWS %}
+        <tr><th scope="row">{{ q }}</th>{% for a in answers %}<td{% if loop.last %} class="us"{% endif %}>{{ a }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted" style="margin-top:14px">A first sales hire&rsquo;s cost is a published estimate for a US business development rep, salary and overheads included. Agency and tool prices are ranges from providers&rsquo; own published pages and guides.</p>
+</section>
+
+<section class="wrap sec">
+  <div class="grid-3">
+    <div class="card"><h3>What you pay for</h3><p>A hire or a retainer is paid whatever happens. We promise a number of meetings each month and credit any shortfall on your next bill.</p></div>
+    <div class="card"><h3>Who does the work</h3><p>With a self-serve tool, someone on your team builds the plays and writes every message. With us, our agents and our team do it, and you approve the messages.</p></div>
+    <div class="card"><h3>What else you get</h3><p>The same team can run your Google Ads and Meta, paid on results, so the buyers we find also see your ads.</p></div>
+  </div>
+</section>
+
+{{ ui.cta("See what we'd promise you.", "A 30-minute call, then your meeting plan in writing within 3 working days.", "Get your meeting plan") }}
+
+{% endblock %}

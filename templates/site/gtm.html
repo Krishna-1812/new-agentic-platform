@@ -48,7 +48,7 @@
       <p class="lead">A play is a buying sign we watch for every day, and what we do when it shows. On the call we choose the plays that suit your market.</p>
     </div>
     <div class="tiles">
-      {% for p in site.PLAYS %}<div class="tile"><b>{{ p.name }}</b><p>{{ p.sign }}</p><span class="by">Run by {{ p.agent }}</span></div>{% endfor %}
+      {% for p in site.PLAYS %}{{ ui.play_tile(p) }}{% endfor %}
     </div>
   </div>
 </section>

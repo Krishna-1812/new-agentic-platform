@@ -1,0 +1,22 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">Industries</span>
+  <h1 class="display">Meetings in <em>your market.</em></h1>
+  <p class="lead">The buyers, the signs and the ads are different in every market. Pick yours to see who we book you in with, the plays that suit it, and sample leads.</p>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="grid-3">
+    {% for i in site.INDUSTRIES %}
+    <a class="ind-card" href="/industries/{{ i.slug }}"><b>{{ i.name }}</b><p>{{ i.headline }}</p><span>See the plays and sample leads &rarr;</span></a>
+    {% endfor %}
+  </div>
+  <p class="lead" style="margin-top:32px">Not on the list? Tell us who you sell to on the call; the plays work the same way.</p>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise in your market, and what it costs.", "Get your meeting plan") }}
+
+{% endblock %}

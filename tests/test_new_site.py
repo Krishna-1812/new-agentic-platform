@@ -30,6 +30,14 @@ PAGES = {
     "/how-it-works": "A small ask of you",
     "/pricing": "A fixed monthly fee",
     "/book": "Tell us who you want",
+    "/plays": "The plays",
+    "/plays/tenders-and-rfps": "Tenders and RFPs",
+    "/industries": "Meetings in",
+    "/industries/healthcare": "Meetings with clinics",
+    "/agents": "Agents do the checking",
+    "/compare": "Hire, retain, subscribe",
+    "/about": "We get paid when you get buyers",
+    "/outreach-policy": "How we reach people",
     "/privacy": "Privacy",
     "/terms": "Terms of",
 }
@@ -129,12 +137,14 @@ def test_sample_leads_are_roles_not_people():
 
 
 @pytest.mark.parametrize("old,new,code", [
-    ("/platform", "/how-it-works", 301), ("/signals", "/gtm-engineering#plays", 301),
+    ("/platform", "/how-it-works", 301), ("/signals", "/plays", 301),
     ("/solutions", "/gtm-engineering", 301), ("/integrations", "/how-it-works", 301),
-    ("/why-intelligence", "/pricing", 302),
-    ("/agents", "/old-site/agents", 302), ("/agents/signal-tracker", "/old-site/agents/signal-tracker", 302),
-    ("/industries", "/old-site/industries", 302),
-    ("/industries/healthcare", "/old-site/industries/healthcare", 302),
+    ("/why-intelligence", "/compare", 301),
+    ("/agents/signal-tracker", "/old-site/agents/signal-tracker", 302),
+    ("/industries/health-tech", "/old-site/industries/health-tech", 302),
+    ("/industries/healthcare/agents/patient-answer-visibility",
+     "/old-site/industries/healthcare/agents/patient-answer-visibility", 302),
+    ("/industries/no-such-industry", "/industries", 302), ("/plays/no-such-play", "/plays", 302),
     ("/resources", "/old-site/resources", 302),
 ])
 def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code):
@@ -144,7 +154,8 @@ def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code
 
 def test_robots_lists_the_new_pages_and_not_the_old_site(client):
     body = client.get("/robots.txt").get_data(as_text=True)
-    for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book"):
+    for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book", "/plays",
+                 "/industries", "/agents", "/compare", "/about", "/outreach-policy"):
         assert "Allow: " + path in body
     assert "old-site" not in body and "Allow: /platform" not in body
 
@@ -197,3 +208,100 @@ def test_the_stylesheet_and_script_exist():
     # Motion only runs when the visitor allows it, and the feed arrives as one object.
     assert "html.js.motion .feed {" in css and "var(--i)" not in css
     assert "/api/demo-request" in js and 'source: "book page"' in js
+
+
+# ── Plays and industries ────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("play", site_pages.PLAYS, ids=lambda p: p["slug"])
+def test_every_play_has_its_own_page(client, play):
+    html = _html(client, "/plays/" + play["slug"])
+    text = _text(html)
+    assert play["name"] in text and play["lead"]["why"] in text and play["message"] in text
+    assert "Run every morning by our %s agent." % play["agent"] in text
+    for slug in play["fits"]:
+        assert 'href="/industries/%s"' % slug in html
+    # Three related plays, never itself.
+    related = re.findall(r'<a class="tile tile-link" href="/plays/([^"]+)"', html)
+    assert len(related) == 3 and play["slug"] not in related
+
+
+def test_the_plays_page_lists_every_play_in_its_group(client):
+    html = _html(client, "/plays")
+    for key, label in site_pages.PLAY_GROUPS:
+        assert label in html
+    for p in site_pages.PLAYS:
+        assert 'href="/plays/%s"' % p["slug"] in html
+        assert p["group"] in dict(site_pages.PLAY_GROUPS)
+
+
+@pytest.mark.parametrize("ind", site_pages.INDUSTRIES, ids=lambda i: i["slug"])
+def test_every_industry_has_its_own_page(client, ind):
+    html = _html(client, "/industries/" + ind["slug"])
+    text = _text(html)
+    assert ind["headline"] in text and ind["perf"] in text
+    for sample in ind["samples"]:
+        assert sample["lead"]["why"] in text and sample["message"] in text
+    for slug in ind["plays"]:
+        assert 'href="/plays/%s"' % slug in html
+    for q, _a in ind["faq"]:
+        assert q in text
+    assert 'aria-current="page">Industries</a>' in html
+
+
+def test_the_industries_page_lists_every_industry(client):
+    html = _html(client, "/industries")
+    for ind in site_pages.INDUSTRIES:
+        assert 'href="/industries/%s"' % ind["slug"] in html
+
+
+def test_plays_and_industries_point_at_each_other():
+    for ind in site_pages.INDUSTRIES:
+        assert set(ind["plays"]) <= set(site_pages.PLAYS_BY_SLUG), ind["slug"]
+        assert len(ind["samples"]) == 3
+    for play in site_pages.PLAYS:
+        assert set(play["fits"]) <= set(site_pages.INDUSTRIES_BY_SLUG), play["slug"]
+
+
+def test_every_sample_is_a_role_not_a_person():
+    leads = [p["lead"] for p in site_pages.PLAYS] + [s["lead"] for i in site_pages.INDUSTRIES for s in i["samples"]]
+    for lead in leads:
+        assert set(lead) <= {"who", "where", "why", "src", "score", "meeting"}
+
+
+# ── The agents, Compare, About and how we contact people ────────────────────────
+
+def test_the_agents_page_names_every_agent_we_run(client):
+    from tracker import paid_catalog
+    text = _text(_html(client, "/agents"))
+    for name, _does in site_pages.GTM_AGENTS + site_pages.SEARCH_AGENTS:
+        assert name in text, name
+    for a in paid_catalog.WORKSPACE:
+        assert a["name"] in text and a["about"] in text, a["name"]
+    total = len(site_pages.GTM_AGENTS) + len(paid_catalog.WORKSPACE) + len(site_pages.SEARCH_AGENTS)
+    assert "%d agents watch" % total in text
+
+
+def test_the_comparison_has_an_answer_for_every_option(client):
+    html = _html(client, "/compare")
+    text = _text(html)
+    for q, answers in site_pages.COMPARE_ROWS:
+        assert len(answers) == len(site_pages.COMPARE_OPTIONS), q
+        assert q in text and all(a in text for a in answers), q
+    assert html.count('class="us"') == len(site_pages.COMPARE_ROWS) + 1
+    # The full comparison and the home page's short one agree on our row.
+    assert site_pages.COMPARE[-1][-1] == dict(site_pages.COMPARE_ROWS)["If it doesn't work"][-1]
+
+
+def test_how_we_contact_people_says_what_the_opt_out_does(client):
+    text = _text(_html(client, "/outreach-policy"))
+    assert "one-click opt-out" in text and "for every client we work with, for good" in text
+    # Leads are de-duplicated per client (br_identities is keyed by owner), so the site never claims
+    # nobody is contacted twice across clients.
+    for path in PAGES:
+        assert "across every client" not in _text(_html(client, path)).replace(
+            "honoured for every client at once", ""), path
+
+
+def test_every_page_links_to_how_we_contact_people(client):
+    for path in PAGES:
+        assert 'href="/outreach-policy"' in _html(client, path), path

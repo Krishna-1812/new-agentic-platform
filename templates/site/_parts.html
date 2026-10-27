@@ -62,3 +62,16 @@
   </div>
 </section>
 {%- endmacro %}
+
+{#- A first message, as the lead receives it, in the client's name. Sample text only. -#}
+{% macro message_card(lead, text) -%}
+<div class="msg">
+  <div class="msg-hd"><span>To: {{ lead.who }}, {{ lead.where }}</span><span class="chip">Sent in your name</span></div>
+  <p>{{ text }}</p>
+</div>
+{%- endmacro %}
+
+{#- A play as a card that links to its page. -#}
+{% macro play_tile(p, show_agent=True) -%}
+<a class="tile tile-link" href="/plays/{{ p.slug }}"><b>{{ p.name }}</b><p>{{ p.sign }}</p>{% if show_agent %}<span class="by">Run by {{ p.agent }}</span>{% endif %}</a>
+{%- endmacro %}

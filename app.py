@@ -964,31 +964,89 @@ def book_page():
                  "3 working days.", want=want)
 
 
-# The previous site's addresses. Those whose content has a new home move there for good; those that
-# get new pages later in the rebuild (agents, industries, resources) show the previous site meanwhile.
-_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/gtm-engineering#plays",
-               "/solutions": "/gtm-engineering", "/integrations": "/how-it-works"}
+@app.route("/plays")
+def plays_page():
+    return _site("plays.html", "plays", "Plays",
+                 "The buying signs we watch for every morning, and what we do when each one shows.")
+
+
+@app.route("/plays/<slug>")
+def play_page(slug):
+    play = site_pages.PLAYS_BY_SLUG.get(slug)
+    if not play:
+        return redirect("/plays")
+    group = dict(site_pages.PLAY_GROUPS)[play["group"]]
+    others = [p for p in site_pages.PLAYS if p["slug"] != slug]
+    related = ([p for p in others if p["group"] == play["group"]] + [p for p in others if p["group"] != play["group"]])[:3]
+    return _site("play.html", "play", play["name"] + " · Plays", play["sign"] + " " + play["finds"].split(". ")[0] + ".",
+                 play=play, group_label=group, related=related,
+                 industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in play["fits"]])
+
+
+@app.route("/industries")
+def industries_page():
+    return _site("industries.html", "industries", "Industries",
+                 "Who we book meetings with in each market, the plays that suit it, and sample leads.")
+
+
+@app.route("/industries/<slug>")
+def industry_page(slug):
+    ind = site_pages.INDUSTRIES_BY_SLUG.get(slug)
+    if not ind:
+        # An industry only the previous site had: its page is kept there.
+        return redirect(OLD_SITE + request.path if slug in INDUSTRIES_BY_SLUG else "/industries")
+    return _site("industry.html", "industry", ind["name"] + " · Industries", ind["lead"],
+                 ind=ind, plays=[site_pages.PLAYS_BY_SLUG[p] for p in ind["plays"]],
+                 others=[i for i in site_pages.INDUSTRIES if i["slug"] != slug])
+
+
+@app.route("/agents")
+def agents_page():
+    return _site("agents.html", "agents", "The agents behind the work",
+                 "The agents that find buyers and check ad accounts every morning, and the team that decides "
+                 "what to do with what they find.", paid=paid_catalog.WORKSPACE)
+
+
+@app.route("/compare")
+def compare_page():
+    return _site("compare.html", "compare", "Compare",
+                 "A first sales hire, a retainer agency, a pay-per-meeting agency, a self-serve GTM tool and "
+                 "Northaxis, side by side.")
+
+
+@app.route("/about")
+def about_page():
+    return _site("about.html", "about", "About",
+                 "We get paid when you get buyers: a promised number of meetings, and ads paid on results.")
+
+
+@app.route("/outreach-policy")
+def outreach_policy_page():
+    return _site("outreach.html", "outreach", "How we contact people",
+                 "Who we write to on our clients' behalf, where the information comes from, and how anyone "
+                 "can say no.")
+
+
+# The previous site's addresses. Those whose content has a new home move there for good; the rest
+# (each old agent page, resources, the old per-industry agent pages) show the previous site.
+_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/plays",
+               "/solutions": "/gtm-engineering", "/integrations": "/how-it-works",
+               "/why-intelligence": "/compare"}
 
 
 @app.route("/platform")
 @app.route("/signals")
 @app.route("/solutions")
 @app.route("/integrations")
+@app.route("/why-intelligence")
 def old_address_moved():
     return redirect(_SITE_MOVED[request.path], code=301)
 
 
-@app.route("/why-intelligence")
-def why_intelligence_page():
-    return redirect("/pricing", code=302)
-
-
-@app.route("/agents")
 @app.route("/agents/<path:rest>")
-@app.route("/industries")
-@app.route("/industries/<path:rest>")
+@app.route("/industries/<islug>/agents/<path:rest>")
 @app.route("/resources")
-def old_address_for_now(rest=None):
+def old_address_for_now(rest=None, islug=None):
     return redirect(OLD_SITE + request.path, code=302)
 
 
@@ -1318,7 +1376,8 @@ def auth_google():
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
-                       "/book", "/agents", "/industries", "/privacy", "/terms", "/static/", "/favicon"]
+                       "/book", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
+                       "/privacy", "/terms", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")
