@@ -627,7 +627,8 @@ def api_demo_request():
     ua = request.headers.get("User-Agent", "")[:200]
     now = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
     vid = (request.cookies.get("p2_vid") or data.get("vid") or "").strip()[:64]
-    row = [now, name, email, company, interest, message, ip, ua, "login page", vid]
+    source = "old site" if data.get("source") == "old site" else "login page"
+    row = [now, name, email, company, interest, message, ip, ua, source, vid]
     payload = {"name": name, "email": email, "company": company,
                "interest": interest, "message": message, "ts": now, "ip": ip}
     sheet_ok = _demo_request_to_sheet(row)
@@ -974,6 +975,68 @@ def industry_agent_detail(islug, aslug):
     related = [x for x in ind["agents"] if x.get("slug") != aslug][:3]
     return render_template("agents.html", page="iagent", agents=AGENTS, agent=ag,
                            related=related, industry=ind, industries=INDUSTRIES)
+
+
+# ── The previous public site, kept at /old-site ──────────────────────────────────
+# The site as it stood before the move to GTM engineering and performance marketing (October 2026),
+# kept whole so anyone can still look at it. The same template as the live pages, with every link
+# starting /old-site, a banner pointing at the new site, and noindex on every page; robots.txt does not
+# list /old-site either.
+OLD_SITE = "/old-site"
+_OLD_SITE_PAGES = {"platform": "platform", "solutions": "solutions", "why-intelligence": "why",
+                   "integrations": "integrations", "resources": "resources", "agents": "agents"}
+
+
+def _old_site(page, **kw):
+    kw.setdefault("agents", AGENTS)
+    kw.setdefault("agent", None)
+    kw.setdefault("related", [])
+    return render_template("agents.html", page=page, site_prefix=OLD_SITE, old_site=True, **kw)
+
+
+@app.route(OLD_SITE, strict_slashes=False)
+def old_site_home():
+    return _old_site("home", signals_list=SIGNALS)
+
+
+@app.route(OLD_SITE + "/<name>")
+def old_site_page(name):
+    if name == "signals":
+        return _old_site("signals", signals_list=SIGNALS, signal_groups=SIGNAL_GROUPS)
+    if name == "industries":
+        return _old_site("industries", industries=INDUSTRIES)
+    if name not in _OLD_SITE_PAGES:
+        abort(404)
+    return _old_site(_OLD_SITE_PAGES[name])
+
+
+@app.route(OLD_SITE + "/agents/<slug>")
+def old_site_agent(slug):
+    a = AGENTS_BY_SLUG.get(slug)
+    if not a:
+        return redirect(OLD_SITE + "/agents")
+    return _old_site("agent", agent=a, related=[x for x in AGENTS if x["slug"] != slug][:3])
+
+
+@app.route(OLD_SITE + "/industries/<slug>")
+def old_site_industry(slug):
+    ind = INDUSTRIES_BY_SLUG.get(slug)
+    if not ind:
+        return redirect(OLD_SITE + "/industries")
+    return _old_site("industry", industry=ind, industries=INDUSTRIES,
+                     other_industries=[x for x in INDUSTRIES if x["slug"] != slug])
+
+
+@app.route(OLD_SITE + "/industries/<islug>/agents/<aslug>")
+def old_site_industry_agent(islug, aslug):
+    ind = INDUSTRIES_BY_SLUG.get(islug)
+    if not ind:
+        return redirect(OLD_SITE + "/industries")
+    ag = next((a for a in ind.get("agents", []) if a.get("slug") == aslug), None)
+    if not ag:
+        return redirect(OLD_SITE + "/industries/" + islug)
+    return _old_site("iagent", agent=ag, industry=ind, industries=INDUSTRIES,
+                     related=[x for x in ind["agents"] if x.get("slug") != aslug][:3])
 
 # ── Account registry ────────────────────────────────────────────────────────────
 ACCOUNTS = {

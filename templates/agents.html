@@ -22,11 +22,16 @@
     a lerp loop writing six CSS variables a frame. None of it is replaced by
     an equivalent. The motion budget now goes on type.
 -#}
+{#- Every link to another page of this site starts with P. On the live site P is
+    empty; the same pages are also kept at /old-site (old_site set, P "/old-site"),
+    so a visitor there stays there, and search engines are told not to index them. -#}
+{%- set P = site_prefix|default('') -%}
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{% if old_site %}<meta name="robots" content="noindex, follow">{% endif %}
 {%- set _t = {
   'agent':        agent.name ~ ' · ' ~ brand.agent_singular,
   'agents':       brand.agents_plural ~ ' directory',
@@ -78,6 +83,11 @@
 <script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');{% if page == 'home' %}try{if(/ vt/.test(document.documentElement.className)&&!sessionStorage.getItem('nx-intro')&&document.referrer.indexOf(location.origin)!==0)document.documentElement.className+=' intro-on'}catch(e){}{% endif %}</script>
 </head>
 <body data-page="{{ page }}">
+{% if old_site %}
+<div class="old-bar" role="note">This is our previous site, kept for reference. <a href="/">See the new one &rarr;</a></div>
+{#- Pinned to the foot of the window: the masthead is fixed at the top and would cover a bar there. -#}
+<style>body{padding-bottom:40px}@media (max-width:480px){body{padding-bottom:58px}}.old-bar{position:fixed;left:0;right:0;bottom:0;z-index:900;padding:9px 16px;background:#121213;color:#F6F4F0;font:500 13px/1.4 "Zalando Sans",system-ui,sans-serif;text-align:center}.old-bar a{color:#FF8B5D;text-decoration:underline;text-underline-offset:2px}</style>
+{% endif %}
 
 <div class="prog" id="prog" aria-hidden="true"></div>
 
@@ -85,17 +95,17 @@
     is that a hairline appears beneath it. The previous bar swapped in a
     blurred gradient, a shadow and a border at once. -#}
 <nav class="nv" id="nv" aria-label="Primary">
-  <a class="nv-brand" href="/" aria-label="{{ brand.name }} home">
+  <a class="nv-brand" href="{{ P }}/" aria-label="{{ brand.name }} home">
     <span class="bn-mark" aria-hidden="true"></span><span class="bn-word">{{ brand.name }}</span>
   </a>
   {% if page != 'login' %}
   <div class="nv-links">
-    <a class="nv-link {% if page=='platform' %}active{% endif %}" href="/platform">Platform</a>
-    <a class="nv-link {% if page=='signals' %}active{% endif %}" href="/signals">Signals</a>
-    <a class="nv-link {% if page=='agents' or page=='agent' %}active{% endif %}" href="/agents">{{ brand.agents_plural }}</a>
-    <a class="nv-link {% if page=='solutions' %}active{% endif %}" href="/solutions">Solutions</a>
-    <a class="nv-link {% if page=='why' %}active{% endif %}" href="/why-intelligence">Compare</a>
-    <a class="nv-link {% if page in ('industries','industry','iagent') %}active{% endif %}" href="/industries">Industries</a>
+    <a class="nv-link {% if page=='platform' %}active{% endif %}" href="{{ P }}/platform">Platform</a>
+    <a class="nv-link {% if page=='signals' %}active{% endif %}" href="{{ P }}/signals">Signals</a>
+    <a class="nv-link {% if page=='agents' or page=='agent' %}active{% endif %}" href="{{ P }}/agents">{{ brand.agents_plural }}</a>
+    <a class="nv-link {% if page=='solutions' %}active{% endif %}" href="{{ P }}/solutions">Solutions</a>
+    <a class="nv-link {% if page=='why' %}active{% endif %}" href="{{ P }}/why-intelligence">Compare</a>
+    <a class="nv-link {% if page in ('industries','industry','iagent') %}active{% endif %}" href="{{ P }}/industries">Industries</a>
   </div>
   {% endif %}
   <div class="nv-cta">
@@ -112,12 +122,12 @@
     It is the site's argument in one screen: the product would never set a nav
     item at 48px, and this is not the product. -#}
 <div class="nv-sheet" id="sheet" aria-hidden="true">
-  <a href="/platform"><span class="idx">01</span>Platform</a>
-  <a href="/signals"><span class="idx">02</span>Signals</a>
-  <a href="/agents"><span class="idx">03</span>{{ brand.agents_plural }}</a>
-  <a href="/solutions"><span class="idx">04</span>Solutions</a>
-  <a href="/why-intelligence"><span class="idx">05</span>Compare</a>
-  <a href="/industries"><span class="idx">06</span>Industries</a>
+  <a href="{{ P }}/platform"><span class="idx">01</span>Platform</a>
+  <a href="{{ P }}/signals"><span class="idx">02</span>Signals</a>
+  <a href="{{ P }}/agents"><span class="idx">03</span>{{ brand.agents_plural }}</a>
+  <a href="{{ P }}/solutions"><span class="idx">04</span>Solutions</a>
+  <a href="{{ P }}/why-intelligence"><span class="idx">05</span>Compare</a>
+  <a href="{{ P }}/industries"><span class="idx">06</span>Industries</a>
   <div class="nv-sheet-foot">
     <a class="btn btn-1" href="/login" style="background:#F6F4F0;color:#121213">Log in</a>
     <button class="btn btn-2" data-demo data-interest="Book a demo" style="box-shadow:inset 0 0 0 1px #3A3A3D;color:#F6F4F0">Book a demo</button>
@@ -164,7 +174,7 @@
       set in the display face at a size that is not a heading. -#}
   <div class="wrap"><div class="tick" aria-label="Buying signals we watch">
     <div class="tick-track">
-      {% for _ in range(2) %}{% for s in ['Funding round','C-suite join','Acquisition','IPO filing','Product launch','Partnership','Hiring surge','Pricing-page visit','AI answer mention','Tech-stack change'] %}<a class="tick-i" href="/signals">{{ s }}</a>{% endfor %}{% endfor %}
+      {% for _ in range(2) %}{% for s in ['Funding round','C-suite join','Acquisition','IPO filing','Product launch','Partnership','Hiring surge','Pricing-page visit','AI answer mention','Tech-stack change'] %}<a class="tick-i" href="{{ P }}/signals">{{ s }}</a>{% endfor %}{% endfor %}
     </div>
   </div></div>
 
@@ -273,7 +283,7 @@
     </div>
     <div class="cells cells-3">
       {% for a in agents[:3] %}
-      <a class="cell" href="/agents/{{ a.slug }}">
+      <a class="cell" href="{{ P }}/agents/{{ a.slug }}">
         <span class="cell-ic">{{ a.icon|safe }}</span>
         <h3>{{ a.name }}</h3>
         <p>{{ a.summary }}</p>
@@ -281,7 +291,7 @@
       </a>
       {% endfor %}
     </div>
-    <div class="btns" style="margin-top:var(--s6)"><a class="btn btn-2" href="/agents">See all {{ agents|length }} {{ brand.agents_plural|lower }}</a></div>
+    <div class="btns" style="margin-top:var(--s6)"><a class="btn btn-2" href="{{ P }}/agents">See all {{ agents|length }} {{ brand.agents_plural|lower }}</a></div>
   </section>
 
   <section class="wrap sec-sm">
@@ -323,7 +333,7 @@
 
   <div class="wrap"><div class="tick" aria-label="Buying signals we watch">
     <div class="tick-track">
-      {% for _ in range(2) %}{% for s in ['Funding round','C-suite join','Acquisition','IPO filing','Product launch','Partnership','Creative hiring','Subsidiary change','News mention'] %}<a class="tick-i" href="/signals">{{ s }}</a>{% endfor %}{% endfor %}
+      {% for _ in range(2) %}{% for s in ['Funding round','C-suite join','Acquisition','IPO filing','Product launch','Partnership','Creative hiring','Subsidiary change','News mention'] %}<a class="tick-i" href="{{ P }}/signals">{{ s }}</a>{% endfor %}{% endfor %}
     </div>
   </div></div>
 
@@ -371,7 +381,7 @@
         are already on the page and the rules do the work. -#}
     <div class="dir" id="dirCards">
       {% for a in agents %}
-      <a class="ag" href="/agents/{{ a.slug }}" data-cat="{{ a.cat }}" data-name="{{ a.name|lower }} {{ a.role|lower }} {{ a.summary|lower }} {{ a.cat|lower }}">
+      <a class="ag" href="{{ P }}/agents/{{ a.slug }}" data-cat="{{ a.cat }}" data-name="{{ a.name|lower }} {{ a.role|lower }} {{ a.summary|lower }} {{ a.cat|lower }}">
         <div class="ag-top">
           <span class="lbl">{{ a.cat }}</span>
           {% if a.badge %}<span class="ag-badge {{ a.badge|lower }}">{{ a.badge }}</span>{% endif %}
@@ -402,10 +412,10 @@
   <div class="wrap">
     <nav class="crumb" aria-label="Breadcrumb">
       {% if page == 'iagent' %}
-      <a class="lk-d" href="/industries">Industries</a><span class="sep">/</span>
-      <a class="lk-d" href="/industries/{{ industry.slug }}">{{ industry.short }}</a><span class="sep">/</span>
+      <a class="lk-d" href="{{ P }}/industries">Industries</a><span class="sep">/</span>
+      <a class="lk-d" href="{{ P }}/industries/{{ industry.slug }}">{{ industry.short }}</a><span class="sep">/</span>
       {% else %}
-      <a class="lk-d" href="/agents">{{ brand.agents_plural }}</a><span class="sep">/</span>
+      <a class="lk-d" href="{{ P }}/agents">{{ brand.agents_plural }}</a><span class="sep">/</span>
       {% endif %}
       <span>{{ agent.name }}</span>
     </nav>
@@ -474,7 +484,7 @@
     <span class="lbl" style="display:block;margin-top:var(--s7);margin-bottom:var(--s5)">More {% if page == 'iagent' %}{{ industry.short }} {% endif %}{{ brand.agents_plural|lower }}</span>
     <div class="cells cells-3">
       {% for a in related %}
-      <a class="cell" href="{% if page == 'iagent' %}/industries/{{ industry.slug }}/agents/{{ a.slug }}{% else %}/agents/{{ a.slug }}{% endif %}">
+      <a class="cell" href="{% if page == 'iagent' %}{{ P }}/industries/{{ industry.slug }}/agents/{{ a.slug }}{% else %}{{ P }}/agents/{{ a.slug }}{% endif %}">
         <span class="cell-ic">{{ a.icon|safe }}</span>
         <h3>{{ a.name }}</h3>
         <p>{{ a.use if page == 'iagent' else a.summary }}</p>
@@ -511,8 +521,8 @@
   <section class="inkband">
     <div class="wrap">
       <div class="stats">
-        <a class="stat rv fade" href="/signals"><b class="num" data-count="26">26</b><span>Signal types</span></a>
-        <a class="stat rv fade" href="/agents"><b class="num" data-count="{{ agents|length }}">{{ agents|length }}</b><span>Always-on {{ brand.agents_plural|lower }}</span></a>
+        <a class="stat rv fade" href="{{ P }}/signals"><b class="num" data-count="26">26</b><span>Signal types</span></a>
+        <a class="stat rv fade" href="{{ P }}/agents"><b class="num" data-count="{{ agents|length }}">{{ agents|length }}</b><span>Always-on {{ brand.agents_plural|lower }}</span></a>
         <div class="stat rv fade"><b class="num">24/7</b><span>Never off duty</span></div>
       </div>
     </div>
@@ -524,12 +534,12 @@
       <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Three moving parts.</span></span><span class="ln"><span><span class="it">One list worth working.</span></span></span></h2></div>
     </div>
     <div class="cells cells-3">
-      <a class="cell" href="/signals">
+      <a class="cell" href="{{ P }}/signals">
         <span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>
         <h3>Live signals</h3><p>Funding, leadership changes, M&amp;A, launches, site visits, AI-answer mentions. Picked up as they surface, not in next quarter&rsquo;s report.</p>
         <span class="more">See signals <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
-      <a class="cell" href="/signals">
+      <a class="cell" href="{{ P }}/signals">
         <span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></span>
         <h3>One honest score</h3><p>Signal type, strength and freshness, weighted and stacked into a single number. It decides who gets called first.</p>
         <span class="more">How it scores <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -645,11 +655,11 @@
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <div class="cells cells-3" style="margin-top:var(--s7);border-top:0">
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Demand generation</h3><p>Always-on programmes that follow live intent, so budget chases the accounts that are moving rather than the ones on last year&rsquo;s list.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><h3>Content &amp; AI search</h3><p>Content written to be quoted in AI answers as well as ranked by Google. The new first page has no ten blue links.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span><h3>Paid media</h3><p>Spend aimed at the accounts heating up this week, not the ones that looked promising last quarter.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><h3>SEO</h3><p>Technical, on-page and authority work: found by our {{ brand.agents_plural|lower }}, shipped by our people.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/platform"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11"/></svg></span><h3>RevOps</h3><p>Signals, scores and next steps wired into the CRM your team already lives in, with routing rules that actually make sense.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Demand generation</h3><p>Always-on programmes that follow live intent, so budget chases the accounts that are moving rather than the ones on last year&rsquo;s list.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><h3>Content &amp; AI search</h3><p>Content written to be quoted in AI answers as well as ranked by Google. The new first page has no ten blue links.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span><h3>Paid media</h3><p>Spend aimed at the accounts heating up this week, not the ones that looked promising last quarter.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><h3>SEO</h3><p>Technical, on-page and authority work: found by our {{ brand.agents_plural|lower }}, shipped by our people.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/platform"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11"/></svg></span><h3>RevOps</h3><p>Signals, scores and next steps wired into the CRM your team already lives in, with routing rules that actually make sense.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="cell" href="#" data-demo data-interest="Build a custom agent"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><h3>A bespoke agent</h3><p>Got a signal nobody tracks? We&rsquo;ll build the agent that does, scoped with you and usually live within weeks.</p><span class="more">Start a conversation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </section>
@@ -960,10 +970,10 @@
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <div class="cells cells-3" style="margin-top:var(--s7);border-top:0">
-      <a class="cell" href="/signals"><span class="lbl">Catalogue</span><h3 style="margin-top:var(--s4)">The signal catalogue</h3><p>All twenty-six buying signals, grouped and explained, with what each one actually tells you.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="lbl">Directory</span><h3 style="margin-top:var(--s4)">The {{ brand.agents_plural|lower }} line-up</h3><p>What each one does, how it does it, and whose week it gives back.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/platform"><span class="lbl">Explainer</span><h3 style="margin-top:var(--s4)">How the score works</h3><p>Type, strength, freshness and stacking, and why one number beats five dashboards.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/why-intelligence"><span class="lbl">Comparison</span><h3 style="margin-top:var(--s4)">How we compare</h3><p>A sourced, footnoted look at the alternatives, including where they&rsquo;re ahead.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/signals"><span class="lbl">Catalogue</span><h3 style="margin-top:var(--s4)">The signal catalogue</h3><p>All twenty-six buying signals, grouped and explained, with what each one actually tells you.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/agents"><span class="lbl">Directory</span><h3 style="margin-top:var(--s4)">The {{ brand.agents_plural|lower }} line-up</h3><p>What each one does, how it does it, and whose week it gives back.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/platform"><span class="lbl">Explainer</span><h3 style="margin-top:var(--s4)">How the score works</h3><p>Type, strength, freshness and stacking, and why one number beats five dashboards.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="{{ P }}/why-intelligence"><span class="lbl">Comparison</span><h3 style="margin-top:var(--s4)">How we compare</h3><p>A sourced, footnoted look at the alternatives, including where they&rsquo;re ahead.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="cell" href="#" data-demo data-interest="The 2026 report" data-prefill="I'd like the State of Buying Signals 2026 report."><span class="lbl">Report</span><h3 style="margin-top:var(--s4)">The State of Buying Signals 2026</h3><p>Ask for a copy and we&rsquo;ll send it your way.</p><span class="more">Request it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </section>
@@ -1010,7 +1020,7 @@
   <section class="wrap sec-sm">
     {% for ind in industries %}
       {% if ind.featured %}
-      <a class="ind-flag" href="/industries/{{ ind.slug }}">
+      <a class="ind-flag" href="{{ P }}/industries/{{ ind.slug }}">
         <div>
           <span class="lbl">Focus industry &middot; {{ ind.agents|length }} {{ brand.agents_plural|lower }}</span>
           <h2 class="d3" style="margin-top:var(--s4)">{{ ind.name }}</h2>
@@ -1025,7 +1035,7 @@
     <span class="lbl" style="display:block;margin:var(--s8) 0 var(--s5)">More markets</span>
     <div class="cells cells-3">
       {% for ind in industries %}{% if not ind.featured %}
-      <a class="cell" href="/industries/{{ ind.slug }}">
+      <a class="cell" href="{{ P }}/industries/{{ ind.slug }}">
         <span class="cell-ic">{{ ind.icon|safe }}</span>
         <h3>{{ ind.name }}</h3>
         <p>{{ ind.headline }} {{ ind.headline_ital }}</p>
@@ -1043,7 +1053,7 @@
 {# ═════════════════════════ INDUSTRY DETAIL ═══════════════════════════ #}
 {% elif page == 'industry' %}
 
-  <div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a class="lk-d" href="/industries">Industries</a><span class="sep">/</span><span>{{ industry.name }}</span></nav></div>
+  <div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a class="lk-d" href="{{ P }}/industries">Industries</a><span class="sep">/</span><span>{{ industry.name }}</span></nav></div>
 
   <header class="wrap hero" style="padding-top:var(--s7)">
     <span class="lbl rv fade">{{ industry.eyebrow }}</span>
@@ -1089,7 +1099,7 @@
     </div>
     <div class="dir">
       {% for a in industry.agents %}
-      {% if a.slug %}<a class="ag" href="/industries/{{ industry.slug }}/agents/{{ a.slug }}">{% else %}<div class="ag">{% endif %}
+      {% if a.slug %}<a class="ag" href="{{ P }}/industries/{{ industry.slug }}/agents/{{ a.slug }}">{% else %}<div class="ag">{% endif %}
         <div class="ag-top"><span class="lbl">from {{ a.base }}</span>{% if a.badge %}<span class="ag-badge">{{ a.badge }}</span>{% endif %}</div>
         <span class="cell-ic">{{ a.icon|safe }}</span>
         <h3>{{ a.name }}</h3>
@@ -1125,7 +1135,7 @@
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <span class="lbl" style="display:block;margin:var(--s7) 0 var(--s5)">More industries</span>
-    <div class="ind-others">{% for o in other_industries %}<a class="ind-other" href="/industries/{{ o.slug }}">{{ o.name }}</a>{% endfor %}</div>
+    <div class="ind-others">{% for o in other_industries %}<a class="ind-other" href="{{ P }}/industries/{{ o.slug }}">{{ o.name }}</a>{% endfor %}</div>
   </section>
   {% endif %}
 
@@ -1190,7 +1200,7 @@
   {#- outcomes.digital closes every page on an orange block carrying its
       wordmark at display size. This is that block, with the name set in the
       headings face. -#}
-  <div class="wrap foot-top"><a class="foot-word" href="/" aria-label="{{ brand.name }} home">{{ brand.name }}</a>
+  <div class="wrap foot-top"><a class="foot-word" href="{{ P }}/" aria-label="{{ brand.name }} home">{{ brand.name }}</a>
     {#- Six shape tiles that keep rearranging themselves; hover or click one
         to play with it. Wide screens only, decorative. -#}
     <div class="toys" aria-hidden="true">{% for c, sh in [('ink','circle'),('paper','quarter'),('sky','leaf'),('red','star'),('acc','plus'),('paper','triangle')] %}<span class="toy t-{{ c }}"><svg viewBox="0 0 100 100"><path data-shape="{{ sh }}" d="{{ SHAPES[sh] }}"/></svg></span>{% endfor %}</div>
@@ -1203,17 +1213,17 @@
     {% if page != 'login' %}
     <div class="foot-cols">
       <div class="foot-col"><h5>Product</h5>
-        <a class="lk-d" href="/platform">Platform</a><a class="lk-d" href="/agents">{{ brand.agents_plural }}</a>
-        <a class="lk-d" href="/signals">Signals</a><a class="lk-d" href="/integrations">Integrations</a>
-        <a class="lk-d" href="/why-intelligence">Compare</a>
+        <a class="lk-d" href="{{ P }}/platform">Platform</a><a class="lk-d" href="{{ P }}/agents">{{ brand.agents_plural }}</a>
+        <a class="lk-d" href="{{ P }}/signals">Signals</a><a class="lk-d" href="{{ P }}/integrations">Integrations</a>
+        <a class="lk-d" href="{{ P }}/why-intelligence">Compare</a>
       </div>
-      <div class="foot-col"><h5>Company</h5><a class="lk-d" href="/solutions">Solutions</a><a class="lk-d" href="/industries">Industries</a></div>
+      <div class="foot-col"><h5>Company</h5><a class="lk-d" href="{{ P }}/solutions">Solutions</a><a class="lk-d" href="{{ P }}/industries">Industries</a></div>
       <div class="foot-col"><h5>Industries</h5>
-        <a class="lk-d" href="/industries/healthcare">Healthcare</a><a class="lk-d" href="/industries/real-estate">Real estate</a>
-        <a class="lk-d" href="/industries/education">Education</a>
+        <a class="lk-d" href="{{ P }}/industries/healthcare">Healthcare</a><a class="lk-d" href="{{ P }}/industries/real-estate">Real estate</a>
+        <a class="lk-d" href="{{ P }}/industries/education">Education</a>
       </div>
       <div class="foot-col"><h5>Resources</h5>
-        <a class="lk-d" href="/resources">Insights</a><a class="lk-d" href="/login">Log in</a>
+        <a class="lk-d" href="{{ P }}/resources">Insights</a><a class="lk-d" href="/login">Log in</a>
       </div>
     </div>
     {% endif %}
@@ -1515,7 +1525,7 @@
       submit.classList.add('loading'); submit.disabled = true; tx.textContent = 'Sending';
       fetch('/api/demo-request', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({name:name, email:email, company:company, interest:interest, message:message,
+        body: JSON.stringify({name:name, email:email, company:company, interest:interest, message:message,{% if old_site %} source:'old site',{% endif %}
           vid: (function(){ try { return localStorage.getItem('p2_vid') || ''; } catch(_){ return ''; } })()})
       })
       .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, d:d}; }); })
