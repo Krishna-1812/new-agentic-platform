@@ -921,9 +921,10 @@ SIGNAL_GROUPS = [{"name": _gname, "items": [s for s in SIGNALS if s["group"] == 
 
 # ── The public site (October 2026 rebuild) ─────────────────────────────────────
 # GTM engineering, where we promise a number of booked meetings each month for a fixed fee, and
-# performance marketing run with our agents and paid on results. templates/site/*.html, styled by
-# static/css/site.css; content that repeats across pages is in site_pages.py. The site before it is
-# kept whole at /old-site (below).
+# performance marketing run with our agents and paid on results. templates/site/*.html, in the previous
+# site's look and motion (static/css/press.css, static/js/press-play.js) with static/css/site.css on top;
+# content that repeats across pages is in site_pages.py. The site before it is kept whole at /old-site
+# (below).
 def _site(template, page, title, description, **kw):
     return render_template("site/" + template, page=page, title=title, description=description,
                            site=site_pages, site_url=SITE_URL, year=datetime.now(IST).year, **kw)

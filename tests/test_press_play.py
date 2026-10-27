@@ -30,7 +30,7 @@ def _play_css():
 
 
 def test_both_public_templates_load_the_play_script_deferred():
-    for tpl in ("agents.html", "login_preview.html"):
+    for tpl in ("agents.html", "login_preview.html", "site/base.html"):
         html = _read("templates", tpl)
         assert re.search(r"<script src=\"[^\"]*press-play\.js[^\"]*\" defer></script>", html), tpl
 
@@ -57,7 +57,7 @@ def test_every_play_rule_waits_for_the_script():
 
 
 def test_the_page_curtain_is_gated_before_first_paint():
-    for tpl in ("agents.html", "login_preview.html"):
+    for tpl in ("agents.html", "login_preview.html", "site/base.html"):
         html = _read("templates", tpl)
         head = html[:html.index("<body")]
         assert "' vt'" in head and "prefers-reduced-motion: reduce" in head, tpl

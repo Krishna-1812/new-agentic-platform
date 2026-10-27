@@ -1,42 +1,73 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
+{% set total = site.GTM_AGENTS|length + paid|length + site.SEARCH_AGENTS|length %}
 {% block main %}
 
-<section class="wrap page-hero">
-  <span class="eyebrow">The agents behind the work</span>
-  <h1 class="display">Agents do the checking. <em>People do the thinking.</em></h1>
-  <p class="lead">{{ site.GTM_AGENTS|length + paid|length + site.SEARCH_AGENTS|length }} agents watch, check and explain every morning, each doing one job thoroughly. Our team decides what to do with what they find, writes to your buyers and runs your ads. You buy the meetings and the results, not the software.</p>
-  <div class="btns"><a class="btn btn-ink" href="/book" data-cta="hero">Book a call {{ ui.arrow() }}</a></div>
+<header class="wrap hero">
+  <span class="lbl rv fade">The agents behind the work</span>
+  <h1 class="d1 rv"><span class="ln"><span>Agents do</span></span> <span class="ln"><span>the checking.</span></span> <span class="ln"><span><span class="it">People do the</span> <span class="mk">thinking.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">{{ total }} agents</span>
+    <p class="lead rv fade">{{ total }} agents watch, check and explain every morning, each doing one job thoroughly. Our team decides what to do with what they find, writes to your buyers and runs your ads. You buy the meetings and the results, not the software.</p>
+    <div class="btns rv fade"><a class="btn btn-1" href="/book" data-cta="hero">Book a call</a></div>
+  </div>
+</header>
+
+<div class="wrap"><div class="tick tick-sm" aria-label="Every agent">
+  <div class="tick-track">
+    {% for copy in range(2) %}{% for name, _does in site.GTM_AGENTS %}<span class="tick-i"{% if copy %} aria-hidden="true"{% endif %}>{{ name }}</span>{% endfor %}{% for a in paid %}<span class="tick-i"{% if copy %} aria-hidden="true"{% endif %}>{{ a.name }}</span>{% endfor %}{% for name, _does in site.SEARCH_AGENTS %}<span class="tick-i"{% if copy %} aria-hidden="true"{% endif %}>{{ name }}</span>{% endfor %}{% endfor %}
+  </div>
+</div></div>
+
+<section class="wrap sec-sm" id="dir">
+  <span class="rule rule-ink rv"></span>
+  <div class="dir-bar" style="margin-top:var(--s7)">
+    <div>
+      <span class="lbl">02 &mdash; The line-up</span>
+      <h2 class="d3 rv" style="margin-top:var(--s3)"><span class="ln"><span>One job each, <span class="it">done thoroughly.</span></span></span></h2>
+    </div>
+    <div class="chips" id="dirChips" role="group" aria-label="Show agents">
+      <button type="button" class="chip on" data-cat="all" aria-pressed="true">All</button>
+      <button type="button" class="chip" data-cat="gtm" aria-pressed="false">Finding buyers</button>
+      <button type="button" class="chip" data-cat="ads" aria-pressed="false">Running ads</button>
+      <button type="button" class="chip" data-cat="search" aria-pressed="false">Search and reporting</button>
+    </div>
+  </div>
+  <div class="dir" id="dirCards">
+    {% for name, does in site.GTM_AGENTS %}
+    <article class="ag" data-cat="gtm">
+      <div class="ag-top"><span class="lbl is-gtm">Finding buyers</span><span class="ag-badge">GTM</span></div>
+      {{ ui.icon('target') }}
+      <h3>{{ name }}</h3>
+      <p>{{ does }}</p>
+    </article>
+    {% endfor %}
+    {% for a in paid %}
+    <article class="ag" data-cat="ads">
+      <div class="ag-top"><span class="lbl is-ads">Running ads</span><span class="ag-badge c-sky">Ads</span></div>
+      {{ ui.icon('chart') }}
+      <h3>{{ a.name }}</h3>
+      <p>{{ a.about }}</p>
+    </article>
+    {% endfor %}
+    {% for name, does in site.SEARCH_AGENTS %}
+    <article class="ag" data-cat="search">
+      <div class="ag-top"><span class="lbl is-ads">Search and reporting</span><span class="ag-badge c-amber">Search</span></div>
+      {{ ui.icon('spark') }}
+      <h3>{{ name }}</h3>
+      <p>{{ does }}</p>
+    </article>
+    {% endfor %}
+  </div>
 </section>
 
-<section class="wrap sec-tight">
-  <div class="group">
-    <h2 class="group-h">Finding buyers &middot; GTM Engineering</h2>
-    <div class="tiles">
-      {% for name, does in site.GTM_AGENTS %}<div class="tile"><b>{{ name }}</b><p>{{ does }}</p></div>{% endfor %}
-    </div>
-  </div>
-  <div class="group">
-    <h2 class="group-h" style="color:var(--sky-tx)">Running ads &middot; Performance Marketing</h2>
-    <div class="tiles tiles-sky">
-      {% for a in paid %}<div class="tile"><b>{{ a.name }}</b><p>{{ a.about }}</p></div>{% endfor %}
-    </div>
-  </div>
-  <div class="group">
-    <h2 class="group-h" style="color:var(--sky-tx)">Search beyond ads, creative and reporting</h2>
-    <div class="tiles tiles-sky">
-      {% for name, does in site.SEARCH_AGENTS %}<div class="tile"><b>{{ name }}</b><p>{{ does }}</p></div>{% endfor %}
-    </div>
-  </div>
-</section>
-
-<section class="band sec">
+<section class="inkband" style="margin-top:var(--sec-sm)">
   <div class="wrap split">
     <div>
-      <span class="eyebrow">How they work with us</span>
-      <h2 class="h2" style="margin-top:18px">Every finding <em>has a person behind it.</em></h2>
+      <span class="lbl">How they work with us</span>
+      <h2 class="d3 rv"><span class="ln"><span>Every finding</span></span> <span class="ln"><span><span class="it">has a person behind it.</span></span></span></h2>
     </div>
-    <ul class="ticks">
+    <ul class="ticks rv fade">
       <li>Agents run every morning and explain what they found and why.</li>
       <li>A person on our team reviews it before anything reaches you or your buyers.</li>
       <li>You approve the messages before sending starts, and every change to your ads is made by your account lead.</li>

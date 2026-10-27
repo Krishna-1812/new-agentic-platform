@@ -1,106 +1,106 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
 {% block main %}
 
-<section class="wrap page-hero">
-  <span class="eyebrow">Pricing</span>
-  <h1 class="display">A fixed monthly fee. <em>A promised number of meetings.</em></h1>
-  <p class="lead">You pay for meetings with your buyers, not for our hours or our software. If we book fewer than we promised, the difference comes off your next bill.</p>
-</section>
+<header class="wrap hero">
+  <span class="lbl rv fade">Pricing</span>
+  <h1 class="d1 rv"><span class="ln"><span>A fixed monthly fee.</span></span> <span class="ln"><span><span class="it">A promised</span></span></span> <span class="ln"><span><span class="mk">number of meetings.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">02 prices</span>
+    <p class="lead rv fade">You pay for meetings with your buyers, not for our hours or our software. If we book fewer than we promised, the difference comes off your next bill.</p>
+    <div class="btns rv fade"><a class="btn btn-1" href="/book" data-cta="hero">Get your meeting plan</a></div>
+  </div>
+</header>
 
-<section class="wrap sec-tight">
-  <div class="price-cards">
-    <article class="price">
-      <span class="eyebrow">GTM Engineering</span>
-      <div class="price-amt">{{ site.GTM_FEE }}<small>a month</small></div>
-      <p class="lead" style="font-size:17px">The number of meetings is agreed on the call and promised in writing. Each missing meeting is credited on your next bill.</p>
+<section class="wrap sec-sm">
+  <div class="blks">
+    <article class="blk blk-big c-orange">
+      <div class="blk-top"><span class="lbl">GTM Engineering</span>{{ ui.icon('calendar') }}</div>
+      <div class="blk-price">{{ site.GTM_FEE }}<small>a month</small></div>
+      <p style="margin-top:var(--s5)">The number of meetings is agreed on the call and promised in writing. Each missing meeting is credited on your next bill.</p>
       <ul class="ticks">
         <li>Customer profile, plays and messages</li>
         <li>Email and LinkedIn outreach in your name</li>
         <li>Replies handled, meetings booked into your calendar</li>
         <li>Every lead in your workspace, Slack and a Google Sheet</li>
       </ul>
-      <a class="btn btn-ink" href="/book" data-cta="pricing-gtm">Get your meeting plan {{ ui.arrow() }}</a>
+      <div class="btns"><a class="btn btn-1" href="/book" data-cta="pricing-gtm">Get your meeting plan</a></div>
     </article>
-    <article class="price is-sky">
-      <span class="eyebrow is-sky">Performance Marketing</span>
-      <div class="price-amt">Paid on results</div>
-      <p class="lead" style="font-size:17px">What counts as a result, and the rate, are set with each client after the free audit, because a sale, a call and a form are worth different amounts to different businesses.</p>
-      <ul class="ticks is-sky">
+    <article class="blk blk-big c-sky">
+      <div class="blk-top"><span class="lbl">Performance Marketing</span>{{ ui.icon('chart') }}</div>
+      <div class="blk-price is-words">Paid on results</div>
+      <p style="margin-top:var(--s5)">What counts as a result, and the rate, are set with each client after the free audit, because a sale, a call and a form are worth different amounts to different businesses.</p>
+      <ul class="ticks">
         <li>A free audit of about 50 checks</li>
         <li>Google Ads and Meta, run by our team</li>
         <li>16 agents checking the account every day</li>
         <li>An Ads insight in Slack every morning</li>
       </ul>
-      <a class="btn btn-ink" href="/book?for=performance" data-cta="pricing-perf">Get a free account audit {{ ui.arrow() }}</a>
+      <div class="btns"><a class="btn btn-1" href="/book?for=performance" data-cta="pricing-perf">Get a free account audit</a></div>
     </article>
   </div>
 </section>
 
 <section class="wrap sec">
-  <div class="shead">
-    <span class="eyebrow">What counts as a meeting</span>
-    <h2 class="h2">Three checks, <em>every time.</em></h2>
+  <span class="rule rv"></span>
+  {% call ui.head("03", "What counts as a meeting") %}<span class="ln"><span>Three checks,</span></span> <span class="ln"><span><span class="it">every time.</span></span></span>{% endcall %}
+  <div class="blks blks-3" style="margin-top:var(--s8)">
+    <div class="blk c-amber"><span class="blk-n">01</span><h3>The person fits</h3><p>They match the customer profile we agreed on the call.</p></div>
+    <div class="blk c-sky"><span class="blk-n">02</span><h3>They said yes</h3><p>They accepted a meeting with you and it is on your calendar.</p></div>
+    <div class="blk c-ink"><span class="blk-n">03</span><h3>It took place</h3><p>A no-show doesn&rsquo;t count towards the promise.</p></div>
   </div>
-  <ol class="counts">
-    <li><b>The person fits</b><p>They match the customer profile we agreed on the call.</p></li>
-    <li><b>They said yes</b><p>They accepted a meeting with you and it is on your calendar.</p></li>
-    <li><b>It took place</b><p>A no-show doesn&rsquo;t count towards the promise.</p></li>
-  </ol>
 </section>
 
-<section class="band sec">
-  <div class="wrap split" style="align-items:start">
+<section class="inkband">
+  <div class="wrap split split-top">
     <div>
-      <span class="eyebrow">A worked example</span>
-      <h2 class="h2" style="margin-top:18px">What a shortfall <em>looks like.</em></h2>
-      <p class="lead" style="margin-top:20px">A software company selling to HR leaders in the US. On the call we promise 6 meetings a month for {{ site.GTM_FEE }}, so each meeting is worth about $167 against the fee. The numbers are illustrative.</p>
+      <span class="lbl">04 &middot; A worked example</span>
+      <h2 class="d3 rv"><span class="ln"><span>What a shortfall</span></span> <span class="ln"><span><span class="it">looks like.</span></span></span></h2>
+      <p class="lead rv fade">A software company selling to HR leaders in the US. On the call we promise 6 meetings a month for {{ site.GTM_FEE }}, so each meeting is worth about $167 against the fee. The numbers are illustrative.</p>
     </div>
-    <div class="tbl-wrap">
-      <table class="tbl tbl-sm">
+    <div class="rv fade">
+      <table class="tbl-ink">
         <thead><tr><th scope="col">Month</th><th scope="col">Promised</th><th scope="col">Took place</th><th scope="col">Bill</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Month 1</th><td class="num">6</td><td class="num">5</td><td class="num">$1,000</td></tr>
-          <tr><th scope="row">Month 2</th><td class="num">6</td><td class="num">8</td><td class="num">$833</td></tr>
-          <tr><th scope="row">Month 3</th><td class="num">6</td><td class="num">7</td><td class="num">$1,000</td></tr>
+          <tr><th scope="row">Month 1</th><td>6</td><td class="hl">5</td><td>$1,000</td></tr>
+          <tr><th scope="row">Month 2</th><td>6</td><td>8</td><td class="hl">$833</td></tr>
+          <tr><th scope="row">Month 3</th><td>6</td><td>7</td><td>$1,000</td></tr>
         </tbody>
       </table>
-      <p class="small muted" style="padding:12px 18px 16px">Month 2&rsquo;s bill is $1,000 less the $167 credit for the meeting missed in month 1.</p>
+      <p class="note">Month 2&rsquo;s bill is $1,000 less the $167 credit for the meeting missed in month 1.</p>
     </div>
   </div>
 </section>
 
 <section class="wrap sec">
-  <div class="split" style="align-items:start">
+  <div class="split split-top">
     <div>
-      <span class="eyebrow">What sets the number</span>
-      <h2 class="h2" style="margin-top:18px">Your market <em>decides it.</em></h2>
-      <ul class="ticks" style="margin-top:24px">
-        <li>How narrow your audience is, and where it is</li>
-        <li>How often its buyers show signs in public</li>
-        <li>How often they reply</li>
-        <li>Your deal size, and how much a meeting is worth to you</li>
-      </ul>
+      <span class="lbl">05 &middot; What sets the number</span>
+      <h2 class="d3 rv"><span class="ln"><span>Your market</span></span> <span class="ln"><span><span class="it">decides it.</span></span></span></h2>
+      <div class="ledger" style="margin-top:var(--s6)">
+        <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>How narrow your audience is, and where it is</h4></div></div>
+        <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>How often its buyers show signs in public</h4></div></div>
+        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>How often they reply</h4></div></div>
+        <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>Your deal size, and what a meeting is worth to you</h4></div></div>
+      </div>
     </div>
     <div>
-      <span class="eyebrow">Against the alternatives</span>
-      <h2 class="h2" style="margin-top:18px">What others <em>charge.</em></h2>
-      <ul class="ticks" style="margin-top:24px">
-        <li>A first sales hire: about $108,600 in year one, salary and overheads included.</li>
-        <li>Pay-per-meeting agencies: commonly quoted at $75 to $500 a meeting.</li>
-        <li>Retainer plus meetings: commonly $2,000 to $4,000 a month plus $150 to $400 a meeting.</li>
-      </ul>
-      <p class="small muted" style="margin-top:14px">Ranges are from the providers&rsquo; own published guides, so treat them as ranges, not quotes.</p>
+      <span class="lbl">Against the alternatives</span>
+      <h2 class="d3 rv"><span class="ln"><span>What others</span></span> <span class="ln"><span><span class="it">charge.</span></span></span></h2>
+      <div class="ledger" style="margin-top:var(--s6)">
+        <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>A first sales hire</h4><p>About $108,600 in year one, salary and overheads included.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>Pay-per-meeting agencies</h4><p>Commonly quoted at $75 to $500 a meeting.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Retainer plus meetings</h4><p>Commonly $2,000 to $4,000 a month plus $150 to $400 a meeting.</p></div></div>
+      </div>
+      <p class="note">Ranges are from the providers&rsquo; own published guides, so treat them as ranges, not quotes.</p>
     </div>
   </div>
 </section>
 
-<section class="wrap sec">
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
   <div class="faq-grid">
-    <div class="shead" style="margin-bottom:0">
-      <span class="eyebrow">Questions</span>
-      <h2 class="h2">About <em>the bill.</em></h2>
-    </div>
+    {% call ui.head("06", "Questions") %}<span class="ln"><span>About</span></span> <span class="ln"><span><span class="it">the bill.</span></span></span>{% endcall %}
     {{ ui.faq([
       ("Is there a contract or minimum term?", "We agree the terms on the call and put them in your meeting plan, along with the number and the price."),
       ("What if you book fewer meetings than promised?", "Each missing meeting is credited on your next bill, at the monthly fee divided by the number of meetings promised."),

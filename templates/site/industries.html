@@ -1,20 +1,30 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
 {% block main %}
 
-<section class="wrap page-hero">
-  <span class="eyebrow">Industries</span>
-  <h1 class="display">Meetings in <em>your market.</em></h1>
-  <p class="lead">The buyers, the signs and the ads are different in every market. Pick yours to see who we book you in with, the plays that suit it, and sample leads.</p>
-</section>
+<header class="wrap hero">
+  <span class="lbl rv fade">Industries</span>
+  <h1 class="d1 rv"><span class="ln"><span>Meetings in</span></span> <span class="ln"><span><span class="mk">your market.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">{{ '%02d'|format(site.INDUSTRIES|length) }} markets</span>
+    <p class="lead rv fade">The buyers, the signs and the ads are different in every market. Pick yours to see who we book you in with, the plays that suit it, and sample leads.</p>
+  </div>
+</header>
 
-<section class="wrap sec-tight">
-  <div class="grid-3">
+{{ ui.ticker(site.INDUSTRY_LINKS, "Every market") }}
+
+<section class="wrap sec">
+  <div class="cells cells-3">
     {% for i in site.INDUSTRIES %}
-    <a class="ind-card" href="/industries/{{ i.slug }}"><b>{{ i.name }}</b><p>{{ i.headline }}</p><span>See the plays and sample leads &rarr;</span></a>
+    <a class="cell" href="/industries/{{ i.slug }}">
+      <div class="cell-idx">{{ ui.icon(site.INDUSTRY_ICONS[i.slug]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
+      <h3>{{ i.name }}</h3>
+      <p>{{ i.headline }}</p>
+      <span class="more">See the plays and sample leads {{ ui.arrow() }}</span>
+    </a>
     {% endfor %}
   </div>
-  <p class="lead" style="margin-top:32px">Not on the list? Tell us who you sell to on the call; the plays work the same way.</p>
+  <p class="lead rv fade" style="margin-top:var(--s7)">Not on the list? Tell us who you sell to on the call; the plays work the same way.</p>
 </section>
 
 {{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise in your market, and what it costs.", "Get your meeting plan") }}

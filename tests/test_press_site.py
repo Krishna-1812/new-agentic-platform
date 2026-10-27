@@ -31,7 +31,7 @@ _TPL = os.path.join(_ROOT, "templates")
 
 # Every template on the public site. Listed explicitly so a new marketing page
 # has to be added here on purpose rather than quietly skipped.
-PRESS_TEMPLATES = ("agents.html", "login_preview.html")
+PRESS_TEMPLATES = ("agents.html", "login_preview.html", "site/base.html")
 
 
 def _read(*parts):

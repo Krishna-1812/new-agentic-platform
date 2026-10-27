@@ -66,7 +66,7 @@ def test_no_page_sets_a_raw_block_colour_as_text():
 # ── Type ────────────────────────────────────────────────────────────────────
 
 def test_the_shells_load_fraunces_and_zalando_and_nothing_older():
-    for tpl in ("_bento.html", "app_base.html", "agents.html"):
+    for tpl in ("_bento.html", "app_base.html", "agents.html", "site/base.html"):
         html = _read("templates", tpl)
         assert "family=Fraunces" in html and "Zalando+Sans" in html, tpl
         for old in ("Familjen+Grotesk", "Instrument+Sans", "family=Inter", "family=Sora"):
