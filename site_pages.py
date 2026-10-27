@@ -450,6 +450,54 @@ INDUSTRIES = (
 )
 INDUSTRIES_BY_SLUG = {i["slug"]: i for i in INDUSTRIES}
 
+# The agents behind the work (/agents), in the words of the agents' own pages. The performance-marketing
+# agents come from tracker/paid_catalog.py (WORKSPACE) at render time, so a new one appears here by itself.
+GTM_AGENTS = (
+    ("Lead Finder", "People and companies on LinkedIn, Reddit and tender notices showing they need what a "
+                    "client sells, with a message ready."),
+    ("People & Signals", "The right people at each target account, and what each account is doing."),
+    ("Contact Finder", "The decision makers at a company, with checked contact details."),
+    ("Market Radar", "Rivals' moves, new places nearby and an industry's news."),
+    ("Job Change Alert", "Buyers and past customers who have just started a new role."),
+    ("Event & Conference Intelligence", "The events worth a client's time and budget, with their speakers."),
+    ("Website visitors", "The companies reading a client's website, and which pages."),
+    ("Local Business Radar", "Every business of one kind in a city, scored and ranked."),
+    ("Social Media Intelligence", "A client's social presence, set against their competitors'."),
+    ("Thought Leader Intelligence", "A client's leaders' presence, and the PR openings around them."),
+)
+SEARCH_AGENTS = (
+    ("Keyword Finder", "Keyword discovery, scoring and clustering."),
+    ("Content briefs", "Briefs built from what already ranks for a search."),
+    ("Site health and AI readiness", "What stops a site being found, by search engines and AI answers."),
+    ("Answer-engine visibility", "How often AI answers name a client, and what to change."),
+    ("Video Studio", "Video ads, made to brief."),
+    ("Ads insight", "Yesterday's numbers and what changed, in Slack every morning at 11:30."),
+)
+
+# The full comparison (/compare). Columns: the options; rows: (question, one answer per option).
+COMPARE_OPTIONS = ("A first sales hire", "A retainer agency", "A pay-per-meeting agency",
+                   "A self-serve GTM tool", "Northaxis")
+COMPARE_ROWS = (
+    ("You pay for", ("Salary, about $108,600 in year one", "Hours, every month",
+                     "Each meeting, commonly $75 to $500", "Seats or credits, $49 to $99 a month and up",
+                     GTM_FEE + " a month, with the meetings promised")),
+    ("Who finds the leads", ("They do, with tools you buy", "The agency", "The agency", "You do, in the tool",
+                             "Our agents, every morning")),
+    ("Who writes and sends", ("They do", "The agency", "The agency", "You do", "We do, in your name")),
+    ("First meetings", ("After months of hiring and ramp", "In weeks", "In weeks",
+                        "Once you've set it up and written the messages", "Within the first month")),
+    ("If it doesn't work", ("You still pay", "You still pay", "You pay only for meetings booked",
+                            "You still pay, and did the work",
+                            "Each missing meeting is credited on your next bill")),
+    ("Ads included", ("No", "Often, as a separate fee", "No", "No",
+                      "Yes, as Performance Marketing, paid on results")),
+    ("Fits better when", ("You want someone in the team for years and can manage them",
+                          "You want a broad marketing programme more than meetings",
+                          "You want meetings only, and a price per meeting suits you",
+                          "Someone on your team has time to build plays and write messages",
+                          "You want a promised number of meetings for a fixed fee, and ads paid on results")),
+)
+
 # Sample leads for the hero and the GTM page: a role and a kind of company, never a real person.
 SAMPLE_LEADS = (
     {"who": "Head of Marketing", "where": "80-person HR software company",

@@ -280,6 +280,13 @@ html.js.motion .feed .chip-meet { opacity: 0; animation: lc-fade .5s var(--ease)
 .group-h { font: 600 13px/1 var(--face-text); letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); margin: 0 0 16px; }
 .group + .group { margin-top: 44px; }
 
+.tiles-sky .tile::before { background: var(--sky); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tbl-compare { min-width: 980px; }
+.tbl-compare thead th.us, .tbl-compare td.us { background: var(--acc-soft); }
+.tbl-compare thead th.us { color: var(--acc-tx); }
+.tbl-compare tbody th { width: 14%; }
+
 /* ── two-column split ─────────────────────────────────────────────────── */
 .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .split > * { min-width: 0; }

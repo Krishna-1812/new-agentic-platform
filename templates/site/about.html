@@ -1,0 +1,42 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">About</span>
+  <h1 class="display">We get paid when you get buyers. <em>That changes how we work.</em></h1>
+  <p class="lead">{{ brand.name }} is a GTM engineering and performance marketing team that works with AI agents. We set out to sell the thing our clients actually want, meetings with buyers and results from their ads, rather than hours or software, and to stand behind it.</p>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="grid-3">
+    <div class="card"><h3>We promise a number</h3><p>Every client gets a number of meetings in writing before they pay anything, and any shortfall is credited on their next bill.</p></div>
+    <div class="card"><h3>Only what happens counts</h3><p>A meeting counts when it takes place, with someone who fits the profile we agreed. Ads are paid on the result we agree, not on spend.</p></div>
+    <div class="card"><h3>Our work, your name</h3><p>We write in your voice and send nothing you haven&rsquo;t approved. Every lead, reply and change is visible in your workspace.</p></div>
+  </div>
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">How we work</span>
+      <h2 class="h2" style="margin-top:18px">Agents watch. <em>People decide.</em></h2>
+      <p class="lead" style="margin-top:20px">Our agents read the market and your ad accounts every morning: who is showing a buying sign, which search terms waste money, which landing page breaks the ad&rsquo;s promise. Our team decides what to do, writes to your buyers and makes the changes.</p>
+      <p style="margin-top:24px"><a class="link-arrow" href="/agents">See the agents behind the work {{ ui.arrow() }}</a></p>
+    </div>
+    <div>
+      <span class="eyebrow">The rules we keep</span>
+      <ul class="ticks" style="margin-top:22px">
+        <li>We write only to business contacts, about their work.</li>
+        <li>Nobody is approached twice for the same client, whichever play found them.</li>
+        <li>Every email carries a one-click opt-out, honoured for every client at once.</li>
+        <li>You approve every message before sending starts.</li>
+      </ul>
+      <p style="margin-top:24px"><a class="link-arrow" href="/outreach-policy">How we contact people {{ ui.arrow() }}</a></p>
+    </div>
+  </div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise, and what it costs.", "Get your meeting plan") }}
+
+{% endblock %}

@@ -34,6 +34,10 @@ PAGES = {
     "/plays/tenders-and-rfps": "Tenders and RFPs",
     "/industries": "Meetings in",
     "/industries/healthcare": "Meetings with clinics",
+    "/agents": "Agents do the checking",
+    "/compare": "Hire, retain, subscribe",
+    "/about": "We get paid when you get buyers",
+    "/outreach-policy": "How we reach people",
     "/privacy": "Privacy",
     "/terms": "Terms of",
 }
@@ -135,8 +139,8 @@ def test_sample_leads_are_roles_not_people():
 @pytest.mark.parametrize("old,new,code", [
     ("/platform", "/how-it-works", 301), ("/signals", "/plays", 301),
     ("/solutions", "/gtm-engineering", 301), ("/integrations", "/how-it-works", 301),
-    ("/why-intelligence", "/pricing", 302),
-    ("/agents", "/old-site/agents", 302), ("/agents/signal-tracker", "/old-site/agents/signal-tracker", 302),
+    ("/why-intelligence", "/compare", 301),
+    ("/agents/signal-tracker", "/old-site/agents/signal-tracker", 302),
     ("/industries/health-tech", "/old-site/industries/health-tech", 302),
     ("/industries/healthcare/agents/patient-answer-visibility",
      "/old-site/industries/healthcare/agents/patient-answer-visibility", 302),
@@ -151,7 +155,7 @@ def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code
 def test_robots_lists_the_new_pages_and_not_the_old_site(client):
     body = client.get("/robots.txt").get_data(as_text=True)
     for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book", "/plays",
-                 "/industries"):
+                 "/industries", "/agents", "/compare", "/about", "/outreach-policy"):
         assert "Allow: " + path in body
     assert "old-site" not in body and "Allow: /platform" not in body
 
@@ -262,3 +266,42 @@ def test_every_sample_is_a_role_not_a_person():
     leads = [p["lead"] for p in site_pages.PLAYS] + [s["lead"] for i in site_pages.INDUSTRIES for s in i["samples"]]
     for lead in leads:
         assert set(lead) <= {"who", "where", "why", "src", "score", "meeting"}
+
+
+# ── The agents, Compare, About and how we contact people ────────────────────────
+
+def test_the_agents_page_names_every_agent_we_run(client):
+    from tracker import paid_catalog
+    text = _text(_html(client, "/agents"))
+    for name, _does in site_pages.GTM_AGENTS + site_pages.SEARCH_AGENTS:
+        assert name in text, name
+    for a in paid_catalog.WORKSPACE:
+        assert a["name"] in text and a["about"] in text, a["name"]
+    total = len(site_pages.GTM_AGENTS) + len(paid_catalog.WORKSPACE) + len(site_pages.SEARCH_AGENTS)
+    assert "%d agents watch" % total in text
+
+
+def test_the_comparison_has_an_answer_for_every_option(client):
+    html = _html(client, "/compare")
+    text = _text(html)
+    for q, answers in site_pages.COMPARE_ROWS:
+        assert len(answers) == len(site_pages.COMPARE_OPTIONS), q
+        assert q in text and all(a in text for a in answers), q
+    assert html.count('class="us"') == len(site_pages.COMPARE_ROWS) + 1
+    # The full comparison and the home page's short one agree on our row.
+    assert site_pages.COMPARE[-1][-1] == dict(site_pages.COMPARE_ROWS)["If it doesn't work"][-1]
+
+
+def test_how_we_contact_people_says_what_the_opt_out_does(client):
+    text = _text(_html(client, "/outreach-policy"))
+    assert "one-click opt-out" in text and "for every client we work with, for good" in text
+    # Leads are de-duplicated per client (br_identities is keyed by owner), so the site never claims
+    # nobody is contacted twice across clients.
+    for path in PAGES:
+        assert "across every client" not in _text(_html(client, path)).replace(
+            "honoured for every client at once", ""), path
+
+
+def test_every_page_links_to_how_we_contact_people(client):
+    for path in PAGES:
+        assert 'href="/outreach-policy"' in _html(client, path), path

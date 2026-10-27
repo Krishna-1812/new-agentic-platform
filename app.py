@@ -1000,27 +1000,49 @@ def industry_page(slug):
                  others=[i for i in site_pages.INDUSTRIES if i["slug"] != slug])
 
 
-# The previous site's addresses. Those whose content has a new home move there for good; those that
-# get new pages later in the rebuild (agents, resources, the old per-industry agent pages) show the
-# previous site meanwhile.
+@app.route("/agents")
+def agents_page():
+    return _site("agents.html", "agents", "The agents behind the work",
+                 "The agents that find buyers and check ad accounts every morning, and the team that decides "
+                 "what to do with what they find.", paid=paid_catalog.WORKSPACE)
+
+
+@app.route("/compare")
+def compare_page():
+    return _site("compare.html", "compare", "Compare",
+                 "A first sales hire, a retainer agency, a pay-per-meeting agency, a self-serve GTM tool and "
+                 "Northaxis, side by side.")
+
+
+@app.route("/about")
+def about_page():
+    return _site("about.html", "about", "About",
+                 "We get paid when you get buyers: a promised number of meetings, and ads paid on results.")
+
+
+@app.route("/outreach-policy")
+def outreach_policy_page():
+    return _site("outreach.html", "outreach", "How we contact people",
+                 "Who we write to on our clients' behalf, where the information comes from, and how anyone "
+                 "can say no.")
+
+
+# The previous site's addresses. Those whose content has a new home move there for good; the rest
+# (each old agent page, resources, the old per-industry agent pages) show the previous site.
 _SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/plays",
-               "/solutions": "/gtm-engineering", "/integrations": "/how-it-works"}
+               "/solutions": "/gtm-engineering", "/integrations": "/how-it-works",
+               "/why-intelligence": "/compare"}
 
 
 @app.route("/platform")
 @app.route("/signals")
 @app.route("/solutions")
 @app.route("/integrations")
+@app.route("/why-intelligence")
 def old_address_moved():
     return redirect(_SITE_MOVED[request.path], code=301)
 
 
-@app.route("/why-intelligence")
-def why_intelligence_page():
-    return redirect("/pricing", code=302)
-
-
-@app.route("/agents")
 @app.route("/agents/<path:rest>")
 @app.route("/industries/<islug>/agents/<path:rest>")
 @app.route("/resources")
@@ -1354,7 +1376,8 @@ def auth_google():
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
-                       "/book", "/plays", "/industries", "/agents", "/privacy", "/terms", "/static/", "/favicon"]
+                       "/book", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
+                       "/privacy", "/terms", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")
