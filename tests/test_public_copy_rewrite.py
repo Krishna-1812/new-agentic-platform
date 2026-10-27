@@ -12,8 +12,11 @@ import pytest
 
 import app as app_module
 
-PUBLIC_PAGES = ["/", "/agents", "/agents/signal-tracker", "/platform", "/signals", "/solutions",
-                "/why-intelligence", "/integrations", "/resources", "/industries", "/login",
+# The new site's pages, and the previous site's, kept at /old-site since the October 2026 rebuild.
+PUBLIC_PAGES = ["/", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book",
+                "/privacy", "/terms", "/old-site", "/old-site/agents", "/old-site/agents/signal-tracker",
+                "/old-site/platform", "/old-site/signals", "/old-site/solutions", "/old-site/why-intelligence",
+                "/old-site/integrations", "/old-site/resources", "/old-site/industries", "/login",
                 "/login-preview"]
 
 # Lines that were copied from intelligence.position2.com. None may reappear.
@@ -61,8 +64,8 @@ def test_no_position2_copy_on_public_pages(client, path):
         assert line.lower() not in body.lower(), f"{path} still says {line!r}"
 
 
-def test_home_leads_with_the_new_headline(client):
-    body = _text(client.get("/"))
+def test_the_old_home_page_keeps_its_headline(client):
+    body = _text(client.get("/old-site"))
     assert "Every deal starts" in body and "weeks before" in body
     assert "the first email." in body
     assert "Buyers leave" not in body
@@ -70,7 +73,7 @@ def test_home_leads_with_the_new_headline(client):
 
 
 def test_platform_formula_is_readable(client):
-    html = client.get("/platform").get_data(as_text=True)
+    html = client.get("/old-site/platform").get_data(as_text=True)
     # The formula line used to be garbled ("type type × severity ... intent</span>times; ...").
     assert "type &times; severity &times; recency<br>+ stacking = <span class=\"mk\">intent</span>" in html
     assert "</span>times;" not in html

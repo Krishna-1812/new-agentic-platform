@@ -1,0 +1,12 @@
+{% extends "site/base.html" %}
+{% block main %}
+<section class="wrap page-hero">
+  <span class="eyebrow">Last updated {{ legal_updated }}</span>
+  <h1 class="display" style="font-size:clamp(40px,5vw,72px)">{% if page == 'privacy' %}Privacy <em>Policy</em>{% else %}Terms of <em>Service</em>{% endif %}</h1>
+</section>
+<section class="wrap">
+  <div class="prose">
+    {% if page == 'privacy' %}{% include "_legal_privacy.html" %}{% else %}{% include "_legal_terms.html" %}{% endif %}
+  </div>
+</section>
+{% endblock %}

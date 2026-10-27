@@ -126,7 +126,7 @@ def test_a_signed_in_staff_member_opening_the_sign_in_page_goes_to_the_hub():
 
 
 def test_the_public_marketing_site_still_opens():
-    for path in ("/", "/agents", "/privacy", "/terms"):
+    for path in ("/", "/gtm-engineering", "/pricing", "/book", "/old-site", "/old-site/agents", "/privacy", "/terms"):
         assert appmod.app.test_client().get(path).status_code == 200
 
 

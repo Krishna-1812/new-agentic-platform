@@ -99,20 +99,18 @@ def test_unknown_old_pages(client):
     assert r.status_code == 302 and r.headers["Location"].endswith("/old-site/industries/" + ind)
 
 
-def test_the_live_pages_are_unchanged(client):
-    """Parking the old site does not touch the live pages: no banner, no noindex, links at the top level."""
-    for path in ("/", "/platform", "/signals", "/agents", "/industries", "/why-intelligence"):
+def test_the_new_site_is_not_marked_old(client):
+    """The new pages carry no banner and no noindex, and link to the old site only from the footer."""
+    for path in ("/", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book"):
         html = client.get(path).get_data(as_text=True)
         assert "old-bar" not in html, path
         assert 'name="robots"' not in html, path
-        assert not any(h.startswith("/old-site") for h in _links(html)), path
-    assert 'href="/platform"' in client.get("/").get_data(as_text=True)
+        assert [h for h in _links(html) if h.startswith("/old-site")] == ["/old-site"], path
 
 
 def test_the_old_sites_booking_form_is_marked_old_site(client):
     html = client.get("/old-site").get_data(as_text=True)
     assert "source:'old site'" in html
-    assert "source:'old site'" not in client.get("/").get_data(as_text=True)
     rows = []
     with patch.object(appmod, "_demo_request_to_sheet", side_effect=lambda row: rows.append(row) or True), \
          patch.object(appmod, "_demo_request_to_slack", return_value=True), \

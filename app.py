@@ -21,6 +21,7 @@ from flask import (
     make_response, render_template, g,
 )
 from brand import BRAND, brand_context  # user-facing product naming (single source of truth)
+import site_pages  # the public site's repeated content
 
 # The internal-app staff gate. Every check that decides whether an account is staff
 # reads this, and so does every page that states the rule (brand.staff_domain),
@@ -609,15 +610,25 @@ def _demo_request_to_email(d: dict) -> bool:
         return False
 
 
+# The Book a call page's extra answers: (form field, label in the message).
+_BOOK_FIELDS = (("website", "Website"), ("sells", "Sells"), ("meet", "Wants to meet"),
+                ("spend", "Monthly ad spend"), ("country", "Buyers in"))
+
+
 @app.route("/api/demo-request", methods=["POST"])
 def api_demo_request():
-    """Public intake for the login-page 'Book a demo / build a custom agent' form."""
+    """Public intake for the Book a call page (/book) and the previous site's 'Book a demo' form."""
     data = request.get_json(silent=True) or request.form.to_dict() or {}
     name     = (data.get("name") or "").strip()[:120]
     email    = (data.get("email") or "").strip()[:160]
     company  = (data.get("company") or "").strip()[:160]
-    interest = (data.get("interest") or "").strip()[:80]
+    interest = (data.get("interest") or data.get("pillar") or "").strip()[:80]
     message  = (data.get("message") or "").strip()[:2000]
+    # The Book a call page's answers ride in the message, so the sheet keeps its columns.
+    extra = [(label, str(data.get(key) or "").strip()[:300]) for key, label in _BOOK_FIELDS]
+    extra = [(label, v) for label, v in extra if v]
+    if extra:
+        message = "\n".join("%s: %s" % kv for kv in extra) + ("\n\n" + message if message else "")
     if not name or not _EMAIL_RE.match(email):
         return jsonify({"ok": False,
                         "error": "Please enter your name and a valid work email."}), 400
@@ -627,7 +638,7 @@ def api_demo_request():
     ua = request.headers.get("User-Agent", "")[:200]
     now = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
     vid = (request.cookies.get("p2_vid") or data.get("vid") or "").strip()[:64]
-    source = "old site" if data.get("source") == "old site" else "login page"
+    source = data.get("source") if data.get("source") in ("old site", "book page") else "login page"
     row = [now, name, email, company, interest, message, ip, ua, source, vid]
     payload = {"name": name, "email": email, "company": company,
                "interest": interest, "message": message, "ts": now, "ip": ip}
@@ -908,73 +919,77 @@ SIGNAL_GROUPS = [{"name": _gname, "items": [s for s in SIGNALS if s["group"] == 
                  for _gname, _ga, _gb in _SIG_GROUPS]
 
 
-@app.route("/agents")
-def agents_dir():
-    return render_template("agents.html", page="agents", agents=AGENTS, agent=None, related=[])
+# ── The public site (October 2026 rebuild) ─────────────────────────────────────
+# GTM engineering, where we promise a number of booked meetings each month for a fixed fee, and
+# performance marketing run with our agents and paid on results. templates/site/*.html, styled by
+# static/css/site.css; content that repeats across pages is in site_pages.py. The site before it is
+# kept whole at /old-site (below).
+def _site(template, page, title, description, **kw):
+    return render_template("site/" + template, page=page, title=title, description=description,
+                           site=site_pages, site_url=SITE_URL, year=datetime.now(IST).year, **kw)
 
 
-@app.route("/agents/<slug>")
-def agent_detail(slug):
-    a = AGENTS_BY_SLUG.get(slug)
-    if not a:
-        return redirect(url_for("agents_dir"))
-    related = [x for x in AGENTS if x["slug"] != slug][:3]
-    return render_template("agents.html", page="agent", agents=AGENTS, agent=a, related=related)
+@app.route("/gtm-engineering")
+def gtm_engineering_page():
+    return _site("gtm.html", "gtm", "GTM Engineering",
+                 "We find the people showing they need what you sell, write to them in your name and book "
+                 "the interested ones into your calendar. %s a month, with the meetings promised." % site_pages.GTM_FEE)
+
+
+@app.route("/performance-marketing")
+def performance_marketing_page():
+    return _site("performance.html", "performance", "Performance Marketing",
+                 "Google Ads and Meta run by our team, with 16 agents checking every account every day. "
+                 "Paid on results, starting with a free account audit.")
+
+
+@app.route("/how-it-works")
+def how_it_works_page():
+    return _site("how.html", "how", "How it works",
+                 "Six steps from the first call to meetings on your calendar, with what you do and what we do.")
+
+
+@app.route("/pricing")
+def pricing_page():
+    return _site("pricing.html", "pricing", "Pricing",
+                 "%s a month with a promised number of meetings; each missing meeting is credited on your next "
+                 "bill. Performance marketing is paid on results." % site_pages.GTM_FEE)
+
+
+@app.route("/book")
+def book_page():
+    want = "performance" if request.args.get("for") == "performance" else ""
+    return _site("book.html", "book", "Book a call",
+                 "Tell us who you want to meet. A 30-minute call, then your meeting plan in writing within "
+                 "3 working days.", want=want)
+
+
+# The previous site's addresses. Those whose content has a new home move there for good; those that
+# get new pages later in the rebuild (agents, industries, resources) show the previous site meanwhile.
+_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/gtm-engineering#plays",
+               "/solutions": "/gtm-engineering", "/integrations": "/how-it-works"}
 
 
 @app.route("/platform")
-def platform_page():
-    return render_template("agents.html", page="platform", agents=AGENTS, agent=None, related=[])
-
-
 @app.route("/signals")
-def signals_page():
-    return render_template("agents.html", page="signals", agents=AGENTS, agent=None, related=[], signals_list=SIGNALS, signal_groups=SIGNAL_GROUPS)
-
-
 @app.route("/solutions")
-def solutions_page():
-    return render_template("agents.html", page="solutions", agents=AGENTS, agent=None, related=[])
+@app.route("/integrations")
+def old_address_moved():
+    return redirect(_SITE_MOVED[request.path], code=301)
 
-# "Why Intelligence" comparison page. UNLINKED by design (no nav/footer entry) so it
-# can be reviewed and shared privately before being promoted. Reachable only by direct URL.
+
 @app.route("/why-intelligence")
 def why_intelligence_page():
-    return render_template("agents.html", page="why", agents=AGENTS, agent=None, related=[])
+    return redirect("/pricing", code=302)
 
 
-# Industries pages: linked from the main nav, the mobile menu and the footer.
+@app.route("/agents")
+@app.route("/agents/<path:rest>")
 @app.route("/industries")
-def industries_page():
-    return render_template("agents.html", page="industries", agents=AGENTS, agent=None,
-                           related=[], industries=INDUSTRIES)
-
-
-@app.route("/industries/<slug>")
-def industry_detail(slug):
-    ind = INDUSTRIES_BY_SLUG.get(slug)
-    if not ind:
-        return redirect(url_for("industries_page"))
-    others = [x for x in INDUSTRIES if x["slug"] != slug]
-    return render_template("agents.html", page="industry", agents=AGENTS, agent=None,
-                           related=[], industry=ind, industries=INDUSTRIES, other_industries=others)
-
-
-@app.route("/industries/<islug>/agents/<aslug>")
-def industry_agent_detail(islug, aslug):
-    ind = INDUSTRIES_BY_SLUG.get(islug)
-    if not ind:
-        return redirect(url_for("industries_page"))
-    ag = None
-    for a in ind.get("agents", []):
-        if a.get("slug") == aslug:
-            ag = a
-            break
-    if not ag:
-        return redirect(url_for("industry_detail", slug=islug))
-    related = [x for x in ind["agents"] if x.get("slug") != aslug][:3]
-    return render_template("agents.html", page="iagent", agents=AGENTS, agent=ag,
-                           related=related, industry=ind, industries=INDUSTRIES)
+@app.route("/industries/<path:rest>")
+@app.route("/resources")
+def old_address_for_now(rest=None):
+    return redirect(OLD_SITE + request.path, code=302)
 
 
 # ── The previous public site, kept at /old-site ──────────────────────────────────
@@ -1302,9 +1317,8 @@ def auth_google():
 # the API and every client workspace (each lives at its own /<slug>)
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
-ROBOTS_PUBLIC_PATHS = ["/$", "/agents", "/industries", "/platform", "/signals",
-                       "/solutions", "/why-intelligence", "/integrations",
-                       "/resources", "/privacy", "/terms", "/static/", "/favicon"]
+ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
+                       "/book", "/agents", "/industries", "/privacy", "/terms", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")
@@ -1329,8 +1343,9 @@ def index():
     if u:
         # Staff go straight to the internal hub; a client to their account; everyone else to the public home.
         return redirect("/hub" if _is_staff(u.get("email", "")) else _acct_landing(u.get("email", "")))
-    return render_template("agents.html", page="home", agents=AGENTS, agent=None,
-                           related=[], signals_list=SIGNALS)
+    return _site("home.html", "home", None,
+                 "GTM engineering and performance marketing, run with AI agents. %s a month for a promised number "
+                 "of meetings with your buyers; each missing meeting is credited on your next bill." % site_pages.GTM_FEE)
 
 # ── Public agents on the signed-in home (/app) ───────────────────────────────────
 # These are the SAME SEO tools embedded internally at /seo-aeo/<seo_slug> (served by
@@ -3253,13 +3268,6 @@ def app_settings():
 
 
 
-@app.route("/integrations")
-def integrations_page():
-    return render_template("agents.html", page="integrations", agents=AGENTS, agent=None, related=[])
-
-@app.route("/resources")
-def resources_page():
-    return render_template("agents.html", page="resources", agents=AGENTS, agent=None, related=[])
 
 LEGAL_UPDATED = "13 October 2026"
 
@@ -3269,8 +3277,10 @@ def _legal_page(page):
     contact = (os.environ.get("LEGAL_CONTACT_EMAIL") or "").strip()
     if "@" not in contact or any(c.isspace() for c in contact):
         contact = ""
-    return render_template("agents.html", page=page, agents=AGENTS, agent=None, related=[],
-                           legal_updated=LEGAL_UPDATED, contact_email=contact)
+    return _site("legal.html", page, "Privacy Policy" if page == "privacy" else "Terms of Service",
+                 "How %s handles personal information." % BRAND["name"] if page == "privacy"
+                 else "The terms for using %s." % BRAND["name"],
+                 legal_updated=LEGAL_UPDATED, contact_email=contact)
 
 
 @app.route("/privacy")

@@ -1,0 +1,109 @@
+{#- ════════════════════════════════════════════════════════════════════════
+    THE PUBLIC SITE (October 2026 rebuild): the layout every page shares.
+
+    Two pillars, GTM Engineering (orange) and Performance Marketing (sky), and
+    one action, the call. The previous site is kept whole at /old-site
+    (templates/agents.html); nothing here reaches into it except the footer
+    link that says where it is. Styles: static/css/site.css. Content that
+    repeats across pages: site_pages.py.
+-#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{%- set _title = (title ~ ' · ' ~ brand.name) if title else (brand.name ~ ' · Meetings with your buyers, promised every month') %}
+<title>{{ _title }}</title>
+<meta name="description" content="{{ description }}">
+<link rel="canonical" href="{{ site_url }}{{ request.path }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ brand.name }}">
+<meta property="og:title" content="{{ _title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="{{ site_url }}{{ request.path }}">
+<meta property="og:image" content="{{ site_url }}/static/og-cover.png?v=7">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F1EFED">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7">
+<link rel="apple-touch-icon" href="/static/favicon.png?v=7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Zalando+Sans:wght@400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/site.css?v=1">
+<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' motion');</script>
+{% block head %}{% endblock %}
+</head>
+<body data-page="{{ page }}">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="hd" id="hd">
+  <div class="wrap hd-in">
+    <a class="brand" href="/" aria-label="{{ brand.name }} home"><i aria-hidden="true"></i>{{ brand.name }}</a>
+    <nav class="hd-nav" aria-label="Main">
+      {% for href, label in site.NAV %}<a href="{{ href }}"{% if request.path == href %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+    <div class="hd-cta">
+      <a class="hd-login" href="/login">Log in</a>
+      <a class="btn btn-ink" href="/book" data-cta="header">Book a call</a>
+      <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet"><i></i><i></i></button>
+    </div>
+  </div>
+</header>
+<nav class="sheet" id="sheet" aria-label="Menu">
+  {% for href, label in site.NAV %}<a class="big" href="{{ href }}">{{ label }}</a>{% endfor %}
+  <div class="btns">
+    <a class="btn btn-ink" href="/book">Book a call</a>
+    <a class="btn btn-line" href="/login">Log in</a>
+  </div>
+</nav>
+
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+
+<footer class="ft">
+  <div class="wrap">
+    <div class="ft-grid">
+      <div>
+        <a class="brand" href="/"><i aria-hidden="true"></i>{{ brand.name }}</a>
+        <p class="ft-tag">GTM engineering and performance marketing, run with AI agents. Meetings with your buyers, promised every month.</p>
+      </div>
+      <div>
+        <h2>What we do</h2>
+        <ul>
+          <li><a href="/gtm-engineering">GTM Engineering</a></li>
+          <li><a href="/performance-marketing">Performance Marketing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Working with us</h2>
+        <ul>
+          <li><a href="/how-it-works">How it works</a></li>
+          <li><a href="/pricing">Pricing</a></li>
+          <li><a href="/book">Book a call</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>More</h2>
+        <ul>
+          <li><a href="/login">Log in</a></li>
+          <li><a href="/privacy">Privacy</a></li>
+          <li><a href="/terms">Terms</a></li>
+          <li><a href="/old-site">Previous site</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="ft-base">
+      <span>&copy; {{ year }} {{ brand.legal_entity }}</span>
+      <span>Every message we send carries a one-click opt-out.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/static/js/site.js?v=1" defer></script>
+<script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=6"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

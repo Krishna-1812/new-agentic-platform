@@ -1,4 +1,7 @@
-"""The Industries pages are live, linked, and lead with Healthcare, Real Estate and Education."""
+"""The Industries pages are live, linked, and lead with Healthcare, Real Estate and Education.
+
+Since the October 2026 rebuild these pages belong to the previous site, kept at /old-site; the new
+site's own industry pages come later in the rebuild, and until then /industries opens the old ones."""
 import html as _html
 import re
 
@@ -9,6 +12,7 @@ from tests.test_public_copy_rewrite import POSITION2_LINES
 
 FOCUS = ["healthcare", "real-estate", "education"]
 INDUSTRIES = app_module.INDUSTRIES
+OLD = "/old-site"
 
 
 @pytest.fixture()
@@ -24,10 +28,10 @@ def _text(resp):
 
 
 def _all_paths():
-    out = ["/industries"]
+    out = [OLD + "/industries"]
     for ind in INDUSTRIES:
-        out.append("/industries/" + ind["slug"])
-        out += ["/industries/%s/agents/%s" % (ind["slug"], a["slug"]) for a in ind["agents"] if a.get("slug")]
+        out.append(OLD + "/industries/" + ind["slug"])
+        out += [OLD + "/industries/%s/agents/%s" % (ind["slug"], a["slug"]) for a in ind["agents"] if a.get("slug")]
     return out
 
 
@@ -56,28 +60,34 @@ def test_every_industry_page_is_live_and_in_its_own_words(client, path):
         assert line.lower() not in body, f"{path} still says {line!r}"
 
 
-@pytest.mark.parametrize("path", ["/", "/agents", "/platform", "/signals", "/industries"])
+@pytest.mark.parametrize("path", [OLD, OLD + "/agents", OLD + "/platform", OLD + "/signals", OLD + "/industries"])
 def test_industries_is_linked_from_nav_menu_and_footer(client, path):
     html = client.get(path).get_data(as_text=True)
-    assert 'class="nv-link' in html and 'href="/industries">Industries</a>' in html
+    assert 'class="nv-link' in html and 'href="/old-site/industries">Industries</a>' in html
     assert '<span class="idx">06</span>Industries</a>' in html
     for slug in FOCUS:
-        assert 'href="/industries/%s"' % slug in html
+        assert 'href="/old-site/industries/%s"' % slug in html
+
+
+def test_the_industry_addresses_open_the_old_pages_until_the_new_ones_exist(client):
+    for path in ("/industries", "/industries/healthcare", "/industries/education/agents/applicant-intent-radar"):
+        r = client.get(path)
+        assert r.status_code == 302 and r.headers["Location"].endswith(OLD + path), path
 
 
 def test_focus_pages_use_their_own_headings(client):
-    re_body = _text(client.get("/industries/real-estate"))
+    re_body = _text(client.get(OLD + "/industries/real-estate"))
     assert "Buyers tour forty homes online" in re_body
     assert "Why good property leads" in re_body and "to site visit." in re_body
     assert "Run it on your projects." in re_body
-    ed = _text(client.get("/industries/education"))
+    ed = _text(client.get(OLD + "/industries/education"))
     assert "Applicants decide" in ed and "to first day of term." in ed
-    hc = _text(client.get("/industries/healthcare"))
+    hc = _text(client.get(OLD + "/industries/healthcare"))
     assert "Patients pick a clinic" in hc and "Why selling into" not in hc
 
 
 def test_industry_agent_outcomes_render(client):
-    body = _text(client.get("/industries/education/agents/applicant-intent-radar"))
+    body = _text(client.get(OLD + "/industries/education/agents/applicant-intent-radar"))
     assert "Applicants ranked by intent" in body
     assert "Closest to applying at the top." in body
 

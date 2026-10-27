@@ -1,0 +1,64 @@
+{#- The parts every page of the new site is built from. Import with
+    {% import "site/_parts.html" as ui %}. -#}
+
+{% macro arrow() -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+{%- endmacro %}
+
+{% macro tick() -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+{%- endmacro %}
+
+{#- The lead card, as clients get it in Slack each morning. Sample data only. -#}
+{% macro lead_card(l) -%}
+<article class="lc">
+  <div class="lc-top">
+    <div class="lc-who"><b>{{ l.who }}</b><span>{{ l.where }}</span></div>
+    <span class="lc-score" aria-label="Fit score {{ l.score }} out of 100">{{ l.score }}</span>
+  </div>
+  <p class="lc-why"><em>Why now:</em> {{ l.why }}</p>
+  <div class="lc-foot">
+    <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-.5.5"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l.5-.5"/></svg>{{ l.src }}</span>
+    <span class="chip">Email checked</span>
+    {% if l.meeting %}<span class="chip chip-meet">{{ l.meeting }}</span>{% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro faq(items) -%}
+<div class="faq">
+  {% for q, a in items %}
+  <details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ a }}</p></details>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{#- The 11:30 Ads insight message, as it lands in Slack. Sample numbers. -#}
+{% macro slack_digest() -%}
+<div class="slack" role="img" aria-label="A sample of the daily Ads insight message in Slack">
+  <div class="slack-hd">
+    <span class="slack-av" aria-hidden="true">A</span>
+    <b>Ads insight</b><span class="slack-app">APP</span><span class="slack-time">11:30 AM</span>
+  </div>
+  <h4>Sample account &middot; yesterday</h4>
+  <ul>
+    <li>Spend $1,240 &middot; 38 conversions &middot; cost per conversion <span class="up">$32.60, 14% better</span> than the week before</li>
+    <li>Search terms: <b>11 new negatives</b> worth adding, about $96 a week wasted on them</li>
+    <li>Two ad groups below <b>Good</b> ad strength; three headlines suggested</li>
+    <li>Mobile after 9pm: cost per conversion <span class="down">2.1&times; the account average</span></li>
+  </ul>
+  <p class="slack-ctx">Checked by 16 agents &middot; reviewed by your account lead before any change</p>
+</div>
+{%- endmacro %}
+
+{% macro cta(title, text, label="Book a call", href="/book") -%}
+<section class="wrap sec-tight" aria-label="Book a call">
+  <div class="cta">
+    <div>
+      <h2 class="h2">{{ title|safe }}</h2>
+      <p>{{ text }}</p>
+    </div>
+    <a class="btn btn-acc" href="{{ href }}" data-cta="band">{{ label }} {{ arrow() }}</a>
+  </div>
+</section>
+{%- endmacro %}

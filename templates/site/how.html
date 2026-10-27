@@ -1,0 +1,53 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap page-hero">
+  <span class="eyebrow">How it works</span>
+  <h1 class="display">A small ask of you. <em>The rest is ours.</em></h1>
+  <p class="lead">Six steps from the first call to meetings on your calendar, with what you do and what we do at each one.</p>
+  <div class="btns"><a class="btn btn-ink" href="/book" data-cta="hero">Book the first call {{ ui.arrow() }}</a></div>
+</section>
+
+<section class="wrap sec-tight">
+  <div class="rows">
+    <div class="row rows-hd" aria-hidden="true"><span></span><span class="who">Step</span><span class="who">You</span><span class="who">We</span><span class="who">When</span></div>
+    <div class="row"><span class="row-n">1</span><h3>The call</h3><p><span class="who">You</span>Tell us what you sell and who you want to meet.</p><p><span class="who">We</span>Ask about deal size, past results and who buys.</p><span class="when">Day 0, 30 minutes</span></div>
+    <div class="row"><span class="row-n">2</span><h3>Your meeting plan</h3><p><span class="who">You</span>Agree the profile, what counts as a meeting, and the monthly number.</p><p><span class="who">We</span>Write the plan and the price.</p><span class="when">Within 3 working days</span></div>
+    <div class="row"><span class="row-n">3</span><h3>The build</h3><p><span class="who">You</span>Approve the messages and share a calendar link.</p><p><span class="who">We</span>Set up the plays and the email and LinkedIn sending.</p><span class="when">Weeks 1 and 2</span></div>
+    <div class="row"><span class="row-n">4</span><h3>Outreach</h3><p><span class="who">You</span>Nothing, or read the morning summary.</p><p><span class="who">We</span>Find leads daily, write to them and handle the replies.</p><span class="when">Every day</span></div>
+    <div class="row"><span class="row-n">5</span><h3>Meetings</h3><p><span class="who">You</span>Take the meetings.</p><p><span class="who">We</span>Book them into your calendar, with notes.</p><span class="when">As they come</span></div>
+    <div class="row"><span class="row-n">6</span><h3>Month end</h3><p><span class="who">You</span>Agree next month&rsquo;s number.</p><p><span class="who">We</span>Count the meetings that took place, credit any shortfall, tune the plays.</p><span class="when">Every month</span></div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">What you get</span>
+    <h2 class="h2">Everything a sales <em>development team</em> would do.</h2>
+  </div>
+  <div class="grid-3">
+    <div class="card"><h3>A written customer profile</h3><p>Who buys, the people involved, and what they care about, from your website and the call.</p></div>
+    <div class="card"><h3>Plays that run every day</h3><p>Buying signs watched across posts, comments, tenders, news and events, matched to your profile.</p></div>
+    <div class="card"><h3>Outreach in your name</h3><p>Email and LinkedIn messages in your voice, approved by you, with replies handled for you.</p></div>
+    <div class="card"><h3>Meetings on your calendar</h3><p>Each with the sign that started it, the lead card and the conversation so far.</p></div>
+    <div class="card"><h3>Every lead, in the open</h3><p>Your workspace, Slack each morning, and a Google Sheet you can filter and share.</p></div>
+    <div class="card"><h3>A weekly summary</h3><p>Leads found, replies, meetings booked and held, and what we&rsquo;re changing next.</p></div>
+  </div>
+</section>
+
+<section class="band sec">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow is-sky">Performance Marketing</span>
+      <h2 class="h2" style="margin-top:18px">For your ads, <em>it starts with an audit.</em></h2>
+      <p class="lead" style="margin-top:20px">About 50 checks with read-only access, then a plan built from your own data and the result we are paid on. After launch, our agents check the account every day and your account lead makes the changes.</p>
+      <div class="btns" style="margin-top:28px"><a class="btn btn-ink" href="/performance-marketing">How Performance Marketing works {{ ui.arrow() }}</a></div>
+    </div>
+    <div>{{ ui.slack_digest() }}</div>
+  </div>
+</section>
+
+{{ ui.cta("Start with a 30-minute call.", "Tell us who you want to meet. Your meeting plan follows within 3 working days.") }}
+
+{% endblock %}

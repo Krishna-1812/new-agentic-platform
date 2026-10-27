@@ -1,0 +1,112 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui %}
+{% block main %}
+
+<section class="wrap hero">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">GTM Engineering</span>
+      <h1 class="display">Meetings with your buyers, <em>booked for you.</em></h1>
+      <p class="lead">We watch the places buyers give themselves away: the problems they post about, the rivals they follow, the tenders they publish. We write to the ones who fit, in your name, and put the interested ones in your calendar. The number is promised every month.</p>
+      <div class="btns">
+        <a class="btn btn-ink" href="/book" data-cta="hero">Get your meeting plan {{ ui.arrow() }}</a>
+        <a class="btn btn-line" href="#journey">Follow one lead</a>
+      </div>
+      <ul class="promise">
+        <li>{{ ui.tick() }}{{ site.GTM_FEE }} a month</li>
+        <li>{{ ui.tick() }}Only meetings that take place count</li>
+        <li>{{ ui.tick() }}Shortfall credited on your next bill</li>
+      </ul>
+    </div>
+    <div class="feed" aria-label="Sample leads">
+      <p class="feed-cap"><b aria-hidden="true"></b>Sample leads, as they land in Slack</p>
+      {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l) }}{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="shead">
+    <span class="eyebrow">What GTM engineering is</span>
+    <h2 class="h2">The system that turns a sign <em>into a meeting.</em></h2>
+    <p class="lead">GTM engineering is the work of building that system: finding the right people, checking them, writing to them and booking them. Companies hire for it; we run it for you.</p>
+  </div>
+  <div class="grid-2" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+    <div class="card"><h3>Find</h3><p>The companies and people who match your customer profile and are showing a buying sign right now.</p></div>
+    <div class="card"><h3>Check</h3><p>Every contact verified, duplicates removed, and nobody contacted twice, across every play we run.</p></div>
+    <div class="card"><h3>Write</h3><p>A message built on the sign that found them, by email and LinkedIn, in your voice and approved by you.</p></div>
+    <div class="card"><h3>Book</h3><p>Replies handled, and the interested ones booked into your calendar with everything you need to know.</p></div>
+  </div>
+  <p class="lead" style="margin-top:32px">A GTM engineer costs $127,500 to $159,000 a year in the US. A first sales hire costs about $108,600 in year one. We cost {{ site.GTM_FEE }} a month, with the meetings promised.</p>
+</section>
+
+<section class="band sec" id="plays">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Where we find buyers</span>
+      <h2 class="h2">The plays <em>we run.</em></h2>
+      <p class="lead">A play is a buying sign we watch for every day, and what we do when it shows. On the call we choose the plays that suit your market.</p>
+    </div>
+    <div class="tiles">
+      {% for p in site.PLAYS %}<div class="tile"><b>{{ p.name }}</b><p>{{ p.sign }}</p><span class="by">Run by {{ p.agent }}</span></div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec" id="journey">
+  <div class="shead">
+    <span class="eyebrow">From sign to meeting</span>
+    <h2 class="h2">One lead, <em>end to end.</em></h2>
+    <p class="lead">Sample data, but the same cards and messages our clients get.</p>
+  </div>
+  <ol class="journey">
+    <li class="jstep"><span class="jstep-l">1 &middot; The sign</span><div class="jcard"><b>A tender notice</b>A 300-person logistics firm asks for proposals to rebuild its customer portal. Closes in 3 weeks.</div></li>
+    <li class="jstep"><span class="jstep-l">2 &middot; The lead</span><div class="jcard"><b>Lead card, score 88</b>Operations Director named on the tender. Fits your profile; email checked.<span class="chip">In Slack at 9:00</span></div></li>
+    <li class="jstep"><span class="jstep-l">3 &middot; The message</span><div class="jcard"><b>An email in your name</b>&ldquo;Saw the portal tender. Before you write the brief, would a 20-minute look at what similar firms asked for help?&rdquo;</div></li>
+    <li class="jstep"><span class="jstep-l">4 &middot; The reply</span><div class="jcard"><b>&ldquo;Yes, Tuesday works.&rdquo;</b>We send your calendar link. The whole thread is in your workspace.</div></li>
+    <li class="jstep"><span class="jstep-l">5 &middot; The meeting</span><div class="jcard"><b>Tuesday, 15:00</b>On your calendar with the tender, the lead card and the thread.<span class="chip chip-meet">Counts when it takes place</span></div></li>
+  </ol>
+</section>
+
+<section class="wrap sec">
+  <div class="grid-2">
+    <div>
+      <div class="shead" style="margin-bottom:28px">
+        <span class="eyebrow">You stay in control</span>
+        <h2 class="h2">Our work, <em>your name.</em></h2>
+      </div>
+      <ul class="ticks">
+        <li>You approve the messages before any sending starts.</li>
+        <li>Every lead and every reply is in your workspace.</li>
+        <li>Every email carries a one-click opt-out, and nobody is contacted twice.</li>
+        <li>Only meetings that take place, with people who fit the profile, count towards the promise.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="shead" style="margin-bottom:28px">
+        <span class="eyebrow">Where it arrives</span>
+        <h2 class="h2">Where you <em>already work.</em></h2>
+      </div>
+      <ul class="ticks">
+        <li>Meetings on your calendar, with notes.</li>
+        <li>Leads each morning in Slack, as the card above.</li>
+        <li>Every lead in a Google Sheet you can filter and share.</li>
+        <li>Your client workspace, with the whole history.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="faq-grid">
+    <div class="shead" style="margin-bottom:0">
+      <span class="eyebrow">Questions</span>
+      <h2 class="h2">About the <em>meetings.</em></h2>
+    </div>
+    {{ ui.faq(site.FAQ_MEETINGS) }}
+  </div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise each month, and what it costs.", "Get your meeting plan") }}
+
+{% endblock %}

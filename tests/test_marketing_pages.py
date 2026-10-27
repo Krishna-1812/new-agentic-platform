@@ -90,9 +90,11 @@ def test_robots_lets_crawlers_read_the_legal_pages(client):
     assert "Allow: /privacy" in body and "Allow: /terms" in body
 
 
-@pytest.mark.parametrize("path", ["/", "/agents", "/resources", "/platform", "/signals",
-                                  "/solutions", "/why-intelligence", "/integrations",
-                                  "/industries", "/login"])
+@pytest.mark.parametrize("path", ["/", "/gtm-engineering", "/performance-marketing", "/how-it-works",
+                                  "/pricing", "/book", "/privacy", "/terms", "/old-site", "/old-site/agents",
+                                  "/old-site/resources", "/old-site/platform", "/old-site/signals",
+                                  "/old-site/solutions", "/old-site/why-intelligence", "/old-site/integrations",
+                                  "/old-site/industries", "/login"])
 def test_every_public_page_links_to_privacy_and_terms(client, path):
     """Google wants the policy linked from the home page; the footer carries it everywhere."""
     body = client.get(path).data.decode("utf-8")
