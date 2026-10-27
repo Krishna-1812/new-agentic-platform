@@ -31,7 +31,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-{% if old_site %}<meta name="robots" content="noindex, follow">{% endif %}
+{% if old_site or page == 'login' %}<meta name="robots" content="noindex, follow">{% endif %}
 {%- set _t = {
   'agent':        agent.name ~ ' · ' ~ brand.agent_singular,
   'agents':       brand.agents_plural ~ ' directory',

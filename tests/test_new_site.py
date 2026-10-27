@@ -154,12 +154,16 @@ def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code
     assert r.status_code == code and r.headers["Location"].endswith(new), (old, r.status_code)
 
 
-def test_robots_lists_the_new_pages_and_not_the_old_site(client):
+def test_robots_lists_the_new_pages_and_keeps_the_old_site_out_of_results(client):
     body = client.get("/robots.txt").get_data(as_text=True)
     for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book", "/plays",
                  "/industries", "/agents", "/compare", "/about", "/outreach-policy"):
         assert "Allow: " + path in body
-    assert "old-site" not in body and "Allow: /platform" not in body
+    assert "Allow: /platform" not in body
+    # The old site may be crawled only so its noindex is read: every page there says it.
+    assert "Allow: /old-site" in body
+    for path in ("/old-site", "/old-site/agents", "/old-site/industries"):
+        assert '<meta name="robots" content="noindex, follow">' in _html(client, path), path
 
 
 def test_the_booking_form_reaches_the_team_with_every_answer(client):

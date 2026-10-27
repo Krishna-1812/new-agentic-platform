@@ -1,0 +1,41 @@
+# {{ brand.name }}
+
+> {{ seo.SUMMARY }}
+
+Two services, sold on their own or together:
+
+- GTM Engineering: {{ site.GTM_FEE }} a month for a promised number of meetings with the buyers a client wants to meet. We watch for buying signs (posts about the problem the client solves, requests for recommendations, competitors' audiences, tenders, company news, new leaders, visits to the client's website, events), write to the people who fit by email and LinkedIn in the client's name, handle the replies and book meetings into the client's calendar. Only meetings that take place, with someone who fits the profile agreed on the first call, count. Each missing meeting is credited on the next bill, at the monthly fee divided by the number promised.
+- Performance Marketing: Google Ads (Search, Shopping and Performance Max) and Meta, checked every day by {{ paid|length }} agents, with every change made by a person on our team. Paid on results; the result and the rate are agreed after a free account audit of about 50 checks.
+
+## Services
+
+- [GTM Engineering]({{ site_url }}/gtm-engineering): what we do, the system behind it, and the plays we run
+- [Performance Marketing]({{ site_url }}/performance-marketing): Google Ads and Meta, checked daily, paid on results
+- [Pricing]({{ site_url }}/pricing): the fixed fee, what counts as a meeting, and a worked example of the shortfall credit
+- [How it works]({{ site_url }}/how-it-works): six steps from the first call to booked meetings
+- [Book a call]({{ site_url }}/book): a 30-minute call, then a meeting plan in writing within 3 working days
+
+## Plays: the buying signs we turn into meetings
+
+- [All plays]({{ site_url }}/plays): what a play is, and every one we run, by the kind of sign
+{% for p in site.PLAYS -%}
+- [{{ p.name }}]({{ site_url }}/plays/{{ p.slug }}): {{ p.sign }}
+{% endfor %}
+## Industries
+
+- [All industries]({{ site_url }}/industries): the markets we book meetings in
+{% for i in site.INDUSTRIES -%}
+- [{{ i.name }}]({{ site_url }}/industries/{{ i.slug }}): {{ i.headline }}
+{% endfor %}
+## More
+
+- [The agents]({{ site_url }}/agents): every agent behind the work, and what each one does
+- [Compare]({{ site_url }}/compare): a first sales hire, a retainer agency, a pay-per-meeting agency, a self-serve GTM tool and {{ brand.name }}, side by side
+- [About]({{ site_url }}/about): why we are paid on meetings and results
+- [How we contact people]({{ site_url }}/outreach-policy): who we write to, where the information comes from, and how to opt out
+
+## Optional
+
+- [The whole site as text]({{ site_url }}/llms-full.txt)
+- [Privacy Policy]({{ site_url }}/privacy)
+- [Terms of Service]({{ site_url }}/terms)

@@ -1,0 +1,30 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% block main %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">Page not found</span>
+  <h1 class="d1 rv"><span class="ln"><span>This page</span></span> <span class="ln"><span><span class="mk">isn&rsquo;t here.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">404</span>
+    <p class="lead rv fade">The address may be mistyped, or the page has moved. These are the pages most people are looking for.</p>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="/">Go to the home page</a>
+      <a class="btn btn-2" href="/book">Book a call</a>
+    </div>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <div class="cells cells-3">
+    {% for href, label in site.NAV %}
+    <a class="cell play-cell" href="{{ href }}">
+      <div class="cell-idx"><span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
+      <h3>{{ label }}</h3>
+      <span class="more">Go to the page {{ ui.arrow() }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

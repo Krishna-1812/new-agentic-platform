@@ -9,6 +9,8 @@ Everything here is sample or plain fact about how we work. Sample leads describe
 company, never a real person or a real company.
 """
 
+from brand import BRAND
+
 GTM_FEE = "$1,000"
 
 # The pages in the header, in order: (address, label).
@@ -553,7 +555,47 @@ FAQ_MEETINGS = (
      "No. We promise meetings with the right people. Winning the deal is yours."),
 )
 
+# The plain questions people (and AI assistants) ask first, answered in a sentence or two, ahead of the
+# questions about how the promise works. site_seo.py marks every list on a page up as its FAQ.
+FAQ_HOME = (
+    ("What does %s do?" % BRAND["name"],
+     "%s is a GTM engineering and performance marketing agency that works with AI agents. We find the "
+     "people showing they need what you sell, write to them in your name and book meetings into your "
+     "calendar, for %s a month with the number of meetings promised. We also run Google Ads and Meta, "
+     "paid on results." % (BRAND["name"], GTM_FEE)),
+    ("How much does it cost?",
+     "GTM engineering is %s a month for a promised number of meetings, set on the first call from your "
+     "market and deal size. Performance marketing is paid on results, agreed after a free account audit."
+     % GTM_FEE),
+) + FAQ_MEETINGS
+
+FAQ_GTM = (
+    ("What is GTM engineering?",
+     "GTM (go-to-market) engineering is building the system that finds the right buyers and starts "
+     "conversations with them: data on who to contact and why now, a message written for each person, and "
+     "the sending, replies and booking that follow. We run that system for you, and promise the number of "
+     "meetings it books each month."),
+    ("How is this different from an appointment-setting agency?",
+     "Appointment setters usually charge a retainer or a price per meeting and work through a list. We "
+     "start from buying signs, such as a post about the problem you solve, a tender or a new leader in the "
+     "role, charge a fixed %s a month, and promise the number of meetings in writing." % GTM_FEE),
+    ("Are the meetings guaranteed?",
+     "The number of meetings is promised in writing for each month, and each missing meeting is credited "
+     "on your next bill. Only meetings that take place, with someone who fits the profile we agreed, count."),
+    ("When do the first meetings arrive?",
+     "Usually within the first month. Your meeting plan is in writing within 3 working days of the call, "
+     "the build takes about two weeks, and outreach starts as soon as you approve the messages."),
+) + FAQ_MEETINGS
+
 FAQ_PERFORMANCE = (
+    ("What is performance marketing?",
+     "Advertising that is paid for, and judged by, measurable results such as sales, enquiries or booked "
+     "visits, rather than hours or impressions. We run Google Ads and Meta this way, and agree the result "
+     "we're paid on after a free account audit."),
+    ("What's in the free account audit?",
+     "About 50 checks on your Google Ads account with read-only access: settings, conversion tracking, "
+     "audiences, structure and bidding, keywords and search terms, ads and landing pages. Meta accounts get "
+     "their own checks. You get a written report of what the account is missing."),
     ("How is it priced?",
      "On results. What counts as a result, and the rate, are agreed with each client after the free audit."),
     ("Do you need access to my ad accounts?",
@@ -565,6 +607,23 @@ FAQ_PERFORMANCE = (
      "research, content briefs and how often AI answers name you."),
     ("Do you make the ads?",
      "We write the copy, and our Video Studio makes video ads."),
+)
+
+FAQ_PRICING = (
+    ("Is there a contract or minimum term?",
+     "We agree the terms on the call and put them in your meeting plan, along with the number and the price."),
+    ("What if you book fewer meetings than promised?",
+     "Each missing meeting is credited on your next bill, at the monthly fee divided by the number of "
+     "meetings promised."),
+    ("What if a meeting doesn't happen?",
+     "It doesn't count. Only meetings that take place, with someone who fits the agreed profile, count "
+     "towards the promise."),
+    ("Can I ask for more meetings?",
+     "Yes. Tell us on the monthly review and we'll set a new number and price for the next month."),
+    ("Do you guarantee sales?",
+     "No. We promise meetings with the right people. Winning the deal is yours."),
+    ("How is Performance Marketing priced?",
+     "On results. What counts as a result, and the rate, are agreed with each client after the free audit."),
 )
 
 

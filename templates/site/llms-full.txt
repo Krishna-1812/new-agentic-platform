@@ -1,0 +1,146 @@
+{#- The whole public site as plain text, for AI assistants (/llms-full.txt). Built from site_pages.py, so a
+    new play, industry or question appears here by itself; the few lines of page copy below say the same
+    as the pages they name. -#}
+# {{ brand.name }}: the whole site as text
+
+> {{ seo.SUMMARY }}
+
+Website: {{ site_url }}/
+Book a call: {{ site_url }}/book
+Last updated: {{ seo.UPDATED }}
+
+## GTM Engineering
+
+Page: {{ site_url }}/gtm-engineering
+
+We watch the places buyers give themselves away: the problems they post about, the rivals they follow, the tenders they publish. We write to the ones who fit, in the client's name, and put the interested ones in the client's calendar. The number of meetings is promised every month.
+
+### Price and the promise
+
+Page: {{ site_url }}/pricing
+
+- {{ site.GTM_FEE }} a month. The number of meetings is agreed on the first call and promised in writing.
+- Included: a customer profile, the plays and the messages; email and LinkedIn outreach in the client's name; replies handled and meetings booked into the client's calendar; every lead in the client's workspace, in Slack and in a Google Sheet.
+- What counts as a meeting, three checks: the person fits the customer profile agreed on the call; they accepted a meeting and it is on the calendar; it took place. A no-show doesn't count.
+- If we book fewer meetings than promised, each missing meeting is credited on the next bill, at the monthly fee divided by the number promised.
+- Worked example (illustrative): 6 meetings promised a month for {{ site.GTM_FEE }}, so each is worth about $167 against the fee. Month 1: 5 took place, the bill is $1,000. Month 2: 8 took place, the bill is $833 ($1,000 less the $167 credit for the meeting missed in month 1). Month 3: 7 took place, the bill is $1,000.
+- What sets the number: how narrow the audience is and where it is; how often its buyers show signs in public; how often they reply; the deal size, and what a meeting is worth to the client.
+- What others charge: a first sales hire, about $108,600 in year one with salary and overheads; pay-per-meeting agencies, commonly $75 to $500 a meeting; retainer plus meetings, commonly $2,000 to $4,000 a month plus $150 to $400 a meeting. Ranges are from the providers' own published guides.
+
+### How it works
+
+Page: {{ site_url }}/how-it-works
+
+1. The call (day 0, 30 minutes). The client says what they sell and who they want to meet; we ask about deal size, past results and who buys.
+2. The meeting plan (within 3 working days). The client agrees the profile, what counts as a meeting and the monthly number; we write the plan and the price.
+3. The build (weeks 1 and 2). The client approves the messages and shares a calendar link; we set up the plays and the email and LinkedIn sending.
+4. Outreach (every day). We find leads daily, write to them and handle the replies.
+5. Meetings (as they come). We book them into the client's calendar, with notes; the client takes them.
+6. Month end (every month). We count the meetings that took place, credit any shortfall and tune the plays; the client agrees next month's number.
+
+### Questions
+
+{% for q, a in site.FAQ_HOME[:2] + site.FAQ_GTM + site.FAQ_PRICING -%}
+Q: {{ q }}
+A: {{ a }}
+
+{% endfor -%}
+
+## Performance Marketing
+
+Page: {{ site_url }}/performance-marketing
+
+Our team runs Google Ads and Meta with {{ paid|length }} agents that read every campaign, search term and landing page daily, and flag what to change before budget leaks. A person on our team decides and makes every change. Paid on results: what counts as a result, and the rate, are agreed with each client after a free account audit. The client keeps ownership of their accounts, and sees what changed, and why, in Slack at 11:30 every morning.
+
+### What the agents check
+
+{% for group, items in site.PERF_CHECKS -%}
+- {{ group }}: {{ items|join("; ") }}
+{% endfor %}
+### Channels
+
+- Google Ads: Search, Shopping and Performance Max
+- Meta: Facebook and Instagram
+- Search beyond ads: keyword research, content briefs, site health, and how often AI answers name the client
+- Video ads from our Video Studio
+
+### Questions
+
+{% for q, a in site.FAQ_PERFORMANCE -%}
+Q: {{ q }}
+A: {{ a }}
+
+{% endfor -%}
+
+## Plays
+
+Page: {{ site_url }}/plays
+
+A play is a buying sign we watch for every morning, and what we do when it shows. On the first call we choose the plays that suit the client's market; together they feed the meetings we promise. Every sample below is a role and a kind of company, never a real person or company.
+
+{% for p in site.PLAYS %}
+### {{ p.name }}
+
+Page: {{ site_url }}/plays/{{ p.slug }}
+
+- The sign: {{ p.sign }}
+- What it finds: {{ p.finds }}
+- Where we look: {{ p.where|join("; ") }}
+- Run every morning by our {{ p.agent }} agent.
+- Suits: {% for s in p.fits %}{{ site.INDUSTRIES_BY_SLUG[s].name }}{{ "; " if not loop.last }}{% endfor %}
+- Sample lead: {{ p.lead.who }}, {{ p.lead.where }}. {{ p.lead.why }} ({{ p.lead.src }})
+- Sample first message, sent in the client's name: "{{ p.message }}"
+{% endfor %}
+
+## Industries
+
+Page: {{ site_url }}/industries
+
+{% for i in site.INDUSTRIES %}
+### {{ i.name }}
+
+Page: {{ site_url }}/industries/{{ i.slug }}
+
+{{ i.headline }} {{ i.lead }}
+
+- Who we book meetings with: {{ i.buyers|join("; ") }}
+- The plays that suit it: {% for s in i.plays %}{{ site.PLAYS_BY_SLUG[s].name }}{{ "; " if not loop.last }}{% endfor %}
+- For the ads: {{ i.perf }}
+{% for q, a in i.faq %}- Q: {{ q }} A: {{ a }}
+{% endfor %}{% endfor %}
+
+## Compare
+
+Page: {{ site_url }}/compare
+
+| | {{ site.COMPARE_OPTIONS|join(" | ") }} |
+|---|{% for _o in site.COMPARE_OPTIONS %}---|{% endfor %}
+{% for q, answers in site.COMPARE_ROWS -%}
+| {{ q }} | {{ answers|join(" | ") }} |
+{% endfor %}
+## The agents
+
+Page: {{ site_url }}/agents
+
+Agents do the checking; people do the thinking. Each agent does one job thoroughly and explains what it found. A person on our team reviews it before anything reaches a client or their buyers.
+
+Finding buyers:
+{% for name, does in site.GTM_AGENTS -%}
+- {{ name }}: {{ does }}
+{% endfor %}
+Running ads:
+{% for a in paid -%}
+- {{ a.name }}: {{ a.about }}
+{% endfor %}
+Search and reporting:
+{% for name, does in site.SEARCH_AGENTS -%}
+- {{ name }}: {{ does }}
+{% endfor %}
+## How we contact people
+
+Page: {{ site_url }}/outreach-policy
+
+- Who we write to: people at businesses, about their work, when something they have done in public suggests a client of ours could help: a post about a problem, a question to their network, a published tender, news about their company, or a new role.
+- Where the information comes from: what people and companies publish themselves (posts and comments on LinkedIn, community threads, tender notices, company news and event agendas) and business contact data providers. Every lead carries a link to the public sign that found it.
+- What we send: a short message, in the name of the client who would like to meet them, that says why they are writing. Follow-ups stop as soon as the person replies.
+- Saying no: every email carries a one-click opt-out link. It stops all further email from us to that address, for every client we work with, for good.

@@ -182,7 +182,15 @@ def rewrite(html, prefix, origin, page_routes):
 
     banner = ("<style>%s</style>\n%s<script>%s</script>\n"
               % (BANNER_CSS, BANNER_HTML, BANNER_JS))
-    return html.replace("</body>", banner + "</body>")
+    return noindex(html.replace("</body>", banner + "</body>"))
+
+
+def noindex(html):
+    """Keep the copy out of search results. It is a preview of the previous site, and listed it would
+    compete with the live site for the brand's own name."""
+    if 'name="robots"' in html:
+        return html
+    return html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex, follow">', 1)
 
 
 def main():
