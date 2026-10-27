@@ -64,7 +64,9 @@ def test_every_page_opens_with_its_heading(client, path, heading):
     html = _html(client, path)
     h1 = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S)
     assert h1 and heading in re.sub(r"<[^>]+>", "", h1.group(1)), path
-    assert '<link rel="stylesheet" href="/static/css/site.css' in html
+    # The previous site's design system and motion, then the new site's own layer on top.
+    press = html.index('<link rel="stylesheet" href="/static/css/press.css')
+    assert press < html.index('<link rel="stylesheet" href="/static/css/site.css')
     assert "<title>" in html and 'name="description" content="' in html
 
 
@@ -90,7 +92,7 @@ def test_every_page_has_the_header_the_call_and_the_footer(client, path):
     html = _html(client, path)
     for href, _label in site_pages.NAV:
         assert 'href="%s"' % href in html, (path, href)
-    assert '<a class="btn btn-ink" href="/book" data-cta="header">Book a call</a>' in html
+    assert '<a class="btn btn-1" href="/book" data-cta="header">Book a call</a>' in html
     assert 'href="/login"' in html and 'href="/privacy"' in html and 'href="/terms"' in html
     assert '<a href="/old-site">Previous site</a>' in html
     assert "Book a demo" not in html and "Sign up" not in html
@@ -98,8 +100,8 @@ def test_every_page_has_the_header_the_call_and_the_footer(client, path):
 
 def test_the_current_page_is_marked_in_the_header(client):
     html = _html(client, "/pricing")
-    assert '<a href="/pricing" aria-current="page">Pricing</a>' in html
-    assert '<a href="/gtm-engineering" aria-current' not in html
+    assert '<a class="nv-link" href="/pricing" aria-current="page">Pricing</a>' in html
+    assert '<a class="nv-link" href="/gtm-engineering" aria-current' not in html
 
 
 def test_the_promise_is_worded_the_same_everywhere(client):
@@ -202,12 +204,48 @@ def test_the_legal_pages_point_people_to_the_booking_page(client):
 
 def test_the_stylesheet_and_script_exist():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    css = open(os.path.join(root, "static", "css", "site.css"), encoding="utf-8").read()
+    css = re.sub(r"/\*.*?\*/", "", open(os.path.join(root, "static", "css", "site.css"), encoding="utf-8").read(), flags=re.S)
     js = open(os.path.join(root, "static", "js", "site.js"), encoding="utf-8").read()
-    assert "--acc:" in css and "--sky:" in css
-    # Motion only runs when the visitor allows it, and the feed arrives as one object.
-    assert "html.js.motion .feed {" in css and "var(--i)" not in css
     assert "/api/demo-request" in js and 'source: "book page"' in js
+    # The booking form throws press-play.js's confetti once it has gone through.
+    assert "window.pressBurst" in js
+    play = open(os.path.join(root, "static", "js", "press-play.js"), encoding="utf-8").read()
+    assert "window.pressBurst = burst;" in play
+    # Motion only runs when the visitor allows it (press-play.js sets html.play), and nothing
+    # arrives card by card: a block's arrival is gated on .play and nothing is delayed by index.
+    assert ".play .blk {" in css and "transform" not in css[css.index(".blk {"):css.index("}", css.index(".blk {"))]
+    assert "var(--i)" not in css and "transition-delay" not in css and "animation-delay" not in css
+
+
+def test_every_new_page_keeps_the_previous_sites_motion_rules():
+    """The pages wear press.css and press-play.js, so the traps tests/test_press_site.py records
+    for the old pages hold here too."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    tpl_dir = os.path.join(root, "templates", "site")
+    for name in sorted(os.listdir(tpl_dir)):
+        markup = open(os.path.join(tpl_dir, name), encoding="utf-8").read()
+        # A clip-path wipe on the element the reveal observes never un-clips.
+        for m in re.finditer(r'class="([^"]*\brv\b[^"]*)"', markup):
+            assert "wipe" not in m.group(1).split(), (name, m.group(1))
+        # A heading's lines are joined by one space, so its words read as words without CSS.
+        assert "</span></span><span class=\"ln\">" not in markup, name
+    base = open(os.path.join(tpl_dir, "base.html"), encoding="utf-8").read()
+    head = base[:base.index("<body")]
+    assert "document.documentElement.className+=' js'" in head and "' vt'" in head
+    assert "sessionStorage.getItem('nx-intro')" in head and "{% if page == 'home' %}" in head
+    anime = base.index("filename='vendor/anime/anime.nx.min.js'")
+    assert anime < base.index("filename='js/press-play.js'") < base.index("</body>")
+    assert re.search(r'<script src="[^"]*press-play\.js[^"]*" defer></script>', base)
+
+
+def test_the_decorative_motion_is_hidden_from_assistive_tech(client):
+    html = _html(client, "/")
+    assert '<div class="deck" id="deck" aria-hidden="true">' in html
+    assert '<div class="kin" aria-hidden="true">' in html and '<div class="toys" aria-hidden="true">' in html
+    # The ticker's second copy, there only so the loop is seamless, is not read or tabbed to twice.
+    ticker = html[html.index('<div class="tick-track">'):]
+    ticker = ticker[:ticker.index("</div>")]
+    assert ticker.count('aria-hidden="true" tabindex="-1"') == len(site_pages.PLAYS)
 
 
 # ── Plays and industries ────────────────────────────────────────────────────────
@@ -221,7 +259,7 @@ def test_every_play_has_its_own_page(client, play):
     for slug in play["fits"]:
         assert 'href="/industries/%s"' % slug in html
     # Three related plays, never itself.
-    related = re.findall(r'<a class="tile tile-link" href="/plays/([^"]+)"', html)
+    related = re.findall(r'<a class="cell play-cell" href="/plays/([^"]+)"', html)
     assert len(related) == 3 and play["slug"] not in related
 
 

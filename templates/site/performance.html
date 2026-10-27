@@ -1,81 +1,92 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
 {% block main %}
 
-<section class="wrap hero">
-  <div class="hero-grid">
-    <div>
-      <span class="eyebrow is-sky">Performance Marketing</span>
-      <h1 class="display">Ad accounts checked <em>every day,</em> not every month.</h1>
+<header class="wrap hero hero-play">
+  {{ ui.deck(site.ADS_DECK, "ACCOUNTS CHECKED • EVERY MORNING •") }}
+  <span class="lbl rv fade">Performance Marketing</span>
+  <h1 class="d1 rv"><span class="ln"><span>Ad accounts</span></span> <span class="ln"><span>checked <span class="it">daily,</span></span></span> <span class="ln"><span><span class="mk">not monthly.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">01 / Performance</span>
+    <div class="rv fade">
       <p class="lead">Our team runs your Google Ads and Meta with 16 agents that read every campaign, search term and landing page daily, and flag what to change before budget leaks. We are paid on results.</p>
-      <div class="btns">
-        <a class="btn btn-ink" href="/book?for=performance" data-cta="audit">Get a free account audit {{ ui.arrow() }}</a>
-        <a class="btn btn-line" href="#checks">What the agents check</a>
-      </div>
       <ul class="promise is-sky">
         <li>{{ ui.tick() }}Paid on results</li>
         <li>{{ ui.tick() }}A person approves every change</li>
         <li>{{ ui.tick() }}You keep your accounts</li>
       </ul>
     </div>
-    <div>{{ ui.slack_digest() }}</div>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="/book?for=performance" data-cta="audit">Get a free account audit</a>
+      <a class="btn btn-2" href="#checks">What the agents check</a>
+    </div>
   </div>
+</header>
+
+{{ ui.ticker([(None, 'Search terms'), (None, 'Negative keywords'), (None, 'Ad strength'), (None, 'Budget pacing'), (None, 'Landing pages'), (None, 'Places and audiences'), (None, 'Devices and hours'), (None, 'Products'), (None, 'Experiments'), (None, 'Seasonality')], "What the agents check every day") }}
+
+<section class="wrap said">
+  <p class="said-t" id="said">Most ad accounts get a proper look once a month. <span class="said-b c-amber">Budget leaks in between.</span> <span class="said-b c-sky">Ours are checked every morning</span> by sixteen agents, and <span class="said-b c-orange">a person makes every&nbsp;change.</span></p>
 </section>
 
 <section class="wrap sec" id="checks">
-  <div class="shead">
-    <span class="eyebrow is-sky">What the agents check</span>
-    <h2 class="h2">Sixteen specialists, <em>one account lead.</em></h2>
-    <p class="lead">Each agent does one job thoroughly and explains what it found. Your account lead decides what to change, and changes it.</p>
-  </div>
-  <div class="grid-2">
+  <span class="rule rv"></span>
+  {% call ui.head("02", "What the agents check", "Each agent does one job thoroughly and explains what it found. Your account lead decides what to change, and changes it.") %}<span class="ln"><span>Sixteen specialists,</span></span> <span class="ln"><span><span class="it">one account lead.</span></span></span>{% endcall %}
+  <div class="cells cells-2" style="margin-top:var(--s8)">
     {% for group, items in site.PERF_CHECKS %}
-    <div class="card">
-      <h3 style="color:var(--sky-tx);font-size:13px;letter-spacing:.06em;text-transform:uppercase">{{ group }}</h3>
-      <ul class="ticks is-sky" style="margin-top:12px">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>
+    <div class="cell">
+      <div class="cell-idx">{{ ui.icon(['search', 'spark', 'shield', 'calendar'][loop.index0]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
+      <h3>{{ group }}</h3>
+      <ul class="ticks is-sky">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>
     </div>
     {% endfor %}
   </div>
 </section>
 
-<section class="band sec">
-  <div class="wrap split">
-    <div>
-      <span class="eyebrow is-sky">Your morning message</span>
-      <h2 class="h2" style="margin-top:18px">What changed, <em>in Slack at 11:30.</em></h2>
-      <p class="lead" style="margin-top:20px">Every morning you get yesterday&rsquo;s numbers, what the agents found and what we&rsquo;re changing. No waiting for the monthly report to learn the budget leaked.</p>
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("03", "How we work", "Your account lead reads the agents' findings every morning and makes the changes. You see what changed, and why, in Slack at 11:30.") %}<span class="ln"><span>Audit first.</span></span> <span class="ln"><span><span class="it">Then every day.</span></span></span>{% endcall %}
+  <div class="story" id="story" style="margin-top:var(--s8)">
+    <div class="story-steps">
+      <div class="story-step on"><span class="idx">01</span><div><h4>A free audit</h4><p>About 50 checks with read-only access, and a written report of what the account is missing.</p></div></div>
+      <div class="story-step"><span class="idx">02</span><div><h4>Plan and terms</h4><p>A strategy built from your own data, and the result we&rsquo;re paid on, agreed with you.</p></div></div>
+      <div class="story-step"><span class="idx">03</span><div><h4>Launch</h4><p>Every campaign QA-checked, and every landing page checked against its ads.</p></div></div>
+      <div class="story-step"><span class="idx">04</span><div><h4>Daily, then monthly</h4><p>Checks and changes every day; a review each month of what moved and why.</p></div></div>
     </div>
-    <div class="card">
-      <h3>Channels we run</h3>
-      <ul class="ticks is-sky" style="margin-top:12px">
-        <li>Google Ads: Search, Shopping and Performance Max</li>
-        <li>Meta: Facebook and Instagram</li>
-        <li>Search beyond ads: keyword research, content briefs, site health, and how often AI answers name you</li>
-        <li>Video ads from our Video Studio</li>
-      </ul>
+    <div class="story-fig">
+      <div class="rv"><div class="wipe wipe-pad">{{ ui.slack_digest() }}</div></div>
     </div>
   </div>
 </section>
 
-<section class="wrap sec">
-  <div class="shead">
-    <span class="eyebrow is-sky">How we work</span>
-    <h2 class="h2">Audit first. <em>Then every day.</em></h2>
+{{ ui.kin([['Search', 'Ads', 'Pages', 'Budgets'], ['Google Ads', 'Meta', 'Shopping', 'Results']]) }}
+
+<section class="inkband">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat rv fade"><b class="num" data-count="16">16</b><span>Agents on every account</span></div>
+      <div class="stat rv fade"><b>~50</b><span>Checks in the free audit</span></div>
+      <div class="stat rv fade"><b>11:30</b><span>Your Ads insight in Slack, daily</span></div>
+      <div class="stat rv fade"><b class="num" data-count="1">1</b><span>Person who makes every change</span></div>
+    </div>
+    <div class="split split-top" style="margin-top:var(--s8)">
+      <p class="pull rv fade">The agents find and explain. <span class="mk">A person decides.</span></p>
+      <div>
+        <span class="lbl">Channels we run</span>
+        <ul class="ticks rv fade" style="margin-top:var(--s4)">
+          <li>Google Ads: Search, Shopping and Performance Max</li>
+          <li>Meta: Facebook and Instagram</li>
+          <li>Search beyond ads: keyword research, content briefs, site health, and how often AI answers name you</li>
+          <li>Video ads from our Video Studio</li>
+        </ul>
+      </div>
+    </div>
   </div>
-  <ol class="steps">
-    <li class="step"><span class="step-n" style="color:var(--sky-tx)">01</span><h3>Free audit</h3><p>About 50 checks with read-only access, and a written report of what the account is missing.</p></li>
-    <li class="step"><span class="step-n" style="color:var(--sky-tx)">02</span><h3>Plan and terms</h3><p>A strategy built from your own data, and the result we&rsquo;re paid on, agreed with you.</p></li>
-    <li class="step"><span class="step-n" style="color:var(--sky-tx)">03</span><h3>Launch</h3><p>Every campaign QA-checked, and every landing page checked against its ads.</p></li>
-    <li class="step"><span class="step-n" style="color:var(--sky-tx)">04</span><h3>Daily, then monthly</h3><p>Checks and changes every day; a review each month of what moved and why.</p></li>
-  </ol>
 </section>
 
 <section class="wrap sec">
   <div class="faq-grid">
-    <div class="shead" style="margin-bottom:0">
-      <span class="eyebrow is-sky">Questions</span>
-      <h2 class="h2">About <em>the ads.</em></h2>
-    </div>
+    {% call ui.head("04", "Questions") %}<span class="ln"><span>About</span></span> <span class="ln"><span><span class="it">the ads.</span></span></span>{% endcall %}
     {{ ui.faq(site.FAQ_PERFORMANCE) }}
   </div>
 </section>

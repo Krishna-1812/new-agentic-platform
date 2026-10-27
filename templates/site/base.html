@@ -2,11 +2,14 @@
     THE PUBLIC SITE (October 2026 rebuild): the layout every page shares.
 
     Two pillars, GTM Engineering (orange) and Performance Marketing (sky), and
-    one action, the call. The previous site is kept whole at /old-site
-    (templates/agents.html); nothing here reaches into it except the footer
-    link that says where it is. Styles: static/css/site.css. Content that
-    repeats across pages: site_pages.py.
+    one action, the call. It wears the previous site's look whole: the paper
+    ground, Fraunces at display sizes, the colour blocks, and every piece of
+    its motion (static/css/press.css and static/js/press-play.js, the same
+    files /old-site runs on). static/css/site.css adds only what these pages
+    need on top. Content that repeats across pages: site_pages.py. The
+    previous site is kept whole at /old-site (templates/agents.html).
 -#}
+{%- import "site/_parts.html" as ui with context -%}
 <!doctype html>
 <html lang="en">
 <head>
@@ -30,90 +33,88 @@
 <link rel="apple-touch-icon" href="/static/favicon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Zalando+Sans:wght@400..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/site.css?v=1">
-<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' motion');</script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/press.css?v=8">
+<link rel="stylesheet" href="/static/css/site.css?v=2">
+{#- .js and .vt before first paint, so every reveal is armed before the first
+    headline is drawn and the page-to-page curtain only runs when motion is
+    allowed. On the home page, a first visit in the session (not arriving from
+    another page of the site) also gets .intro-on: the opening sequence covers
+    the page before it is drawn, and press.css lifts the cover after 3s if
+    press-play.js never arrives. -#}
+<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');{% if page == 'home' %}try{if(/ vt/.test(document.documentElement.className)&&!sessionStorage.getItem('nx-intro')&&document.referrer.indexOf(location.origin)!==0)document.documentElement.className+=' intro-on'}catch(e){}{% endif %}</script>
 {% block head %}{% endblock %}
 </head>
 <body data-page="{{ page }}">
 <a class="skip" href="#main">Skip to content</a>
+<div class="prog" id="prog" aria-hidden="true"></div>
 
-<header class="hd" id="hd">
-  <div class="wrap hd-in">
-    <a class="brand" href="/" aria-label="{{ brand.name }} home"><i aria-hidden="true"></i>{{ brand.name }}</a>
-    <nav class="hd-nav" aria-label="Main">
-      {% for href, label in site.NAV %}<a href="{{ href }}"{% if request.path == href or request.path.startswith(href ~ "/") %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
-    </nav>
-    <div class="hd-cta">
-      <a class="hd-login" href="/login">Log in</a>
-      <a class="btn btn-ink" href="/book" data-cta="header">Book a call</a>
-      <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet"><i></i><i></i></button>
-    </div>
+<nav class="nv" id="nv" aria-label="Main">
+  <a class="nv-brand" href="/" aria-label="{{ brand.name }} home"><span class="bn-mark" aria-hidden="true"></span><span class="bn-word">{{ brand.name }}</span></a>
+  <div class="nv-links">
+    {% for href, label in site.NAV %}<a class="nv-link" href="{{ href }}"{% if request.path == href or request.path.startswith(href ~ "/") %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
   </div>
-</header>
-<nav class="sheet" id="sheet" aria-label="Menu">
-  {% for href, label in site.NAV %}<a class="big" href="{{ href }}">{{ label }}</a>{% endfor %}
-  <div class="btns">
-    <a class="btn btn-ink" href="/book">Book a call</a>
-    <a class="btn btn-line" href="/login">Log in</a>
+  <div class="nv-cta">
+    <a class="nv-signin" href="/login">Log in</a>
+    <a class="btn btn-1" href="/book" data-cta="header">Book a call</a>
+    <button class="nv-burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet"><i></i><i></i></button>
   </div>
 </nav>
+
+{#- The phone menu: a full-screen ink page with the links at display size. -#}
+<div class="nv-sheet" id="sheet" aria-hidden="true">
+  {% for href, label in site.NAV %}<a href="{{ href }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ label }}</a>
+  {% endfor %}<div class="nv-sheet-foot">
+    <a class="btn btn-1" href="/book">Book a call</a>
+    <a class="btn btn-2" href="/login">Log in</a>
+  </div>
+</div>
 
 <main id="main">
 {% block main %}{% endblock %}
 </main>
 
-<footer class="ft">
-  <div class="wrap">
-    <div class="ft-grid">
-      <div>
-        <a class="brand" href="/"><i aria-hidden="true"></i>{{ brand.name }}</a>
-        <p class="ft-tag">GTM engineering and performance marketing, run with AI agents. Meetings with your buyers, promised every month.</p>
+{#- The shape library the kinetic bands and the footer tiles morph between: laid
+    out but sizeless, because a path that is not rendered cannot report its length. -#}
+<svg class="shape-lib" aria-hidden="true" focusable="false" width="0" height="0">{% for k, d in site.SHAPES.items() %}<path id="shp-{{ k }}" d="{{ d }}"/>{% endfor %}</svg>
+
+{#- The colophon: the orange block with the wordmark at display size. -#}
+<footer class="foot">
+  <div class="wrap foot-top"><a class="foot-word" href="/" aria-label="{{ brand.name }} home">{{ brand.name }}</a>
+    <div class="toys" aria-hidden="true">{% for c, sh in [('ink','circle'),('paper','quarter'),('sky','leaf'),('red','star'),('acc','plus'),('paper','triangle')] %}<span class="toy t-{{ c }}"><svg viewBox="0 0 100 100"><path data-shape="{{ sh }}" d="{{ site.SHAPES[sh] }}"/></svg></span>{% endfor %}</div>
+  </div>
+  <div class="wrap foot-in">
+    <div>
+      <p class="foot-tag">Meetings with your buyers, promised every month.</p>
+      <a class="btn btn-1" href="/book" data-cta="footer">Book a call</a>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col"><h5>What we do</h5>
+        <a href="/gtm-engineering">GTM Engineering</a><a href="/performance-marketing">Performance Marketing</a><a href="/agents">The agents</a>
       </div>
-      <div>
-        <h2>What we do</h2>
-        <ul>
-          <li><a href="/gtm-engineering">GTM Engineering</a></li>
-          <li><a href="/performance-marketing">Performance Marketing</a></li>
-          <li><a href="/agents">The agents</a></li>
-        </ul>
+      <div class="foot-col"><h5>Explore</h5>
+        <a href="/plays">Plays</a><a href="/industries">Industries</a><a href="/compare">Compare</a>
       </div>
-      <div>
-        <h2>Explore</h2>
-        <ul>
-          <li><a href="/plays">Plays</a></li>
-          <li><a href="/industries">Industries</a></li>
-          <li><a href="/compare">Compare</a></li>
-        </ul>
+      <div class="foot-col"><h5>Working with us</h5>
+        <a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/about">About</a><a href="/book">Book a call</a>
       </div>
-      <div>
-        <h2>Working with us</h2>
-        <ul>
-          <li><a href="/how-it-works">How it works</a></li>
-          <li><a href="/pricing">Pricing</a></li>
-          <li><a href="/about">About</a></li>
-          <li><a href="/book">Book a call</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>More</h2>
-        <ul>
-          <li><a href="/login">Log in</a></li>
-          <li><a href="/outreach-policy">How we contact people</a></li>
-          <li><a href="/privacy">Privacy</a></li>
-          <li><a href="/terms">Terms</a></li>
-          <li><a href="/old-site">Previous site</a></li>
-        </ul>
+      <div class="foot-col"><h5>More</h5>
+        <a href="/login">Log in</a><a href="/outreach-policy">How we contact people</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/old-site">Previous site</a>
       </div>
     </div>
-    <div class="ft-base">
-      <span>&copy; {{ year }} {{ brand.legal_entity }}</span>
-      <span>Every message we send carries a one-click opt-out. <a href="/outreach-policy">How we contact people</a></span>
-    </div>
+  </div>
+  <div class="wrap foot-bottom">
+    <span>&copy; {{ year }} {{ brand.legal_entity }}</span>
+    <span>Every message we send carries a one-click opt-out. <a href="/outreach-policy">How we contact people</a></span>
   </div>
 </footer>
 
-<script src="/static/js/site.js?v=1" defer></script>
+{#- site.js: the masthead, the menu, the reveals, the story steps and the booking
+    form. Anime.js (MIT, self-hosted) and press-play.js: the motion. Every page is
+    complete without all three. -#}
+<script src="/static/js/site.js?v=2" defer></script>
+<script src="{{ url_for('static', filename='vendor/anime/anime.nx.min.js') }}?v=4.5.0" defer></script>
+<script src="{{ url_for('static', filename='js/press-play.js') }}?v=6" defer></script>
 <script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=6"></script>
 {% block scripts %}{% endblock %}
 </body>

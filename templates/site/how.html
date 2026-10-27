@@ -1,50 +1,69 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
 {% block main %}
 
-<section class="wrap page-hero">
-  <span class="eyebrow">How it works</span>
-  <h1 class="display">A small ask of you. <em>The rest is ours.</em></h1>
-  <p class="lead">Six steps from the first call to meetings on your calendar, with what you do and what we do at each one.</p>
-  <div class="btns"><a class="btn btn-ink" href="/book" data-cta="hero">Book the first call {{ ui.arrow() }}</a></div>
-</section>
-
-<section class="wrap sec-tight">
-  <div class="rows">
-    <div class="row rows-hd" aria-hidden="true"><span></span><span class="who">Step</span><span class="who">You</span><span class="who">We</span><span class="who">When</span></div>
-    <div class="row"><span class="row-n">1</span><h3>The call</h3><p><span class="who">You</span>Tell us what you sell and who you want to meet.</p><p><span class="who">We</span>Ask about deal size, past results and who buys.</p><span class="when">Day 0, 30 minutes</span></div>
-    <div class="row"><span class="row-n">2</span><h3>Your meeting plan</h3><p><span class="who">You</span>Agree the profile, what counts as a meeting, and the monthly number.</p><p><span class="who">We</span>Write the plan and the price.</p><span class="when">Within 3 working days</span></div>
-    <div class="row"><span class="row-n">3</span><h3>The build</h3><p><span class="who">You</span>Approve the messages and share a calendar link.</p><p><span class="who">We</span>Set up the plays and the email and LinkedIn sending.</p><span class="when">Weeks 1 and 2</span></div>
-    <div class="row"><span class="row-n">4</span><h3>Outreach</h3><p><span class="who">You</span>Nothing, or read the morning summary.</p><p><span class="who">We</span>Find leads daily, write to them and handle the replies.</p><span class="when">Every day</span></div>
-    <div class="row"><span class="row-n">5</span><h3>Meetings</h3><p><span class="who">You</span>Take the meetings.</p><p><span class="who">We</span>Book them into your calendar, with notes.</p><span class="when">As they come</span></div>
-    <div class="row"><span class="row-n">6</span><h3>Month end</h3><p><span class="who">You</span>Agree next month&rsquo;s number.</p><p><span class="who">We</span>Count the meetings that took place, credit any shortfall, tune the plays.</p><span class="when">Every month</span></div>
+<header class="wrap hero">
+  <span class="lbl rv fade">How it works</span>
+  <h1 class="d1 rv"><span class="ln"><span>A small ask</span></span> <span class="ln"><span>of you.</span></span> <span class="ln"><span><span class="it">The rest is</span> <span class="mk">ours.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">06 steps</span>
+    <p class="lead rv fade">Six steps from the first call to meetings on your calendar, with what you do and what we do at each one.</p>
+    <div class="btns rv fade"><a class="btn btn-1" href="/book" data-cta="hero">Book the first call</a></div>
   </div>
-</section>
+</header>
+
+{{ ui.ticker([(None, 'The call'), (None, 'Your meeting plan'), (None, 'The build'), (None, 'Outreach'), (None, 'Meetings'), (None, 'Month end')], "The six steps", small=True) }}
 
 <section class="wrap sec">
-  <div class="shead">
-    <span class="eyebrow">What you get</span>
-    <h2 class="h2">Everything a sales <em>development team</em> would do.</h2>
-  </div>
-  <div class="grid-3">
-    <div class="card"><h3>A written customer profile</h3><p>Who buys, the people involved, and what they care about, from your website and the call.</p></div>
-    <div class="card"><h3>Plays that run every day</h3><p>Buying signs watched across posts, comments, tenders, news and events, matched to your profile.</p></div>
-    <div class="card"><h3>Outreach in your name</h3><p>Email and LinkedIn messages in your voice, approved by you, with replies handled for you.</p></div>
-    <div class="card"><h3>Meetings on your calendar</h3><p>Each with the sign that started it, the lead card and the conversation so far.</p></div>
-    <div class="card"><h3>Every lead, in the open</h3><p>Your workspace, Slack each morning, and a Google Sheet you can filter and share.</p></div>
-    <div class="card"><h3>A weekly summary</h3><p>Leads found, replies, meetings booked and held, and what we&rsquo;re changing next.</p></div>
+  {% call ui.head("02", "Step by step", "Your meeting plan fills in as you read: the part each step settles is marked on it.") %}<span class="ln"><span>What you do,</span></span> <span class="ln"><span><span class="it">and what we do.</span></span></span>{% endcall %}
+  <div class="story" id="story" style="margin-top:var(--s8)">
+    <div class="story-steps">
+      <div class="story-step on" data-row="who"><span class="idx">01</span><div><h4>The call</h4><div class="yw"><b>You</b><span>Tell us what you sell and who you want to meet.</span><b>We</b><span>Ask about deal size, past results and who buys.</span></div><span class="when">Day 0, 30 minutes</span></div></div>
+      <div class="story-step" data-row="number"><span class="idx">02</span><div><h4>Your meeting plan</h4><div class="yw"><b>You</b><span>Agree the profile, what counts as a meeting, and the monthly number.</span><b>We</b><span>Write the plan and the price.</span></div><span class="when">Within 3 working days</span></div></div>
+      <div class="story-step" data-row="plays"><span class="idx">03</span><div><h4>The build</h4><div class="yw"><b>You</b><span>Approve the messages and share a calendar link.</span><b>We</b><span>Set up the plays and the email and LinkedIn sending.</span></div><span class="when">Weeks 1 and 2</span></div></div>
+      <div class="story-step" data-row="sent"><span class="idx">04</span><div><h4>Outreach</h4><div class="yw"><b>You</b><span>Nothing, or read the morning summary.</span><b>We</b><span>Find leads daily, write to them and handle the replies.</span></div><span class="when">Every day</span></div></div>
+      <div class="story-step" data-row="counts"><span class="idx">05</span><div><h4>Meetings</h4><div class="yw"><b>You</b><span>Take the meetings.</span><b>We</b><span>Book them into your calendar, with notes.</span></div><span class="when">As they come</span></div></div>
+      <div class="story-step" data-row="credit"><span class="idx">06</span><div><h4>Month end</h4><div class="yw"><b>You</b><span>Agree next month&rsquo;s number.</span><b>We</b><span>Count the meetings that took place, credit any shortfall, tune the plays.</span></div><span class="when">Every month</span></div></div>
+    </div>
+    <div class="story-fig">
+      <div class="rv"><div class="wipe wipe-pad">
+        <div class="plan" role="img" aria-label="A sample meeting plan">
+          <div class="plan-top"><b>Your meeting plan</b><span class="pill">Sample</span></div>
+          <div class="plan-num"><b>6</b><span>Meetings promised<br>each month</span></div>
+          <div class="plan-row" data-plan-row="who"><span>Who</span><p>Heads of HR at 200 to 2,000-person companies in the US</p></div>
+          <div class="plan-row" data-plan-row="number"><span>Price</span><p>{{ site.GTM_FEE }} a month, for 6 meetings</p></div>
+          <div class="plan-row" data-plan-row="plays"><span>Plays</span><p>Posting about the problem, new in the job, tenders and RFPs</p></div>
+          <div class="plan-row" data-plan-row="sent"><span>Sent as</span><p>Email and LinkedIn, in your name, approved by you</p></div>
+          <div class="plan-row" data-plan-row="counts"><span>Counts</span><p>Fits the profile, said yes, and took place</p></div>
+          <div class="plan-row" data-plan-row="credit"><span>Shortfall</span><p>About $167 off the next bill for each missing meeting</p></div>
+        </div>
+      </div></div>
+    </div>
   </div>
 </section>
 
-<section class="band sec">
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("03", "What you get") %}<span class="ln"><span>Everything a sales</span></span> <span class="ln"><span><span class="it">development team</span> would do.</span></span>{% endcall %}
+  <div class="cells cells-3" style="margin-top:var(--s8)">
+    <div class="cell">{{ ui.icon('doc') }}<h3>A written customer profile</h3><p>Who buys, the people involved, and what they care about, from your website and the call.</p></div>
+    <div class="cell">{{ ui.icon('bolt') }}<h3>Plays that run every day</h3><p>Buying signs watched across posts, comments, tenders, news and events, matched to your profile.</p></div>
+    <div class="cell">{{ ui.icon('pen') }}<h3>Outreach in your name</h3><p>Email and LinkedIn messages in your voice, approved by you, with replies handled for you.</p></div>
+    <div class="cell">{{ ui.icon('calendar') }}<h3>Meetings on your calendar</h3><p>Each with the sign that started it, the lead card and the conversation so far.</p></div>
+    <div class="cell">{{ ui.icon('inbox') }}<h3>Every lead, in the open</h3><p>Your workspace, Slack each morning, and a Google Sheet you can filter and share.</p></div>
+    <div class="cell">{{ ui.icon('chart') }}<h3>A weekly summary</h3><p>Leads found, replies, meetings booked and held, and what we&rsquo;re changing next.</p></div>
+  </div>
+</section>
+
+<section class="inkband">
   <div class="wrap split">
     <div>
-      <span class="eyebrow is-sky">Performance Marketing</span>
-      <h2 class="h2" style="margin-top:18px">For your ads, <em>it starts with an audit.</em></h2>
-      <p class="lead" style="margin-top:20px">About 50 checks with read-only access, then a plan built from your own data and the result we are paid on. After launch, our agents check the account every day and your account lead makes the changes.</p>
-      <div class="btns" style="margin-top:28px"><a class="btn btn-ink" href="/performance-marketing">How Performance Marketing works {{ ui.arrow() }}</a></div>
+      <span class="lbl">04 &middot; Performance Marketing</span>
+      <h2 class="d3 rv"><span class="ln"><span>For your ads,</span></span> <span class="ln"><span><span class="it">it starts with an audit.</span></span></span></h2>
+      <p class="lead rv fade">About 50 checks with read-only access, then a plan built from your own data and the result we are paid on. After launch, our agents check the account every day and your account lead makes the changes.</p>
+      <div class="btns rv fade"><a class="btn btn-1" href="/performance-marketing">How Performance Marketing works</a></div>
     </div>
-    <div>{{ ui.slack_digest() }}</div>
+    <div class="rv fade">{{ ui.slack_digest() }}</div>
   </div>
 </section>
 

@@ -566,3 +566,50 @@ FAQ_PERFORMANCE = (
     ("Do you make the ads?",
      "We write the copy, and our Video Studio makes video ads."),
 )
+
+
+# ── The look (static/css/press.css + static/js/press-play.js, shared with the previous site) ──────
+# Eight flat shapes on a 100-unit square. The kinetic bands and the footer's shape tiles are drawn
+# from them, and press-play.js morphs between them.
+SHAPES = {
+    "circle": "M50 4a46 46 0 1 1 0 92a46 46 0 1 1 0-92z",
+    "star": "M50 2L61 35H98L68 57L79 91L50 70L21 91L32 57L2 35H39Z",
+    "square": "M20 6h60a14 14 0 0 1 14 14v60a14 14 0 0 1-14 14H20A14 14 0 0 1 6 80V20A14 14 0 0 1 20 6z",
+    "triangle": "M50 6L95 90H5Z",
+    "quarter": "M6 94V6a88 88 0 0 1 88 88Z",
+    "leaf": "M6 94C6 45 45 6 94 6C94 55 55 94 6 94Z",
+    "half": "M4 72a46 46 0 0 1 92 0Z",
+    "plus": "M38 6h24v32h32v24H62v32H38V62H6V38h32Z",
+}
+
+
+def _lead_deck(leads):
+    """The hero's card deck: the sample leads as colour blocks, and the meeting one of them became."""
+    cards = [{"c": c, "k": l["src"].split(" · ")[0], "b": l["who"], "l": l["where"], "s": str(l["score"])}
+             for c, l in zip(("orange", "amber", "sky"), leads)]
+    booked = leads[-1]
+    cards.append({"c": "ink", "k": "Meeting booked", "b": booked["who"], "l": "Thursday, on your calendar", "s": "11:00"})
+    return tuple(cards)
+
+
+LEAD_DECK = _lead_deck(SAMPLE_LEADS)
+
+# The Performance Marketing hero's deck: the findings in the sample Ads insight message.
+ADS_DECK = (
+    {"c": "sky", "k": "Yesterday", "b": "38 conversions", "l": "Cost per conversion $32.60", "s": "−14%"},
+    {"c": "amber", "k": "Search terms", "b": "11 new negatives", "l": "About $96 a week wasted", "s": "$96"},
+    {"c": "orange", "k": "Mobile after 9pm", "b": "Costs too much", "l": "Cost per conversion vs the account", "s": "2.1×"},
+    {"c": "ink", "k": "Ad strength", "b": "Two ad groups", "l": "Below Good; three headlines suggested", "s": "2"},
+)
+
+# One line icon per industry and per group of plays (templates/site/_parts.html draws them).
+INDUSTRY_ICONS = {
+    "technology-saas": "code", "agencies": "megaphone", "professional-services": "briefcase",
+    "it-services": "server", "financial-services": "coins", "healthcare": "heart",
+    "real-estate": "home", "education": "cap", "ecommerce": "cart",
+}
+PLAY_ICONS = {"say": "chat", "do": "bolt", "match": "target"}
+
+# The tickers: (address, words) for each play and each industry.
+PLAY_LINKS = tuple(("/plays/" + p["slug"], p["name"]) for p in PLAYS)
+INDUSTRY_LINKS = tuple(("/industries/" + i["slug"], i["name"]) for i in INDUSTRIES)

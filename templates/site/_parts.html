@@ -1,12 +1,90 @@
 {#- The parts every page of the new site is built from. Import with
-    {% import "site/_parts.html" as ui %}. -#}
+    {% import "site/_parts.html" as ui with context %} (the deck, the bands and the
+    icons read site_pages through `site`).
+
+    The look is the previous site's, kept whole: static/css/press.css and its motion,
+    static/js/press-play.js. What only this site needs is in static/css/site.css. -#}
 
 {% macro arrow() -%}
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
 {%- endmacro %}
 
 {% macro tick() -%}
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+{%- endmacro %}
+
+{#- Line art at one size, drawn in the ink (press.css .cell-ic). -#}
+{% set ICONS = {
+  'search': '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  'shield': '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="m9 12 2 2 4-4"/>',
+  'pen': '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
+  'calendar': '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  'chat': '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  'bolt': '<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>',
+  'target': '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12h.01"/>',
+  'doc': '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  'inbox': '<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
+  'chart': '<path d="M4 20V4M4 20h16"/><path d="m7 15 4-4 3 3 5-6"/>',
+  'users': '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21 20c0-2.6-1.6-4.8-4-5.6"/>',
+  'spark': '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+  'code': '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+  'megaphone': '<path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6"/>',
+  'briefcase': '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>',
+  'server': '<rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M8 7.5h.01M8 16.5h.01"/>',
+  'coins': '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+  'heart': '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  'home': '<path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+  'cap': '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/>',
+  'cart': '<circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M3 4h2l2.5 11h11L21 7H6.2"/>',
+  'eye': '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+} %}
+
+{% macro icon(name) -%}
+<span class="cell-ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ ICONS[name]|safe }}</svg></span>
+{%- endmacro %}
+
+{#- A section's head: index and label in the margin, the statement (its lines are the
+    caller, each a <span class="ln"><span>...</span></span>, joined by one space) and a lead. -#}
+{% macro head(n, label, lead=None, size="d3") -%}
+<div class="shead">
+  <div class="shead-l"><span class="idx">{{ n }}</span><span class="lbl">{{ label }}</span></div>
+  <div class="shead-r">
+    <h2 class="{{ size }} rv">{{ caller() }}</h2>
+    {% if lead %}<p class="lead rv fade">{{ lead }}</p>{% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
+{#- The hero's deck: four tilted colour blocks, dealt one to the back every few seconds,
+    with a sticker spinning on the stack (press-play.js). Wide screens only, and
+    decorative: everything on it is said on the page. -#}
+{% macro deck(cards, sticker) -%}
+<div class="deck" id="deck" aria-hidden="true">
+  {% for c in cards %}<div class="deck-card c-{{ c.c }}" data-pos="{{ loop.index0 }}"><span class="deck-k">{{ c.k }}</span><b>{{ c.b }}</b><span class="deck-l">{{ c.l }}</span><span class="deck-s">{{ c.s }}</span></div>
+  {% endfor %}<svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk" textLength="272" lengthAdjust="spacing">{{ sticker }}</textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
+</div>
+{%- endmacro %}
+
+{#- Continuous display type across the page. The second copy is for the loop only. -#}
+{% macro ticker(items, label, small=False) -%}
+<div class="wrap"><div class="tick{% if small %} tick-sm{% endif %}" aria-label="{{ label }}">
+  <div class="tick-track">
+    {% for copy in range(2) %}{% for href, text in items %}{% if href %}<a class="tick-i" href="{{ href }}"{% if copy %} aria-hidden="true" tabindex="-1"{% endif %}>{{ text }}</a>{% else %}<span class="tick-i"{% if copy %} aria-hidden="true"{% endif %}>{{ text }}</span>{% endif %}{% endfor %}{% endfor %}
+  </div>
+</div></div>
+{%- endmacro %}
+
+{#- Two rows of display type that slide opposite ways with the scroll, shapes turning
+    between the words. Decorative; each row is four words. -#}
+{% macro kin(rows) -%}
+{%- set kinds = ['circle', 'square', 'half', 'star'] -%}
+<div class="kin" aria-hidden="true">
+  {% for row in rows %}
+  <div class="kin-row" data-dir="{{ '-1' if loop.first else '1' }}">
+    {% for _ in range(3) %}{% for w in row %}<span class="kin-w{{ ' o' if loop.index is even }}">{{ w }}</span><svg class="kin-s s{{ loop.index }}" viewBox="0 0 100 100"><path data-shape="{{ kinds[loop.index0] }}" d="{{ site.SHAPES[kinds[loop.index0]] }}"/></svg>{% endfor %}{% endfor %}
+  </div>
+  {% endfor %}
+</div>
 {%- endmacro %}
 
 {#- The lead card, as clients get it in Slack each morning. Sample data only. -#}
@@ -18,18 +96,18 @@
   </div>
   <p class="lc-why"><em>Why now:</em> {{ l.why }}</p>
   <div class="lc-foot">
-    <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-.5.5"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l.5-.5"/></svg>{{ l.src }}</span>
-    <span class="chip">Email checked</span>
-    {% if l.meeting %}<span class="chip chip-meet">{{ l.meeting }}</span>{% endif %}
+    <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-.5.5"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l.5-.5"/></svg>{{ l.src }}</span>
+    <span class="pill">Email checked</span>
+    {% if l.meeting %}<span class="pill pill-meet">{{ l.meeting }}</span>{% endif %}
   </div>
 </article>
 {%- endmacro %}
 
-{% macro faq(items) -%}
-<div class="faq">
-  {% for q, a in items %}
-  <details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ a }}</p></details>
-  {% endfor %}
+{#- A first message, as the lead receives it, in the client's name. Sample text only. -#}
+{% macro message_card(lead, text) -%}
+<div class="msg">
+  <div class="msg-hd"><span>To: {{ lead.who }}, {{ lead.where }}</span><span class="pill">Sent in your name</span></div>
+  <p>{{ text }}</p>
 </div>
 {%- endmacro %}
 
@@ -51,27 +129,37 @@
 </div>
 {%- endmacro %}
 
-{% macro cta(title, text, label="Book a call", href="/book") -%}
-<section class="wrap sec-tight" aria-label="Book a call">
-  <div class="cta">
-    <div>
-      <h2 class="h2">{{ title|safe }}</h2>
-      <p>{{ text }}</p>
-    </div>
-    <a class="btn btn-acc" href="{{ href }}" data-cta="band">{{ label }} {{ arrow() }}</a>
-  </div>
-</section>
-{%- endmacro %}
-
-{#- A first message, as the lead receives it, in the client's name. Sample text only. -#}
-{% macro message_card(lead, text) -%}
-<div class="msg">
-  <div class="msg-hd"><span>To: {{ lead.who }}, {{ lead.where }}</span><span class="chip">Sent in your name</span></div>
-  <p>{{ text }}</p>
+{% macro faq(items) -%}
+<div class="faq">
+  {% for q, a in items %}
+  <details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ a }}</p></details>
+  {% endfor %}
 </div>
 {%- endmacro %}
 
-{#- A play as a card that links to its page. -#}
-{% macro play_tile(p, show_agent=True) -%}
-<a class="tile tile-link" href="/plays/{{ p.slug }}"><b>{{ p.name }}</b><p>{{ p.sign }}</p>{% if show_agent %}<span class="by">Run by {{ p.agent }}</span>{% endif %}</a>
+{#- A play as a cell that links to its page; the cell floods with a block colour under
+    the pointer (press-play.js). -#}
+{% macro play_cell(p, show_agent=True) -%}
+<a class="cell play-cell" href="/plays/{{ p.slug }}">
+  <div class="cell-idx">{{ icon(site.PLAY_ICONS[p.group]) }}{% if show_agent %}<span class="lbl">{{ p.agent }}</span>{% endif %}</div>
+  <h3>{{ p.name }}</h3>
+  <p>{{ p.sign }}</p>
+  <span class="more">See the play {{ arrow() }}</span>
+</a>
+{%- endmacro %}
+
+{#- The closing block on every page: the sky block before the orange colophon. -#}
+{% macro cta(title, text, label="Book a call", href="/book") -%}
+<section class="limeband" aria-label="Book a call">
+  <div class="wrap">
+    <div class="shead">
+      <div class="shead-l"><span class="lbl">Next step</span></div>
+      <div class="shead-r">
+        <h2 class="d2 rv"><span class="ln"><span>{{ title|safe }}</span></span></h2>
+        <p class="lead rv fade">{{ text }}</p>
+        <div class="btns rv fade"><a class="btn btn-1 btn-hero" href="{{ href }}" data-cta="band">{{ label }}</a></div>
+      </div>
+    </div>
+  </div>
+</section>
 {%- endmacro %}

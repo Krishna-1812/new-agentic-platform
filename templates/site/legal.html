@@ -1,12 +1,19 @@
 {% extends "site/base.html" %}
 {% block main %}
-<section class="wrap page-hero">
-  <span class="eyebrow">Last updated {{ legal_updated }}</span>
-  <h1 class="display" style="font-size:clamp(40px,5vw,72px)">{% if page == 'privacy' %}Privacy <em>Policy</em>{% else %}Terms of <em>Service</em>{% endif %}</h1>
-</section>
-<section class="wrap">
-  <div class="prose">
-    {% if page == 'privacy' %}{% include "_legal_privacy.html" %}{% else %}{% include "_legal_terms.html" %}{% endif %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">Legal</span>
+  <h1 class="d1 rv"><span class="ln"><span>{% if page == 'privacy' %}Privacy <span class="mk">Policy</span>{% else %}Terms of <span class="mk">Service</span>{% endif %}</span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">Last updated {{ legal_updated }}</span>
   </div>
+</header>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  <article class="legal prose">
+    {% if page == 'privacy' %}{% include "_legal_privacy.html" %}{% else %}{% include "_legal_terms.html" %}{% endif %}
+  </article>
 </section>
+
 {% endblock %}

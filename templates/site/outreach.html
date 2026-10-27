@@ -1,12 +1,18 @@
 {% extends "site/base.html" %}
 {% block main %}
-<section class="wrap page-hero">
-  <span class="eyebrow">How we contact people</span>
-  <h1 class="display" style="font-size:clamp(40px,5vw,72px)">How we reach people, <em>and how they can say no.</em></h1>
-  <p class="lead">We write to people on behalf of our clients. If you received a message from us, this page explains why, and how to make sure it never happens again.</p>
-</section>
-<section class="wrap">
-  <div class="prose">
+
+<header class="wrap hero">
+  <span class="lbl rv fade">How we contact people</span>
+  <h1 class="d2 rv"><span class="ln"><span>How we reach people,</span></span> <span class="ln"><span><span class="it">and how they can</span> <span class="mk">say no.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">Outreach</span>
+    <p class="lead rv fade">We write to people on behalf of our clients. If you received a message from us, this page explains why, and how to make sure it never happens again.</p>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  <article class="legal prose">
     <h2>Who we write to</h2>
     <p>We write to people at businesses, about their work, when something they have done in public suggests a client of ours could help: a post about a problem, a question to their network, a published tender, news about their company, or a new role.</p>
     <h2>Where the information comes from</h2>
@@ -17,6 +23,7 @@
     <p>Every email we send carries a one-click opt-out link. Using it stops all further email from us to that address, for every client we work with, for good. And we never start a second approach to the same person for the same client.</p>
     <h2>Questions</h2>
     <p>Reply to the message you received, or use the form on our <a href="/book">Book a call</a> page and mention outreach; a person will reply. How we handle personal information in general is in our <a href="/privacy">Privacy Policy</a>.</p>
-  </div>
+  </article>
 </section>
+
 {% endblock %}

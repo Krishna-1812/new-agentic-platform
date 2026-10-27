@@ -548,6 +548,8 @@
       if (life < 1) raf(step); else layer.remove();
     })(t0);
   }
+  // The new site (templates/site/) throws it when the booking form has gone through.
+  window.pressBurst = burst;
   doc.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-demo]");
     if (!b) return;

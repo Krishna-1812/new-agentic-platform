@@ -1,81 +1,84 @@
 {% extends "site/base.html" %}
-{% import "site/_parts.html" as ui %}
+{% import "site/_parts.html" as ui with context %}
 {% block main %}
 
-<section class="wrap hero">
-  <div class="hero-grid">
-    <div>
-      <span class="eyebrow">GTM Engineering</span>
-      <h1 class="display">Meetings with your buyers, <em>booked for you.</em></h1>
+<header class="wrap hero hero-play">
+  {{ ui.deck(site.LEAD_DECK, "FOUND • WRITTEN TO • BOOKED IN •") }}
+  <span class="lbl rv fade">GTM Engineering</span>
+  <h1 class="d1 rv"><span class="ln"><span>Meetings with</span></span> <span class="ln"><span>your buyers,</span></span> <span class="ln"><span><span class="mk">booked for you.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">01 / GTM Engineering</span>
+    <div class="rv fade">
       <p class="lead">We watch the places buyers give themselves away: the problems they post about, the rivals they follow, the tenders they publish. We write to the ones who fit, in your name, and put the interested ones in your calendar. The number is promised every month.</p>
-      <div class="btns">
-        <a class="btn btn-ink" href="/book" data-cta="hero">Get your meeting plan {{ ui.arrow() }}</a>
-        <a class="btn btn-line" href="#journey">Follow one lead</a>
-      </div>
       <ul class="promise">
         <li>{{ ui.tick() }}{{ site.GTM_FEE }} a month</li>
         <li>{{ ui.tick() }}Only meetings that take place count</li>
         <li>{{ ui.tick() }}Shortfall credited on your next bill</li>
       </ul>
     </div>
-    <div class="feed" aria-label="Sample leads">
-      <p class="feed-cap"><b aria-hidden="true"></b>Sample leads, as they land in Slack</p>
-      {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l) }}{% endfor %}
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="/book" data-cta="hero">Get your meeting plan</a>
+      <a class="btn btn-2" href="#journey">Follow one lead</a>
     </div>
   </div>
+</header>
+
+{{ ui.ticker(site.INDUSTRY_LINKS, "Markets we book meetings in") }}
+
+<section class="wrap said">
+  <p class="said-t" id="said">A GTM engineer costs <span class="said-b c-amber">$127,500 to $159,000 a year</span> in the US. A first sales hire costs <span class="said-b c-sky">about $108,600 in year one.</span> We cost <span class="said-b c-orange">{{ site.GTM_FEE }} a month,</span> with the meetings&nbsp;promised.</p>
 </section>
 
 <section class="wrap sec">
-  <div class="shead">
-    <span class="eyebrow">What GTM engineering is</span>
-    <h2 class="h2">The system that turns a sign <em>into a meeting.</em></h2>
-    <p class="lead">GTM engineering is the work of building that system: finding the right people, checking them, writing to them and booking them. Companies hire for it; we run it for you.</p>
-  </div>
-  <div class="grid-2" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
-    <div class="card"><h3>Find</h3><p>The companies and people who match your customer profile and are showing a buying sign right now.</p></div>
-    <div class="card"><h3>Check</h3><p>Every contact verified, duplicates removed, and nobody contacted twice, across every play we run.</p></div>
-    <div class="card"><h3>Write</h3><p>A message built on the sign that found them, by email and LinkedIn, in your voice and approved by you.</p></div>
-    <div class="card"><h3>Book</h3><p>Replies handled, and the interested ones booked into your calendar with everything you need to know.</p></div>
-  </div>
-  <p class="lead" style="margin-top:32px">A GTM engineer costs $127,500 to $159,000 a year in the US. A first sales hire costs about $108,600 in year one. We cost {{ site.GTM_FEE }} a month, with the meetings promised.</p>
-</section>
-
-<section class="band sec" id="plays">
-  <div class="wrap">
-    <div class="shead">
-      <span class="eyebrow">Where we find buyers</span>
-      <h2 class="h2">The plays <em>we run.</em></h2>
-      <p class="lead">A play is a buying sign we watch for every day, and what we do when it shows. On the call we choose the plays that suit your market.</p>
-    </div>
-    <div class="tiles">
-      {% for p in site.PLAYS %}{{ ui.play_tile(p) }}{% endfor %}
-    </div>
+  <span class="rule rv"></span>
+  {% call ui.head("02", "What GTM engineering is", "GTM engineering is the work of building that system: finding the right people, checking them, writing to them and booking them. Companies hire for it; we run it for you.") %}<span class="ln"><span>The system that turns</span></span> <span class="ln"><span>a sign <span class="it">into a meeting.</span></span></span>{% endcall %}
+  <div class="cells cells-4 cells-num" style="margin-top:var(--s8)">
+    <div class="cell"><div class="cell-idx"><span class="cell-n">01</span>{{ ui.icon('search') }}</div><h3>Find</h3><p>The companies and people who match your customer profile and are showing a buying sign right now.</p></div>
+    <div class="cell"><div class="cell-idx"><span class="cell-n">02</span>{{ ui.icon('shield') }}</div><h3>Check</h3><p>Every contact verified, duplicates removed, and nobody contacted twice, whichever play found them.</p></div>
+    <div class="cell"><div class="cell-idx"><span class="cell-n">03</span>{{ ui.icon('pen') }}</div><h3>Write</h3><p>A message built on the sign that found them, by email and LinkedIn, in your voice and approved by you.</p></div>
+    <div class="cell"><div class="cell-idx"><span class="cell-n">04</span>{{ ui.icon('calendar') }}</div><h3>Book</h3><p>Replies handled, and the interested ones booked into your calendar with everything you need to know.</p></div>
   </div>
 </section>
 
-<section class="wrap sec" id="journey">
-  <div class="shead">
-    <span class="eyebrow">From sign to meeting</span>
-    <h2 class="h2">One lead, <em>end to end.</em></h2>
-    <p class="lead">Sample data, but the same cards and messages our clients get.</p>
+<section class="wrap sec-sm" id="plays">
+  <span class="rule rv"></span>
+  {% call ui.head("03", "Where we find buyers", "A play is a buying sign we watch for every day, and what we do when it shows. On the call we choose the plays that suit your market.") %}<span class="ln"><span>The plays</span></span> <span class="ln"><span><span class="it">we run.</span></span></span>{% endcall %}
+  <div class="cells cells-3" style="margin-top:var(--s8)">
+    {% for p in site.PLAYS %}{{ ui.play_cell(p) }}{% endfor %}
   </div>
-  <ol class="journey">
-    <li class="jstep"><span class="jstep-l">1 &middot; The sign</span><div class="jcard"><b>A tender notice</b>A 300-person logistics firm asks for proposals to rebuild its customer portal. Closes in 3 weeks.</div></li>
-    <li class="jstep"><span class="jstep-l">2 &middot; The lead</span><div class="jcard"><b>Lead card, score 88</b>Operations Director named on the tender. Fits your profile; email checked.<span class="chip">In Slack at 9:00</span></div></li>
-    <li class="jstep"><span class="jstep-l">3 &middot; The message</span><div class="jcard"><b>An email in your name</b>&ldquo;Saw the portal tender. Before you write the brief, would a 20-minute look at what similar firms asked for help?&rdquo;</div></li>
-    <li class="jstep"><span class="jstep-l">4 &middot; The reply</span><div class="jcard"><b>&ldquo;Yes, Tuesday works.&rdquo;</b>We send your calendar link. The whole thread is in your workspace.</div></li>
-    <li class="jstep"><span class="jstep-l">5 &middot; The meeting</span><div class="jcard"><b>Tuesday, 15:00</b>On your calendar with the tender, the lead card and the thread.<span class="chip chip-meet">Counts when it takes place</span></div></li>
-  </ol>
 </section>
 
-<section class="wrap sec">
-  <div class="grid-2">
-    <div>
-      <div class="shead" style="margin-bottom:28px">
-        <span class="eyebrow">You stay in control</span>
-        <h2 class="h2">Our work, <em>your name.</em></h2>
+{{ ui.kin([['Find', 'Check', 'Write', 'Book'], ['Posts', 'Tenders', 'Rivals', 'Events']]) }}
+
+<section class="wrap sec-sm" id="journey">
+  <span class="rule rv"></span>
+  {% call ui.head("04", "From sign to meeting", "Sample data, but the same cards and messages our clients get.") %}<span class="ln"><span>One lead,</span></span> <span class="ln"><span><span class="it">end to end.</span></span></span>{% endcall %}
+  <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
+    <div class="track-pin">
+      <div class="track-tabs" aria-label="One lead, step by step">
+        <button type="button" class="on" data-i="0"><b>01</b>The sign</button>
+        <button type="button" data-i="1"><b>02</b>The lead</button>
+        <button type="button" data-i="2"><b>03</b>The message</button>
+        <button type="button" data-i="3"><b>04</b>The reply</button>
+        <button type="button" data-i="4"><b>05</b>The meeting</button>
       </div>
-      <ul class="ticks">
+      <div class="track-view"><div class="track-rail">
+        <article class="track-card c-orange"><span class="track-n">01</span><span class="track-k">The sign</span><h4>A tender notice</h4><p>A 300-person logistics firm asks for proposals to rebuild its customer portal. Closes in 3 weeks.</p></article>
+        <article class="track-card c-amber"><span class="track-n">02</span><span class="track-k">The lead</span><h4>Lead card, score 88</h4><p>The Operations Director named on the tender. Fits your profile; email checked.</p><span class="pill">In Slack at 9:00</span></article>
+        <article class="track-card c-sky"><span class="track-n">03</span><span class="track-k">The message</span><h4>An email in your name</h4><p>&ldquo;Saw the portal tender. Before you write the brief, would a 20-minute look at what similar firms asked for help?&rdquo;</p></article>
+        <article class="track-card c-red"><span class="track-n">04</span><span class="track-k">The reply</span><h4>&ldquo;Yes, Tuesday works.&rdquo;</h4><p>We send your calendar link. The whole thread is in your workspace.</p></article>
+        <article class="track-card c-ink"><span class="track-n">05</span><span class="track-k">The meeting</span><h4>Tuesday, 15:00</h4><p>On your calendar with the tender, the lead card and the thread.</p><span class="pill">Counts when it takes place</span></article>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="inkband">
+  <div class="wrap split split-top">
+    <div>
+      <span class="lbl">05 &middot; You stay in control</span>
+      <h2 class="d3 rv"><span class="ln"><span>Our work,</span></span> <span class="ln"><span><span class="it">your name.</span></span></span></h2>
+      <ul class="ticks rv fade">
         <li>You approve the messages before any sending starts.</li>
         <li>Every lead and every reply is in your workspace.</li>
         <li>Every email carries a one-click opt-out, and nobody is contacted twice.</li>
@@ -83,13 +86,11 @@
       </ul>
     </div>
     <div>
-      <div class="shead" style="margin-bottom:28px">
-        <span class="eyebrow">Where it arrives</span>
-        <h2 class="h2">Where you <em>already work.</em></h2>
-      </div>
-      <ul class="ticks">
+      <span class="lbl">Where it arrives</span>
+      <h2 class="d3 rv"><span class="ln"><span>Where you</span></span> <span class="ln"><span><span class="it">already work.</span></span></span></h2>
+      <ul class="ticks rv fade">
         <li>Meetings on your calendar, with notes.</li>
-        <li>Leads each morning in Slack, as the card above.</li>
+        <li>Leads each morning in Slack, as the cards below.</li>
         <li>Every lead in a Google Sheet you can filter and share.</li>
         <li>Your client workspace, with the whole history.</li>
       </ul>
@@ -98,11 +99,16 @@
 </section>
 
 <section class="wrap sec">
+  {% call ui.head("06", "Sample leads", "Sample data, written the way our clients receive it: who, why now, and where the sign was.") %}<span class="ln"><span>What arrives</span></span> <span class="ln"><span><span class="it">each morning.</span></span></span>{% endcall %}
+  <div class="lcs" style="margin-top:var(--s8)">
+    {% for l in site.SAMPLE_LEADS %}{{ ui.lead_card(l) }}{% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
   <div class="faq-grid">
-    <div class="shead" style="margin-bottom:0">
-      <span class="eyebrow">Questions</span>
-      <h2 class="h2">About the <em>meetings.</em></h2>
-    </div>
+    {% call ui.head("07", "Questions") %}<span class="ln"><span>About the</span></span> <span class="ln"><span><span class="it">meetings.</span></span></span>{% endcall %}
     {{ ui.faq(site.FAQ_MEETINGS) }}
   </div>
 </section>
