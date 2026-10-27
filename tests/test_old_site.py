@@ -82,10 +82,12 @@ def test_every_old_page_says_noindex_and_shows_the_banner(client):
         assert "This is our previous site" in html, path
 
 
-def test_robots_txt_does_not_list_the_old_site(client):
+def test_robots_txt_lets_the_old_site_be_crawled_only_to_read_its_noindex(client):
+    """Every old page says noindex, and a crawler can only read that on a page it may fetch. The sitemap
+    never lists it."""
     body = client.get("/robots.txt").get_data(as_text=True)
-    assert "old-site" not in body
-    assert "Disallow: /" in body
+    assert "Allow: /old-site" in body and "Disallow: /" in body
+    assert "old-site" not in client.get("/sitemap.xml").get_data(as_text=True)
 
 
 def test_unknown_old_pages(client):
@@ -104,7 +106,7 @@ def test_the_new_site_is_not_marked_old(client):
     for path in ("/", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book"):
         html = client.get(path).get_data(as_text=True)
         assert "old-bar" not in html, path
-        assert 'name="robots"' not in html, path
+        assert "noindex" not in html, path
         assert [h for h in _links(html) if h.startswith("/old-site")] == ["/old-site"], path
 
 
