@@ -34,17 +34,17 @@
   {% call ui.head("02", "What GTM engineering is", "GTM engineering is the work of building that system: finding the right people, checking them, writing to them and booking them. Companies hire for it; we run it for you.") %}<span class="ln"><span>The system that turns</span></span> <span class="ln"><span>a sign <span class="it">into a meeting.</span></span></span>{% endcall %}
   <div class="cells cells-4 cells-num" style="margin-top:var(--s8)">
     <div class="cell"><div class="cell-idx"><span class="cell-n">01</span>{{ ui.icon('search') }}</div><h3>Find</h3><p>The companies and people who match your customer profile and are showing a buying sign right now.</p></div>
-    <div class="cell"><div class="cell-idx"><span class="cell-n">02</span>{{ ui.icon('shield') }}</div><h3>Check</h3><p>Every contact verified, duplicates removed, and nobody contacted twice, whichever play found them.</p></div>
+    <div class="cell"><div class="cell-idx"><span class="cell-n">02</span>{{ ui.icon('shield') }}</div><h3>Check</h3><p>Every contact verified, duplicates removed, and nobody contacted twice, whichever signal found them.</p></div>
     <div class="cell"><div class="cell-idx"><span class="cell-n">03</span>{{ ui.icon('pen') }}</div><h3>Write</h3><p>A message built on the sign that found them, by email and LinkedIn, in your voice and approved by you.</p></div>
     <div class="cell"><div class="cell-idx"><span class="cell-n">04</span>{{ ui.icon('calendar') }}</div><h3>Book</h3><p>Replies handled, and the interested ones booked into your calendar with everything you need to know.</p></div>
   </div>
 </section>
 
-<section class="wrap sec-sm" id="plays">
+<section class="wrap sec-sm" id="signals">
   <span class="rule rv"></span>
-  {% call ui.head("03", "Where we find buyers", "A play is a buying sign we watch for every day, and what we do when it shows. On the call we choose the plays that suit your market.") %}<span class="ln"><span>The plays</span></span> <span class="ln"><span><span class="it">we run.</span></span></span>{% endcall %}
+  {% call ui.head("03", "Where we find buyers", "A signal is a buying sign we watch for every day; its flow is what we do when it shows. On the call we choose the signals that suit your market.") %}<span class="ln"><span>The signals</span></span> <span class="ln"><span><span class="it">we watch.</span></span></span>{% endcall %}
   <div class="cells cells-3" style="margin-top:var(--s8)">
-    {% for p in site.PLAYS %}{{ ui.play_cell(p) }}{% endfor %}
+    {% for s in site.SIGNALS %}{{ ui.signal_cell(s) }}{% endfor %}
   </div>
 </section>
 

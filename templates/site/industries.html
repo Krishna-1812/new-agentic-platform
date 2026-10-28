@@ -7,7 +7,7 @@
   <h1 class="d1 rv"><span class="ln"><span>Meetings in</span></span> <span class="ln"><span><span class="mk">your market.</span></span></span></h1>
   <div class="hero-foot">
     <span class="idx rv fade">{{ '%02d'|format(site.INDUSTRIES|length) }} markets</span>
-    <p class="lead rv fade">The buyers, the signs and the ads are different in every market. Pick yours to see who we book you in with, the plays that suit it, and sample leads.</p>
+    <p class="lead rv fade">The buyers, the signs and the ads are different in every market. Pick yours to see who we book you in with, the signals that suit it, and sample leads.</p>
   </div>
 </header>
 
@@ -20,11 +20,11 @@
       <div class="cell-idx">{{ ui.icon(site.INDUSTRY_ICONS[i.slug]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
       <h3>{{ i.name }}</h3>
       <p>{{ i.headline }}</p>
-      <span class="more">See the plays and sample leads {{ ui.arrow() }}</span>
+      <span class="more">See the signals and sample leads {{ ui.arrow() }}</span>
     </a>
     {% endfor %}
   </div>
-  <p class="lead rv fade" style="margin-top:var(--s7)">Not on the list? Tell us who you sell to on the call; the plays work the same way.</p>
+  <p class="lead rv fade" style="margin-top:var(--s7)">Not on the list? Tell us who you sell to on the call; the signals work the same way.</p>
 </section>
 
 {{ ui.cta("Tell us who you want to meet.", "We'll tell you how many meetings we can promise in your market, and what it costs.", "Get your meeting plan") }}

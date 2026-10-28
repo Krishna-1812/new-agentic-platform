@@ -137,15 +137,49 @@
 </div>
 {%- endmacro %}
 
-{#- A play as a cell that links to its page; the cell floods with a block colour under
+{#- How strong a signal is: three bars, filled to its strength, and the word. -#}
+{% macro strength(n, word=True) -%}
+<span class="str s{{ n }}" title="{{ site.STRENGTHS[n] }} signal"><i></i><i></i><i></i>{% if word %}<b>{{ site.STRENGTHS[n] }}</b>{% endif %}</span>
+{%- endmacro %}
+
+{#- A signal as a cell that links to its page; the cell floods with a block colour under
     the pointer (press-play.js). -#}
-{% macro play_cell(p, show_agent=True) -%}
-<a class="cell play-cell" href="/plays/{{ p.slug }}">
-  <div class="cell-idx">{{ icon(site.PLAY_ICONS[p.group]) }}{% if show_agent %}<span class="lbl">{{ p.agent }}</span>{% endif %}</div>
-  <h3>{{ p.name }}</h3>
-  <p>{{ p.sign }}</p>
-  <span class="more">See the play {{ arrow() }}</span>
+{% macro signal_cell(s, show_agent=True) -%}
+<a class="cell play-cell" href="/signals/{{ s.slug }}">
+  <div class="cell-idx">{{ icon(site.SIGNAL_ICONS[s.group]) }}{% if show_agent %}<span class="lbl">{{ s.agent }}</span>{% else %}{{ strength(s.strength, False) }}{% endif %}</div>
+  <h3>{{ s.name }}</h3>
+  <p>{{ s.sign }}</p>
+  <span class="more">See the flow {{ arrow() }}</span>
 </a>
+{%- endmacro %}
+
+{#- A signal in the library (/signals): where it comes from, how strong it is, what it is, and who we
+    write to. data-cat and data-q are what the filter and the search read (static/js/site.js). -#}
+{% macro signal_card(s) -%}
+<a class="ag sl-card" href="/signals/{{ s.slug }}" data-cat="{{ s.group }}" data-q="{{ (s.name ~ ' ' ~ s.sign ~ ' ' ~ s.agent ~ ' ' ~ s.finds ~ ' ' ~ s.where|join(' '))|lower }}">
+  <div class="ag-top"><span class="lbl">{{ site.SIGNAL_GROUPS|selectattr(0, 'equalto', s.group)|map(attribute=1)|first }}</span>{{ strength(s.strength) }}</div>
+  {{ icon(site.SIGNAL_ICONS[s.group]) }}
+  <h3>{{ s.name }}</h3>
+  <p>{{ s.sign }}</p>
+  <p class="sl-to"><b>We write to</b> {{ s.flow[1][0]|lower }}{{ s.flow[1][1:] }}</p>
+  <div class="ag-foot"><span class="ag-role">{{ s.agent }}</span><span class="arrow">{{ arrow() }}</span></div>
+</a>
+{%- endmacro %}
+
+{#- The flow a signal starts, as five steps joined by a line that draws as it comes into view. With no
+    signal, each step says what it means in general. -#}
+{% macro flow(s=None) -%}
+<ol class="flow rv">
+  {% for name, ic, general in site.FLOW_STEPS %}
+  <li class="flow-step">
+    <span class="flow-dot">{{ icon(ic) }}</span>
+    <span class="flow-n">{{ '%02d'|format(loop.index) }}</span>
+    <h4>{{ name }}</h4>
+    <p>{% if not s %}{{ general }}{% elif loop.first %}{{ s.sign }}{% elif loop.last %}{{ site.FLOW_BOOK }}{% else %}{{ s.flow[loop.index0 - 1] }}.{% endif %}</p>
+  </li>
+  {% endfor %}
+  <li class="flow-pulse" aria-hidden="true"></li>
+</ol>
 {%- endmacro %}
 
 {#- The closing block on every page: the sky block before the orange colophon. -#}

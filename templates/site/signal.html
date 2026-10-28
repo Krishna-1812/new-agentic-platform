@@ -1,0 +1,71 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% block main %}
+
+<div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="/signals">Signals</a><span class="sep">/</span><span>{{ signal.name }}</span></nav></div>
+
+<header class="wrap hero" style="padding-top:var(--s7)">
+  <div class="hero-2col">
+    <div>
+      <span class="lbl rv fade">Signal &middot; {{ group_label }}</span>
+      <h1 class="d2 rv"><span class="ln"><span>{{ signal.name }}</span></span></h1>
+      <div class="sl-meta rv fade">{{ ui.strength(signal.strength) }}<span>{{ site.STRENGTH_NOTES[signal.strength] }}</span></div>
+      <p class="lead rv fade">{{ signal.finds }}</p>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="/book" data-cta="signal">Watch for this signal</a>
+        <a class="btn btn-2" href="/signals#library">All {{ site.SIGNALS|length }} signals</a>
+      </div>
+    </div>
+    <div class="pair" aria-label="A sample lead from this signal, and the first message">
+      <p class="fig-cap">A sample lead from this signal</p>
+      {{ ui.lead_card(signal.lead) }}
+      {{ ui.message_card(signal.lead, signal.message) }}
+    </div>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("01", "The flow", "What happens from the moment this signal appears to the meeting on your calendar.") %}<span class="ln"><span>From signal</span></span> <span class="ln"><span><span class="it">to meeting.</span></span></span>{% endcall %}
+  <div style="margin-top:var(--s8)">{{ ui.flow(signal) }}</div>
+</section>
+
+<section class="wrap sec-sm">
+  <div class="trips">
+    <div class="trip rv fade"><h4>Where we look</h4><ul class="ticks" style="font-size:var(--fs-sm);color:var(--ink2)">{% for w in signal.where %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    <div class="trip rv fade"><h4>Who runs it</h4><p>Watched every morning by our {{ signal.agent }} agent. A person on our team reviews every lead before anything is sent.</p></div>
+    <div class="trip rv fade"><h4>Suits</h4><div class="ind-others" style="margin-top:0">{% for i in industries %}<a class="ind-other" href="/industries/{{ i.slug }}">{{ i.name }}</a>{% endfor %}</div></div>
+  </div>
+</section>
+
+{% if recipes %}
+<section class="wrap sec-sm" style="padding-top:0">
+  <span class="rule rv"></span>
+  {% call ui.head("02", "Recipes") %}<span class="ln"><span>Even stronger <span class="it">with.</span></span></span>{% endcall %}
+  <div class="rcps" style="margin-top:var(--s7)">
+    {% set colours = ['c-orange', 'c-sky', 'c-amber'] %}
+    {% for r in recipes %}
+    <article class="blk rcp {{ colours[loop.index0 % colours|length] }} rv fade">
+      <span class="lbl">Recipe</span>
+      <h3>{{ r.name }}</h3>
+      <div class="rcp-mix">
+        {% for slug in r.signals %}{% set s = site.SIGNALS_BY_SLUG[slug] %}{% if not loop.first %}<span class="rcp-plus" aria-label="and">+</span>{% endif %}{% if slug == signal.slug %}<span class="rcp-chip is-here">{{ s.name }}</span>{% else %}<a class="rcp-chip" href="/signals/{{ s.slug }}">{{ s.name }}</a>{% endif %}{% endfor %}
+      </div>
+      <p>{{ r.why }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="wrap sec-sm" style="padding-top:0">
+  <span class="rule rv"></span>
+  {% call ui.head("", "Works well with") %}<span class="ln"><span>Signals that go <span class="it">with it.</span></span></span>{% endcall %}
+  <div class="cells cells-3" style="margin-top:var(--s7)">
+    {% for s in related %}{{ ui.signal_cell(s) }}{% endfor %}
+  </div>
+</section>
+
+{{ ui.cta("Want this signal watched for you?", "We'll pick it with the others that suit your market, and promise the number of meetings they'll bring.", "Get your meeting plan") }}
+
+{% endblock %}

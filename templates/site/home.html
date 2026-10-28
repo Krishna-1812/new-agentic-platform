@@ -23,7 +23,7 @@
   </div>
 </header>
 
-{{ ui.ticker(site.PLAY_LINKS, "Plays we run") }}
+{{ ui.ticker(site.SIGNAL_LINKS, "Signals we watch") }}
 
 {#- The statement. While it scrolls past, its words light up in reading order and the
     three signs get their colour blocks (press-play.js). Without the script it is
@@ -102,7 +102,7 @@
       <div class="track-view"><div class="track-rail">
         <article class="track-card c-orange"><span class="track-n">01</span><h4>A 30-minute call</h4><p>What you sell, who you want to meet, and what you&rsquo;ve tried so far.</p></article>
         <article class="track-card c-amber"><span class="track-n">02</span><h4>Your meeting plan</h4><p>Who we&rsquo;ll reach, what counts as a meeting, how many we promise, and the price. In writing, within 3 working days.</p></article>
-        <article class="track-card c-sky"><span class="track-n">03</span><h4>We build and write</h4><p>We set up the plays that find your buyers and write the messages. You approve them before anything is sent.</p></article>
+        <article class="track-card c-sky"><span class="track-n">03</span><h4>We build and write</h4><p>We set up the signals that find your buyers and write the messages. You approve them before anything is sent.</p></article>
         <article class="track-card c-ink"><span class="track-n">04</span><h4>Meetings land</h4><p>Interested replies get your calendar link. Each missing meeting is credited on your next bill.</p></article>
       </div></div>
     </div>
@@ -114,7 +114,7 @@
   <div class="wrap">
     <div class="stats">
       <div class="stat rv fade"><b>{{ site.GTM_FEE }}</b><span>A month, with the meetings promised</span></div>
-      <div class="stat rv fade"><b class="num" data-count="{{ site.PLAYS|length }}">{{ site.PLAYS|length }}</b><span>Plays watching for your buyers</span></div>
+      <div class="stat rv fade"><b class="num" data-count="{{ site.SIGNALS|length }}">{{ site.SIGNALS|length }}</b><span>Signals watched for your buyers</span></div>
       <div class="stat rv fade"><b class="num" data-count="16">16</b><span>Agents checking your ad accounts daily</span></div>
       <div class="stat rv fade"><b class="num">0</b><span>Meetings you pay for that didn&rsquo;t happen</span></div>
     </div>
@@ -123,11 +123,11 @@
 </section>
 
 <section class="wrap sec">
-  {% call ui.head("05", "Where we find buyers", "Each of these is a play our agents run every morning. On the call we pick the ones that suit your market.") %}<span class="ln"><span>Your buyers are already</span></span> <span class="ln"><span><span class="it">telling someone.</span></span></span>{% endcall %}
+  {% call ui.head("05", "Where we find buyers", "Each of these is a buying signal our agents watch for every morning. On the call we pick the ones that suit your market.") %}<span class="ln"><span>Your buyers are already</span></span> <span class="ln"><span><span class="it">telling someone.</span></span></span>{% endcall %}
   <div class="cells cells-4" style="margin-top:var(--s8)">
-    {% for p in site.PLAYS[:8] %}{{ ui.play_cell(p, False) }}{% endfor %}
+    {% for s in site.SIGNALS if s.slug in site.HOME_SIGNALS %}{{ ui.signal_cell(s, False) }}{% endfor %}
   </div>
-  <div class="btns sec-foot"><a class="btn btn-2" href="/plays">All {{ site.PLAYS|length }} plays we run</a></div>
+  <div class="btns sec-foot"><a class="btn btn-2" href="/signals">All {{ site.SIGNALS|length }} signals and their flows</a></div>
 </section>
 
 <section class="wrap sec-sm">
@@ -150,12 +150,12 @@
   <span class="rule rv"></span>
   {% call ui.head("07", "Both together") %}<span class="ln"><span>Each side makes</span></span> <span class="ln"><span><span class="it">the other</span> better.</span></span>{% endcall %}
   <div class="loop" style="margin-top:var(--s7)">
-    <div class="blk c-orange"><span class="lbl">From GTM Engineering</span><h3>The buyers our plays find</h3><p>can be shown your ads, so the name in their inbox is one they have already seen.</p></div>
+    <div class="blk c-orange"><span class="lbl">From GTM Engineering</span><h3>The buyers our signals find</h3><p>can be shown your ads, so the name in their inbox is one they have already seen.</p></div>
     <div class="loop-arrows" aria-hidden="true">
       <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h50M44 3l8 7-8 7"/></svg>
       <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M54 10H4M12 3l-8 7 8 7"/></svg>
     </div>
-    <div class="blk c-sky"><span class="lbl">From Performance Marketing</span><h3>The searches that convert</h3><p>tell our plays which problems your buyers name, so we listen for them in public.</p></div>
+    <div class="blk c-sky"><span class="lbl">From Performance Marketing</span><h3>The searches that convert</h3><p>tell our signals which problems your buyers name, so we listen for them in public.</p></div>
   </div>
 </section>
 

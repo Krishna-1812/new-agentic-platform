@@ -2,14 +2,14 @@
 
 Beside its own copy, each page carries:
 - the title and description it is listed with in search results (the routes in app.py, and the titles
-  for each play and industry below);
+  for each signal and industry below);
 - structured data (schema.org JSON-LD). Search engines read it for rich results, and AI assistants
   read it to describe the business correctly: who Northaxis is, what it sells and at what price,
   where the page sits in the site, and the questions the page answers;
 - an entry in /sitemap.xml, and a line in /llms.txt and /llms-full.txt, the plain-text summaries
   AI assistants read.
 
-All of it is built from site_pages.py, so a new play, industry or question reaches every one of them
+All of it is built from site_pages.py, so a new signal, industry or question reaches every one of them
 on its own. Bump UPDATED when the site's content changes: it is each page's last-modified date in the
 sitemap and in the structured data.
 """
@@ -33,21 +33,30 @@ KNOWS_ABOUT = ("GTM engineering", "B2B appointment setting", "Outbound lead gene
 # engines use them to tie those profiles to this site; add each one as it goes live.
 SAME_AS = ()
 
-# The title each play and industry page is listed with: what someone looking for it would search.
-# The page's own heading stays the play's or the industry's name.
-PLAY_TITLES = {
+# The title each signal and industry page is listed with: what someone looking for it would search.
+# The page's own heading stays the signal's or the industry's name.
+SIGNAL_TITLES = {
+    "visitors-on-your-site": "Identify the companies visiting your website",
+    "engaging-with-your-posts": "Turn comments on your LinkedIn posts into meetings",
+    "talking-about-your-product": "Find people talking about your product online",
+    "rivals-audience": "Prospect your competitors' audience on LinkedIn",
+    "unhappy-with-a-rival": "Find people unhappy with a competitor",
+    "experts-audience": "Prospect an industry expert's audience",
+    "hashtags-you-track": "Find buyers through the LinkedIn hashtags they use",
     "posting-about-the-problem": "Find buyers posting about the problem you solve",
     "asking-for-recommendations": "Find people asking for supplier recommendations",
-    "rivals-audience": "Prospect your competitors' audience",
-    "experts-audience": "Prospect an industry expert's audience",
     "tenders-and-rfps": "Find tenders and RFPs for your services",
-    "news-that-opens-a-door": "Funding and expansion news as buying signals",
+    "hiring-for-the-work": "Hiring signals: companies hiring for what you sell",
     "new-in-the-job": "Reach buyers who are new in the job",
-    "visitors-on-your-site": "Identify the companies visiting your website",
-    "same-event": "Meet buyers going to the same events",
+    "champion-moved": "Champion tracking: past customers in new jobs",
+    "raised-money": "Funding signals: reach recently funded companies",
+    "news-that-opens-a-door": "Launch and expansion news as buying signals",
+    "growing-fast": "Find fast-growing companies by headcount growth",
+    "uses-a-tool": "Technographic signals: companies using a rival's tool",
     "lookalikes": "Find lookalikes of your best customers",
-    "several-signs-at-once": "Find companies showing several buying signs",
+    "same-event": "Meet buyers going to the same events",
     "local-businesses": "Find and score local businesses by city",
+    "several-signs-at-once": "Find companies showing several buying signals",
 }
 # Each industry page's (title, description), in the words its buyers search with.
 INDUSTRY_META = {
@@ -112,8 +121,8 @@ def _fee():
 def pages():
     """(path, page) for every page the sitemap lists."""
     out = [("/", "home"), ("/gtm-engineering", "gtm"), ("/performance-marketing", "performance"),
-           ("/how-it-works", "how"), ("/pricing", "pricing"), ("/plays", "plays")]
-    out += [("/plays/" + p["slug"], "play") for p in S.PLAYS]
+           ("/how-it-works", "how"), ("/pricing", "pricing"), ("/signals", "signals")]
+    out += [("/signals/" + s["slug"], "signal") for s in S.SIGNALS]
     out += [("/industries", "industries")]
     out += [("/industries/" + i["slug"], "industry") for i in S.INDUSTRIES]
     out += [("/agents", "agents"), ("/compare", "compare"), ("/about", "about"), ("/book", "book"),
@@ -188,7 +197,7 @@ def _item_list(url, name, items):
 
 
 # The kind of page each one is, where schema.org has a better word than WebPage.
-_PAGE_TYPES = {"about": "AboutPage", "book": "ContactPage", "plays": "CollectionPage",
+_PAGE_TYPES = {"about": "AboutPage", "book": "ContactPage", "signals": "CollectionPage",
                "industries": "CollectionPage"}
 
 
@@ -210,10 +219,10 @@ def graph(site_url, page, url, title, description, crumbs=(), faqs=()):
         nodes.append(gtm_service(site_url))
     if page in ("home", "performance", "pricing"):
         nodes.append(performance_service(site_url))
-    if page == "plays":
-        nodes.append(_item_list(url, "Plays", [(site_url + h, n) for h, n in S.PLAY_LINKS]))
+    if page == "signals":
+        nodes.append(_item_list(url, "Buying signals", [(site_url + h, n) for h, n in S.SIGNAL_LINKS]))
     if page == "industries":
         nodes.append(_item_list(url, "Industries", [(site_url + h, n) for h, n in S.INDUSTRY_LINKS]))
-    if page in ("plays", "industries") and not faqs:
+    if page in ("signals", "industries") and not faqs:
         webpage["mainEntity"] = {"@id": url + "#list"}
     return {"@context": "https://schema.org", "@graph": nodes}

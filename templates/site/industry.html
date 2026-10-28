@@ -33,9 +33,9 @@
       </div>
     </div>
     <div>
-      <span class="lbl">The plays that suit it</span>
+      <span class="lbl">The signals that suit it</span>
       <div class="cells cells-4" style="margin-top:var(--s5)">
-        {% for p in plays %}{{ ui.play_cell(p, False) }}{% endfor %}
+        {% for s in signals %}{{ ui.signal_cell(s, False) }}{% endfor %}
       </div>
     </div>
   </div>

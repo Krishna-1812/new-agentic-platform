@@ -71,24 +71,49 @@
     steps.forEach(function (s) { sio.observe(s); });
   }
 
-  /* ── The agents directory filter ──
+  /* ── The directory filter: the agents, and the signal library ──
+     The chips pick a group; on /signals a search box narrows it further
+     (each card carries its words in data-q), a line under the chips says
+     what the group is (data-note), and a note shows when nothing matches.
      press-play.js, when motion is on, glides the cards to their new places. */
   var grid = doc.getElementById("dirCards");
   if (grid) {
     var cards = Array.prototype.slice.call(grid.querySelectorAll(".ag"));
     var chips = Array.prototype.slice.call(doc.querySelectorAll("#dirChips .chip"));
-    var cat = "all";
+    var search = doc.getElementById("dirSearch"), note = doc.getElementById("dirNote"),
+        empty = doc.getElementById("dirEmpty");
+    var cat = "all", words = [];
     var apply = function () {
-      cards.forEach(function (c) { c.style.display = (cat === "all" || c.getAttribute("data-cat") === cat) ? "" : "none"; });
+      var shown = 0;
+      cards.forEach(function (c) {
+        var q = c.getAttribute("data-q") || "";
+        var ok = (cat === "all" || c.getAttribute("data-cat") === cat) &&
+                 words.every(function (w) { return q.indexOf(w) !== -1; });
+        c.style.display = ok ? "" : "none";
+        if (ok) shown++;
+      });
+      if (empty) empty.style.display = shown ? "" : "block";
     };
+    var run = function () { if (window.pressFlip) window.pressFlip(cards, apply); else apply(); };
     chips.forEach(function (ch) {
       ch.addEventListener("click", function () {
         chips.forEach(function (x) { x.classList.remove("on"); x.setAttribute("aria-pressed", "false"); });
         ch.classList.add("on"); ch.setAttribute("aria-pressed", "true");
         cat = ch.getAttribute("data-cat") || "all";
-        if (window.pressFlip) window.pressFlip(cards, apply); else apply();
+        if (note && ch.getAttribute("data-note")) note.textContent = ch.getAttribute("data-note");
+        run();
       });
     });
+    if (search) {
+      var timer;
+      search.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+          run();
+        }, 120);
+      });
+    }
   }
 
   /* ── The booking form (/book) ──

@@ -994,35 +994,43 @@ def book_page():
                  "3 working days.", crumbs=[("Book a call", "/book")], want=want)
 
 
-@app.route("/plays")
-def plays_page():
-    return _site("plays.html", "plays", "Buying signals we turn into B2B meetings: %d plays" % len(site_pages.PLAYS),
-                 "The %d buying signs we watch for every morning, from posts and tenders to new leaders and "
-                 "visits to your website, and how each one becomes a meeting." % len(site_pages.PLAYS),
-                 crumbs=[("Plays", "/plays")], faqs=site_pages.FAQ_PLAYS)
+@app.route("/signals")
+def signals_page():
+    n = len(site_pages.SIGNALS)
+    return _site("signals.html", "signals", "Buying signals library: %d signals we turn into meetings" % n,
+                 "%d buying signals we watch every morning, from website visits, hiring and funding to posts "
+                 "about your product, and the flow that turns each into a meeting." % n,
+                 crumbs=[("Signals", "/signals")], faqs=site_pages.FAQ_SIGNALS)
 
 
-@app.route("/plays/<slug>")
-def play_page(slug):
-    play = site_pages.PLAYS_BY_SLUG.get(slug)
-    if not play:
-        return redirect("/plays")
-    group = dict(site_pages.PLAY_GROUPS)[play["group"]]
-    others = [p for p in site_pages.PLAYS if p["slug"] != slug]
-    related = ([p for p in others if p["group"] == play["group"]] + [p for p in others if p["group"] != play["group"]])[:3]
-    return _site("play.html", "play", site_seo.PLAY_TITLES.get(slug, play["name"]),
-                 site_seo.clip(play["finds"].split(". ")[0] + ". We look every morning and write to them in "
+@app.route("/signals/<slug>")
+def signal_page(slug):
+    signal = site_pages.SIGNALS_BY_SLUG.get(slug)
+    if not signal:
+        return redirect("/signals")
+    others = [s for s in site_pages.SIGNALS if s["slug"] != slug]
+    related = ([s for s in others if s["group"] == signal["group"]] + [s for s in others if s["group"] != signal["group"]])[:3]
+    return _site("signal.html", "signal", site_seo.SIGNAL_TITLES.get(slug, signal["name"]),
+                 site_seo.clip(signal["finds"].split(". ")[0] + ". We look every morning and write to them in "
                                "your name."),
-                 crumbs=[("Plays", "/plays"), (play["name"], "/plays/" + slug)],
-                 play=play, group_label=group, related=related,
-                 industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in play["fits"]])
+                 crumbs=[("Signals", "/signals"), (signal["name"], "/signals/" + slug)],
+                 signal=signal, group_label=dict(site_pages.SIGNAL_GROUPS)[signal["group"]], related=related,
+                 recipes=[r for r in site_pages.RECIPES if slug in r["signals"]],
+                 industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in signal["fits"]])
+
+
+# The signals were called plays until October 2026: their old addresses move to the new ones for good.
+@app.route("/plays")
+@app.route("/plays/<slug>")
+def plays_moved(slug=None):
+    return redirect("/signals/" + slug if slug in site_pages.SIGNALS_BY_SLUG else "/signals", code=301)
 
 
 @app.route("/industries")
 def industries_page():
     return _site("industries.html", "industries", "Lead generation and appointment setting by industry",
                  "Booked meetings in software, agencies, professional services, IT, fintech, healthcare, real "
-                 "estate, education and e-commerce, with plays and sample leads.",
+                 "estate, education and e-commerce, with signals and sample leads.",
                  crumbs=[("Industries", "/industries")])
 
 
@@ -1036,7 +1044,7 @@ def industry_page(slug):
     return _site("industry.html", "industry", search_title, search_description,
                  crumbs=[("Industries", "/industries"), (ind["name"], "/industries/" + slug)],
                  faqs=tuple(ind["faq"]) + site_pages.FAQ_MEETINGS[:2],
-                 ind=ind, plays=[site_pages.PLAYS_BY_SLUG[p] for p in ind["plays"]],
+                 ind=ind, signals=[site_pages.SIGNALS_BY_SLUG[s] for s in ind["signals"]],
                  others=[i for i in site_pages.INDUSTRIES if i["slug"] != slug])
 
 
@@ -1104,13 +1112,12 @@ def llms_txt():
 
 # The previous site's addresses. Those whose content has a new home move there for good; the rest
 # (each old agent page, resources, the old per-industry agent pages) show the previous site.
-_SITE_MOVED = {"/platform": "/how-it-works", "/signals": "/plays",
+_SITE_MOVED = {"/platform": "/how-it-works",
                "/solutions": "/gtm-engineering", "/integrations": "/how-it-works",
                "/why-intelligence": "/compare"}
 
 
 @app.route("/platform")
-@app.route("/signals")
 @app.route("/solutions")
 @app.route("/integrations")
 @app.route("/why-intelligence")
@@ -1452,7 +1459,7 @@ def auth_google():
 # alone; each other entry covers its page and everything under it. The sitemap
 # and the llms.txt files are what search engines and AI assistants read first.
 ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
-                       "/book", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
+                       "/book", "/signals", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
                        "/privacy", "/terms", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
 # Crawled but never listed: every page under these says noindex, and a crawler can only read that on a page
 # it may fetch. Blocked instead, the footer's links to them could still be listed as bare addresses.
