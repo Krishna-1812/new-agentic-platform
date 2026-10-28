@@ -313,3 +313,118 @@
 .inkband + .limeband { margin-top: var(--s7); }
 .ag-badge.c-sky   { background: var(--sky); color: #121213; }
 .ag-badge.c-amber { background: var(--amber); color: #121213; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE SIGNALS (/signals and /signals/<slug>)
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── How strong a signal is: three rising bars and the word ── */
+.str { display: inline-flex; align-items: flex-end; gap: 3px; white-space: nowrap; }
+.str i { display: block; width: 5px; border-radius: 2px; background: var(--rule-strong); }
+.str i:nth-child(1) { height: 7px; } .str i:nth-child(2) { height: 11px; } .str i:nth-child(3) { height: 15px; }
+.str.s1 i:nth-child(-n+1), .str.s2 i:nth-child(-n+2), .str.s3 i:nth-child(-n+3) { background: var(--acc); }
+.str b { margin-left: var(--s2); font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+         text-transform: uppercase; color: var(--ink); line-height: 1; }
+.sl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s4); margin-top: var(--s5);
+           font-size: var(--fs-sm); color: var(--ink2); }
+
+/* ── The flow: five steps on one line that draws itself ── */
+.flow { --dot: 60px; position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s5);
+        list-style: none; margin: 0; padding: 0; counter-reset: none; }
+.flow::before, .flow::after { content: ''; position: absolute; top: calc(var(--dot) / 2 - 1px); height: 2px;
+                              left: calc(10% - var(--s5) / 2); right: calc(10% - var(--s5) / 2); }
+.flow::before { background: repeating-linear-gradient(90deg, var(--rule-strong) 0 6px, transparent 6px 12px); }
+.flow::after { background: var(--acc); transform-origin: 0 50%; }
+.flow-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.flow-dot { width: var(--dot); height: var(--dot); border-radius: 50%; display: grid; place-items: center; align-self: center;
+            background: var(--card); box-shadow: inset 0 0 0 2px var(--ink); transition: background 300ms ease, transform 420ms var(--spring); }
+.flow-dot .cell-ic { margin: 0; }
+.flow-step:first-child .flow-dot { background: var(--acc); }
+.flow-step:nth-child(5) .flow-dot { background: var(--ink); color: var(--ink-paper); }
+.flow-step:nth-child(5) .flow-dot .cell-ic { color: var(--ink-paper); }
+.flow-n { align-self: center; margin-top: var(--s4); font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--ls-label); color: var(--acc-tx); }
+.flow-step h4 { align-self: stretch; text-align: center; font-family: var(--face-display); font-weight: var(--fw-semi);
+                font-size: clamp(22px, 2vw, 28px); letter-spacing: var(--ls-h); line-height: 1.1; margin-top: var(--s2);
+                font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 36; }
+.flow-step p { align-self: stretch; text-align: center; margin-top: var(--s3); font-size: var(--fs-sm); color: var(--ink2); }
+.flow-step:hover .flow-dot { transform: scale(1.08) rotate(-6deg); }
+/* With motion: the orange line draws across as the flow comes into view, then a signal runs along it. */
+.play .flow::after { transform: scaleX(0); transition: transform 1400ms var(--glide); }
+.play .flow.in::after { transform: scaleX(1); }
+.play .flow-dot { transform: scale(.6); opacity: 0; transition: transform 520ms var(--spring), opacity 300ms ease; }
+.play .flow.in .flow-dot { transform: scale(1); opacity: 1; }
+.play .flow.in .flow-step:hover .flow-dot { transform: scale(1.08) rotate(-6deg); }
+.flow-pulse { display: none; }
+.play .flow.in .flow-pulse { display: block; position: absolute; z-index: 0; top: calc(var(--dot) / 2 - 6px); left: calc(10% - var(--s5) / 2);
+                             width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--acc);
+                             box-shadow: 0 0 0 6px rgba(255, 96, 34, .22); animation: flowRun 4.2s var(--glide) infinite; }
+@keyframes flowRun { 0% { left: calc(10% - var(--s5) / 2); opacity: 0; } 8% { opacity: 1; }
+                     88% { opacity: 1; } 100% { left: calc(90% + var(--s5) / 2); opacity: 0; } }
+@media (max-width: 900px) {
+  .flow { --dot: 52px; grid-template-columns: 1fr; gap: var(--s5); }
+  .flow::before, .flow::after { top: calc(var(--dot) / 2); bottom: calc(var(--dot) / 2); left: calc(var(--dot) / 2 - 1px); right: auto;
+                                width: 2px; height: auto; }
+  .flow::before { background: repeating-linear-gradient(180deg, var(--rule-strong) 0 6px, transparent 6px 12px); }
+  .flow::after { transform-origin: 50% 0; }
+  .play .flow::after { transform: scaleY(0); }
+  .play .flow.in::after { transform: scaleY(1); }
+  .play .flow.in .flow-pulse { display: none; }
+  .flow-step { display: grid; grid-template-columns: var(--dot) 1fr; column-gap: var(--s4); align-items: start; }
+  .flow-dot { grid-row: 1 / span 3; align-self: start; }
+  .flow-n { align-self: start; margin-top: 4px; }
+  .flow-step h4, .flow-step p { text-align: left; margin-top: var(--s1); }
+}
+
+/* ── The library: the search, the chips with their counts, and the cards ── */
+.sl-srch { min-width: min(340px, 100%); }
+.sl-chips { margin-bottom: var(--s4); }
+.sl-count { display: inline-block; min-width: 1.6em; margin-left: 4px; padding: 0 6px; border-radius: var(--r-pill);
+            background: var(--paper2); color: var(--ink2); font-size: var(--fs-xs); font-weight: var(--fw-semi); text-align: center; }
+.chip.on .sl-count { background: rgba(255,255,255,.18); color: inherit; }
+.sl-note { font-size: var(--fs-sm); color: var(--ink3); margin-bottom: var(--s6); min-height: 1.5em; }
+.sl-dir .ag-top .lbl { color: var(--acc-tx); }
+.sl-card h3 { font-size: clamp(22px, 1.9vw, 27px); }
+.sl-card .cell-ic { margin-bottom: var(--s4); }
+.sl-to { font-size: var(--fs-xs) !important; color: var(--ink3) !important; margin-top: var(--s4); }
+.sl-to b { font-weight: var(--fw-semi); color: var(--ink2); text-transform: uppercase; letter-spacing: var(--ls-label); font-size: var(--fs-label); margin-right: 4px; }
+.play .sl-card:hover .sl-to, .play .sl-card:hover .sl-to b { color: var(--ink) !important; }
+.play .sl-card:hover .str i { background: rgba(18,18,19,.25); }
+.play .sl-card:hover .str.s1 i:nth-child(-n+1), .play .sl-card:hover .str.s2 i:nth-child(-n+2),
+.play .sl-card:hover .str.s3 i:nth-child(-n+3) { background: var(--ink); }
+
+/* ── Recipes: colour blocks, each naming the signals it combines ── */
+.rcps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: var(--s4); }
+.rcp { padding: clamp(24px, 3vw, 40px); min-height: 300px; }
+.rcp h3 { font-size: clamp(26px, 2.4vw, 36px); margin-top: var(--s5); }
+.rcp p { font-size: var(--fs-body); margin-top: auto; padding-top: var(--s5); }
+.rcp-mix { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: var(--s3); }
+.rcp-chip { display: inline-flex; padding: 5px var(--s3); border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: var(--fw-semi);
+            background: rgba(255,255,255,.62); color: #121213; transition: background 200ms ease, transform 300ms var(--spring); }
+a.rcp-chip:hover { background: #fff; transform: translateY(-2px); }
+.rcp-chip.is-here { background: #121213; color: var(--ink-paper); }
+.blk.c-ink .rcp-chip, .blk.c-card .rcp-chip { background: var(--paper2); }
+.blk.c-ink .rcp-chip { background: #2A2A2C; color: var(--ink-paper); }
+.blk.c-ink a.rcp-chip:hover { background: var(--acc); color: #121213; }
+.rcp-plus { font-family: var(--face-display); font-size: 20px; font-weight: var(--fw-semi); line-height: 1; padding-left: var(--s3); }
+
+/* ── How strong each signal is, in the ink block ── */
+.strs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: var(--s6); margin-top: var(--s7); }
+.strs-col { border-top: 1px solid var(--rule); padding-top: var(--s5); }
+.strs-col .str i { background: #3A3A3D; }
+.strs-col .str.s1 i:nth-child(-n+1), .strs-col .str.s2 i:nth-child(-n+2), .strs-col .str.s3 i:nth-child(-n+3) { background: var(--acc); }
+.strs-col p { margin-top: var(--s3); font-size: var(--fs-sm); color: var(--ink2); }
+.strs-col ul { margin-top: var(--s4); display: grid; gap: var(--s2); }
+.strs-col a { font-family: var(--face-display); font-size: clamp(19px, 1.6vw, 22px); font-weight: var(--fw-semi); letter-spacing: var(--ls-h);
+              text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .18em;
+              transition: text-decoration-color 200ms ease, color 200ms ease; }
+.strs-col a:hover { color: #FF8B5D; text-decoration-color: currentColor; }
+/* On a phone the library is one column: tighter cards, so 21 of them stay a short scroll. */
+@media (max-width: 640px) {
+  .sl-dir { gap: var(--s3); }
+  .sl-card { padding: var(--s5); }
+  .sl-card .cell-ic { display: none; }
+  .sl-card .ag-top { margin-bottom: var(--s3); }
+  .sl-card p { margin-top: var(--s2); }
+  .sl-card .ag-foot { padding-top: var(--s4); }
+  .sl-chips .chip { padding-block: 6px; }
+}

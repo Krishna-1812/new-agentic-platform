@@ -30,8 +30,8 @@ PAGES = {
     "/how-it-works": "A small ask of you",
     "/pricing": "A fixed monthly fee",
     "/book": "Tell us who you want",
-    "/plays": "The plays",
-    "/plays/tenders-and-rfps": "Tenders and RFPs",
+    "/signals": "Every buying signal",
+    "/signals/tenders-and-rfps": "Tenders and RFPs",
     "/industries": "Meetings in",
     "/industries/healthcare": "Meetings with clinics",
     "/agents": "Agents do the checking",
@@ -129,8 +129,11 @@ def test_the_site_says_nothing_about_warming_up_sending_accounts(client):
         assert "warm" not in _text(_html(client, path)).lower(), path
 
 
-def test_hiring_signals_stay_off():
-    assert not any("hiring" in (p["name"] + p["sign"]).lower() for p in site_pages.PLAYS)
+def test_the_signals_asked_for_are_in_the_library():
+    """Website visitors, comments on your own posts, hashtags, new jobs and hiring (October 2026)."""
+    for slug in ("visitors-on-your-site", "engaging-with-your-posts", "talking-about-your-product",
+                 "hashtags-you-track", "new-in-the-job", "hiring-for-the-work"):
+        assert slug in site_pages.SIGNALS_BY_SLUG, slug
 
 
 def test_sample_leads_are_roles_not_people():
@@ -139,14 +142,15 @@ def test_sample_leads_are_roles_not_people():
 
 
 @pytest.mark.parametrize("old,new,code", [
-    ("/platform", "/how-it-works", 301), ("/signals", "/plays", 301),
+    ("/platform", "/how-it-works", 301), ("/plays", "/signals", 301),
+    ("/plays/tenders-and-rfps", "/signals/tenders-and-rfps", 301), ("/plays/no-such-play", "/signals", 301),
     ("/solutions", "/gtm-engineering", 301), ("/integrations", "/how-it-works", 301),
     ("/why-intelligence", "/compare", 301),
     ("/agents/signal-tracker", "/old-site/agents/signal-tracker", 302),
     ("/industries/health-tech", "/old-site/industries/health-tech", 302),
     ("/industries/healthcare/agents/patient-answer-visibility",
      "/old-site/industries/healthcare/agents/patient-answer-visibility", 302),
-    ("/industries/no-such-industry", "/industries", 302), ("/plays/no-such-play", "/plays", 302),
+    ("/industries/no-such-industry", "/industries", 302), ("/signals/no-such-signal", "/signals", 302),
     ("/resources", "/old-site/resources", 302),
 ])
 def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code):
@@ -156,7 +160,7 @@ def test_the_previous_sites_addresses_go_somewhere_useful(client, old, new, code
 
 def test_robots_lists_the_new_pages_and_keeps_the_old_site_out_of_results(client):
     body = client.get("/robots.txt").get_data(as_text=True)
-    for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book", "/plays",
+    for path in ("/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book", "/signals",
                  "/industries", "/agents", "/compare", "/about", "/outreach-policy"):
         assert "Allow: " + path in body
     assert "Allow: /platform" not in body
@@ -249,31 +253,68 @@ def test_the_decorative_motion_is_hidden_from_assistive_tech(client):
     # The ticker's second copy, there only so the loop is seamless, is not read or tabbed to twice.
     ticker = html[html.index('<div class="tick-track">'):]
     ticker = ticker[:ticker.index("</div>")]
-    assert ticker.count('aria-hidden="true" tabindex="-1"') == len(site_pages.PLAYS)
+    assert ticker.count('aria-hidden="true" tabindex="-1"') == len(site_pages.SIGNALS)
 
 
-# ── Plays and industries ────────────────────────────────────────────────────────
+# ── Signals and industries ──────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("play", site_pages.PLAYS, ids=lambda p: p["slug"])
-def test_every_play_has_its_own_page(client, play):
-    html = _html(client, "/plays/" + play["slug"])
+@pytest.mark.parametrize("signal", site_pages.SIGNALS, ids=lambda s: s["slug"])
+def test_every_signal_has_its_own_page_with_its_flow(client, signal):
+    html = _html(client, "/signals/" + signal["slug"])
     text = _text(html)
-    assert play["name"] in text and play["lead"]["why"] in text and play["message"] in text
-    assert "Run every morning by our %s agent." % play["agent"] in text
-    for slug in play["fits"]:
+    assert signal["name"] in text and signal["lead"]["why"] in text and signal["message"] in text
+    assert "Watched every morning by our %s agent." % signal["agent"] in text
+    assert site_pages.STRENGTHS[signal["strength"]] in text
+    # The five steps: the signal itself, its own three, and the booking.
+    assert signal["sign"] in text and site_pages.FLOW_BOOK in text
+    for step in signal["flow"]:
+        assert step + "." in text, step
+    for slug in signal["fits"]:
         assert 'href="/industries/%s"' % slug in html
-    # Three related plays, never itself.
-    related = re.findall(r'<a class="cell play-cell" href="/plays/([^"]+)"', html)
-    assert len(related) == 3 and play["slug"] not in related
+    for r in site_pages.RECIPES:
+        assert (r["name"] in text) == (signal["slug"] in r["signals"]), r["name"]
+    # Three related signals, never itself.
+    related = re.findall(r'<a class="cell play-cell" href="/signals/([^"]+)"', html)
+    assert len(related) == 3 and signal["slug"] not in related
 
 
-def test_the_plays_page_lists_every_play_in_its_group(client):
-    html = _html(client, "/plays")
-    for key, label in site_pages.PLAY_GROUPS:
-        assert label in html
-    for p in site_pages.PLAYS:
-        assert 'href="/plays/%s"' % p["slug"] in html
-        assert p["group"] in dict(site_pages.PLAY_GROUPS)
+def test_every_signal_is_complete():
+    agents = {name for name, _does in site_pages.GTM_AGENTS}
+    groups = dict(site_pages.SIGNAL_GROUPS)
+    for s in site_pages.SIGNALS:
+        assert s["group"] in groups and s["group"] in site_pages.SIGNAL_GROUP_NOTES, s["slug"]
+        assert s["agent"] in agents, s["slug"]
+        assert s["strength"] in site_pages.STRENGTHS, s["slug"]
+        assert len(s["flow"]) == 3 and len(s["where"]) == 3, s["slug"]
+        assert not any(step.endswith(".") for step in s["flow"]), s["slug"]
+    assert len({s["name"] for s in site_pages.SIGNALS}) == len(site_pages.SIGNALS)
+
+
+def test_the_signals_page_is_a_library_you_can_filter(client):
+    html = _html(client, "/signals")
+    cards = re.findall(r'<a class="ag sl-card" href="/signals/([^"]+)" data-cat="([^"]+)" data-q="([^"]*)"', html)
+    assert [c[0] for c in cards] == [s["slug"] for s in site_pages.SIGNALS]
+    for slug, cat, q in cards:
+        assert cat == site_pages.SIGNALS_BY_SLUG[slug]["group"] and q == q.lower() and q
+    for key, label in site_pages.SIGNAL_GROUPS:
+        n = sum(1 for s in site_pages.SIGNALS if s["group"] == key)
+        assert re.search(r'data-cat="%s"[^>]*>%s <span class="sl-count">%d</span>' % (key, re.escape(label), n), html), key
+    assert 'id="dirSearch"' in html and 'id="dirEmpty"' in html and 'id="dirNote"' in html
+    # The flow, the recipes and the strength guide.
+    for name, _icon, general in site_pages.FLOW_STEPS:
+        assert name in html and general in _text(html)
+    for r in site_pages.RECIPES:
+        assert r["name"] in html
+        for slug in r["signals"]:
+            assert 'class="rcp-chip" href="/signals/%s"' % slug in html
+    for level, word in site_pages.STRENGTHS.items():
+        assert site_pages.STRENGTH_NOTES[level] in _text(html)
+
+
+def test_recipes_combine_signals_that_exist():
+    for r in site_pages.RECIPES:
+        assert len(r["signals"]) == 2 and set(r["signals"]) <= set(site_pages.SIGNALS_BY_SLUG), r["name"]
+    assert set(site_pages.HOME_SIGNALS) <= set(site_pages.SIGNALS_BY_SLUG) and len(site_pages.HOME_SIGNALS) == 8
 
 
 @pytest.mark.parametrize("ind", site_pages.INDUSTRIES, ids=lambda i: i["slug"])
@@ -283,8 +324,8 @@ def test_every_industry_has_its_own_page(client, ind):
     assert ind["headline"] in text and ind["perf"] in text
     for sample in ind["samples"]:
         assert sample["lead"]["why"] in text and sample["message"] in text
-    for slug in ind["plays"]:
-        assert 'href="/plays/%s"' % slug in html
+    for slug in ind["signals"]:
+        assert 'href="/signals/%s"' % slug in html
     for q, _a in ind["faq"]:
         assert q in text
     assert 'aria-current="page">Industries</a>' in html
@@ -296,16 +337,16 @@ def test_the_industries_page_lists_every_industry(client):
         assert 'href="/industries/%s"' % ind["slug"] in html
 
 
-def test_plays_and_industries_point_at_each_other():
+def test_signals_and_industries_point_at_each_other():
     for ind in site_pages.INDUSTRIES:
-        assert set(ind["plays"]) <= set(site_pages.PLAYS_BY_SLUG), ind["slug"]
+        assert set(ind["signals"]) <= set(site_pages.SIGNALS_BY_SLUG), ind["slug"]
         assert len(ind["samples"]) == 3
-    for play in site_pages.PLAYS:
-        assert set(play["fits"]) <= set(site_pages.INDUSTRIES_BY_SLUG), play["slug"]
+    for s in site_pages.SIGNALS:
+        assert set(s["fits"]) <= set(site_pages.INDUSTRIES_BY_SLUG), s["slug"]
 
 
 def test_every_sample_is_a_role_not_a_person():
-    leads = [p["lead"] for p in site_pages.PLAYS] + [s["lead"] for i in site_pages.INDUSTRIES for s in i["samples"]]
+    leads = [s["lead"] for s in site_pages.SIGNALS] + [s["lead"] for i in site_pages.INDUSTRIES for s in i["samples"]]
     for lead in leads:
         assert set(lead) <= {"who", "where", "why", "src", "score", "meeting"}
 

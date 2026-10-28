@@ -14,7 +14,7 @@ import app as app_module
 
 # The new site's pages, and the previous site's, kept at /old-site since the October 2026 rebuild.
 PUBLIC_PAGES = ["/", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing", "/book",
-                "/plays", "/plays/tenders-and-rfps", "/industries", "/industries/healthcare", "/agents",
+                "/signals", "/signals/tenders-and-rfps", "/industries", "/industries/healthcare", "/agents",
                 "/compare", "/about", "/outreach-policy",
                 "/privacy", "/terms", "/old-site", "/old-site/agents", "/old-site/agents/signal-tracker",
                 "/old-site/platform", "/old-site/signals", "/old-site/solutions", "/old-site/why-intelligence",

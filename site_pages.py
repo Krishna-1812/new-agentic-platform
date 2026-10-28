@@ -2,7 +2,7 @@
 
 The site sells two things: GTM engineering, where we promise a number of booked meetings each month
 for a fixed fee, and performance marketing run with our agents and paid on results. Lists that more
-than one page shows live here, so a play or a question is written once. Page copy that appears on one
+than one page shows live here, so a signal or a question is written once. Page copy that appears on one
 page only lives in that page's template under templates/site/.
 
 Everything here is sample or plain fact about how we work. Sample leads describe a role and a kind of
@@ -17,176 +17,403 @@ GTM_FEE = "$1,000"
 NAV = (
     ("/gtm-engineering", "GTM Engineering"),
     ("/performance-marketing", "Performance Marketing"),
-    ("/plays", "Plays"),
+    ("/signals", "Signals"),
     ("/industries", "Industries"),
     ("/how-it-works", "How it works"),
     ("/pricing", "Pricing"),
 )
 
-# The buying signs we watch for, each a play our agents run today. Hiring signals are off on purpose.
-# Each play has its own page (/plays/<slug>): what it finds, where we look, a sample lead and a
-# sample first message. "group" sorts them on /plays; "fits" names the industries (INDUSTRIES below)
-# the play suits best.
-PLAY_GROUPS = (
-    ("say", "What people say in public"),
-    ("do", "What companies and people do"),
-    ("match", "Who looks like your best customers"),
+# The buying signals we watch for (/signals), each with the flow it starts: what we check, who we write
+# to, and how. Every one runs on an agent we have today. Each has its own page (/signals/<slug>) with what
+# it finds, where we look, a sample lead and a sample first message. "group" is where the signal comes
+# from, and sorts the library; "strength" (3 strong, 2 good, 1 steady) is how close to buying it usually
+# means someone is; "fits" names the industries (INDUSTRIES below) it suits best.
+SIGNAL_GROUPS = (
+    ("site", "On your website"),
+    ("brand", "Around your brand"),
+    ("need", "Saying they need it"),
+    ("change", "Changes at the company"),
+    ("fit", "Who fits"),
+    ("combo", "Signals combined"),
 )
+# What each group is, in a line, for the library's filter.
+SIGNAL_GROUP_NOTES = {
+    "site": "Companies on your own website, read with a small script we give you.",
+    "brand": "People engaging with you, your rivals and the voices your buyers follow.",
+    "need": "People and organisations asking, in public, for what you sell.",
+    "change": "Something new at a company that creates a need: a hire, a raise, a move.",
+    "fit": "Companies and people that look like your best customers.",
+    "combo": "Two or more signals at one company, close together.",
+}
+STRENGTHS = {3: "Strong", 2: "Good", 1: "Steady"}
+STRENGTH_NOTES = {
+    3: "They are choosing, or about to: write within a day or two.",
+    2: "The need is real but not yet urgent: write while it is fresh.",
+    1: "They fit well: steady volume beside the sharper signals.",
+}
+# The flow every signal starts: (step, icon, what it means in general). Each signal says what the middle
+# three steps mean for it ("flow"); the last is the same for all (FLOW_BOOK).
+FLOW_STEPS = (
+    ("The signal", "bolt", "Someone shows, in public, that they may need what you sell."),
+    ("We check", "shield", "It fits your customer profile, it is recent, and nobody has been contacted twice."),
+    ("We find", "users", "The person who buys, with a verified email or LinkedIn profile."),
+    ("We write", "pen", "A message in your name that starts from the signal, approved by you."),
+    ("You meet", "calendar", "Interested replies are booked into your calendar."),
+)
+FLOW_BOOK = ("Interested replies get your calendar link, and the meeting lands on your calendar with the "
+             "signal and the thread.")
 
-PLAYS = (
-    {"slug": "posting-about-the-problem", "group": "say", "name": "Posting about the problem",
-     "sign": "A LinkedIn post that names the problem you solve.", "agent": "Lead Finder",
-     "finds": "People who write in public about the exact problem you solve: rising costs, a process "
-              "that keeps breaking, a tool they have outgrown. Someone describing the pain this week is "
-              "far likelier to take a meeting than someone who merely fits your profile.",
-     "where": ("LinkedIn posts from the last few weeks", "The words your buyers use, agreed on the call",
-               "Your customer profile, to keep only the people who fit"),
-     "lead": {"who": "Head of Operations", "where": "Accounting firm, 120 people",
-              "why": "Posted that month-end close still takes them nine days, and asked how others do it.",
-              "src": "LinkedIn post · 3 days ago", "score": 92},
-     "message": "Saw your post about the nine-day close. Shortening it for firms your size is what we do. "
-                "Worth 20 minutes to compare notes?",
-     "fits": ("technology-saas", "professional-services", "agencies", "financial-services")},
-    {"slug": "asking-for-recommendations", "group": "say", "name": "Asking for recommendations",
-     "sign": "“Can anyone recommend…” posts and Reddit threads.", "agent": "Lead Finder",
-     "finds": "People asking their network or a community to recommend a supplier like you. It is the "
-              "clearest buying sign there is: they have a need, a budget in mind, and they are choosing now.",
-     "where": ("LinkedIn posts asking for recommendations", "Reddit and community threads in your field",
-               "Your customer profile, to keep only the people who fit"),
-     "lead": {"who": "Founder", "where": "D2C skincare brand, 15 people",
-              "why": "Asked their network to recommend a performance marketing agency before a launch.",
-              "src": "LinkedIn post · yesterday", "score": 95},
-     "message": "Saw you're looking for help before the launch. Happy to share what we'd check first in "
-                "your ad accounts, no strings. Would Thursday suit?",
-     "fits": ("agencies", "ecommerce", "professional-services", "technology-saas")},
-    {"slug": "rivals-audience", "group": "say", "name": "A rival's audience",
-     "sign": "People commenting on a competitor's posts.", "agent": "Lead Finder",
-     "finds": "People who comment on your competitors' posts: their customers, people comparing options, "
-              "and people unhappy with what they have. You name the competitors on the call; we watch them.",
-     "where": ("Comments on the competitors you name", "Their company pages and their leaders' posts",
-               "Your customer profile, to keep only the people who fit"),
-     "lead": {"who": "VP Sales", "where": "Logistics software company, 200 people",
-              "why": "Commented on a competitor's launch post asking whether it works with their CRM.",
-              "src": "LinkedIn comment · today", "score": 87},
-     "message": "Noticed your question about CRM support on the launch post. It's the first thing our "
-                "customers ask too. Want to see how we handle it?",
-     "fits": ("technology-saas", "it-services", "financial-services")},
-    {"slug": "experts-audience", "group": "say", "name": "An expert's audience",
-     "sign": "People commenting on an industry expert's posts.", "agent": "Lead Finder",
-     "finds": "People who engage with the experts your buyers follow. A comment on a post about your "
-              "subject says the topic is on their mind, and the comment itself gives you the opening line.",
-     "where": ("Comments on the experts you and we choose", "Posts on the subjects you sell into",
-               "Your customer profile, to keep only the people who fit"),
-     "lead": {"who": "Head of People", "where": "Hospital group, 2,000 staff",
-              "why": "Commented on an HR expert's post about nurse retention: “this is our number one issue”.",
-              "src": "LinkedIn comment · 2 days ago", "score": 84},
-     "message": "Your comment on retention stuck with me. Early turnover often starts in the first weeks of "
-                "onboarding. Would a short call be useful?",
-     "fits": ("healthcare", "education", "professional-services")},
-    {"slug": "tenders-and-rfps", "group": "do", "name": "Tenders and RFPs",
-     "sign": "A published request for proposals in your field.", "agent": "Lead Finder",
-     "finds": "Organisations that have published a tender or a request for proposals for what you sell. "
-              "We find them while there is still time to respond, with the deadline and the named contact.",
-     "where": ("Public procurement portals and tender notices", "Requests for proposals posted on the open web",
-               "The services and regions agreed on the call"),
-     "lead": {"who": "Operations Director", "where": "Logistics firm, 300 people",
-              "why": "Published a tender for a customer-portal rebuild, closing in 3 weeks.",
-              "src": "Tender notice · yesterday", "score": 88},
-     "message": "Saw the portal tender. Before you write the brief, would a 20-minute look at what similar "
-                "firms asked for help?",
-     "fits": ("it-services", "professional-services", "education", "healthcare")},
-    {"slug": "news-that-opens-a-door", "group": "do", "name": "News that opens a door",
-     "sign": "Funding, a launch, an expansion or a new office.", "agent": "Market Radar",
-     "finds": "Companies in the news for something that creates a need: a funding round, a product launch, "
-              "a new market, a new office. The news is your reason to write, and it dates the need.",
-     "where": ("Company news and press releases", "Funding and launch announcements",
-               "Moves by the companies in your market"),
-     "lead": {"who": "COO", "where": "Fintech, 60 people",
-              "why": "Announced a Series A and an office in London this week.",
-              "src": "Press release · 2 days ago", "score": 85},
-     "message": "Congratulations on the round and the London office. Hiring and set-up in a new city is "
-                "where we usually help first. Open to a quick call?",
-     "fits": ("technology-saas", "financial-services", "real-estate")},
-    {"slug": "new-in-the-job", "group": "do", "name": "New in the job",
-     "sign": "A buyer who has just started a role.", "agent": "Job Change Alert",
-     "finds": "Buyers who have just started a new role, at your customers' companies or at companies that "
-              "fit. New leaders review suppliers in their first months, and a former customer brings you "
-              "with them.",
-     "where": ("Job changes of the roles you sell to", "Your past customers' and champions' moves",
-               "Your customer profile, to keep only the companies that fit"),
-     "lead": {"who": "New Head of Marketing", "where": "Property developer, 400 people",
-              "why": "Started the role 3 weeks ago; was a customer at their last company.",
-              "src": "Job change · 3 weeks ago", "score": 90},
-     "message": "Congratulations on the new role. You worked with us at your last company; happy to share "
-                "what we'd look at first here.",
-     "fits": ("real-estate", "technology-saas", "agencies", "ecommerce")},
-    {"slug": "visitors-on-your-site", "group": "do", "name": "Visitors on your site",
+SIGNALS = (
+    {"slug": "visitors-on-your-site", "group": "site", "name": "Visitors on your site", "strength": 3,
      "sign": "Companies reading your pricing or product pages.", "agent": "Website visitors",
      "finds": "Companies that visit your website and read the pages that matter, such as pricing or a "
               "product, without filling in a form. We name the company and find the right person there.",
      "where": ("Your website's visits, with a small script we give you", "The pages each company read, and how often",
                "Your customer profile, to keep only the companies that fit"),
+     "flow": ("The company fits your profile and read the pages that matter",
+              "The person who buys what you sell at that company",
+              "An email offering what they were reading about"),
      "lead": {"who": "IT Director", "where": "Insurance broker, 250 people",
               "why": "Three visits to your pricing page this week from the company's network.",
               "src": "Website visits · this week", "score": 83},
      "message": "A few of your team have been looking at how we price this. Happy to walk you through what "
                 "a firm your size usually needs. Does next week work?",
      "fits": ("technology-saas", "it-services", "financial-services")},
-    {"slug": "same-event", "group": "do", "name": "Going to the same event",
-     "sign": "Speakers and attendees of events in your market.", "agent": "Event & Conference Intelligence",
-     "finds": "The events your buyers go to, and the speakers and exhibitors at them. A shared event is a "
-              "natural reason to meet, before, during or after it.",
-     "where": ("Conference agendas, speaker and exhibitor lists", "Events in your market and regions",
+    {"slug": "engaging-with-your-posts", "group": "brand", "name": "Engaging with your posts", "strength": 3,
+     "sign": "People commenting on your company's or founder's LinkedIn posts.", "agent": "Lead Finder",
+     "finds": "People who comment on what your company and your leaders post. They already know your name, "
+              "and a comment that asks a question or names the problem is an easy opening most teams never "
+              "follow up.",
+     "where": ("Comments on your company page's posts", "Comments on your founders' and leaders' posts",
                "Your customer profile, to keep only the people who fit"),
-     "lead": {"who": "Director of Admissions", "where": "University, 15,000 students",
-              "why": "Speaking at a higher-education marketing conference next month.",
-              "src": "Event agenda · next month", "score": 82},
-     "message": "Saw you're speaking at the conference next month. We'll be there too. Coffee before your "
-                "session?",
-     "fits": ("education", "healthcare", "it-services", "agencies")},
-    {"slug": "lookalikes", "group": "match", "name": "Lookalikes of your best customers",
+     "flow": ("The comment shows interest or a need, and the person fits your profile",
+              "The commenter, or the person who buys at their company",
+              "A message that answers what they said"),
+     "lead": {"who": "Head of Revenue Operations", "where": "B2B software company, 180 people",
+              "why": "Asked under your founder's post whether the approach works with HubSpot.",
+              "src": "LinkedIn comment · yesterday", "score": 89},
+     "message": "Thanks for your question under the post. Short answer: yes, it works with HubSpot. Want me "
+                "to show you how teams like yours set it up?",
+     "fits": ("technology-saas", "agencies", "professional-services", "it-services")},
+    {"slug": "talking-about-your-product", "group": "brand", "name": "Talking about your product", "strength": 3,
+     "sign": "Posts and threads that name your product or company.", "agent": "Lead Finder",
+     "finds": "People who mention you in public: asking whether you're any good, comparing you with a "
+              "rival, or describing a problem you solve. They are already weighing you up, and a quick, "
+              "helpful answer can decide it.",
+     "where": ("LinkedIn posts that name your product or company", "Reddit threads that mention you",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("A real question or comparison, not your own team or a reseller",
+              "The person who posted",
+              "A helpful answer in your name, by message or in the thread"),
+     "lead": {"who": "Marketing Director", "where": "Retail chain, 40 stores",
+              "why": "Asked whether anyone has used your product across many stores.",
+              "src": "LinkedIn post · today", "score": 91},
+     "message": "Saw your question about using us across many stores. A few retail chains do exactly that; "
+                "happy to show you how they set it up.",
+     "fits": ("technology-saas", "ecommerce", "it-services", "financial-services")},
+    {"slug": "rivals-audience", "group": "brand", "name": "A rival's audience", "strength": 2,
+     "sign": "People commenting on a competitor's posts.", "agent": "Lead Finder",
+     "finds": "People who comment on your competitors' posts: their customers, people comparing options, "
+              "and people unhappy with what they have. You name the competitors on the call; we watch them.",
+     "where": ("Comments on the competitors you name", "Their company pages and their leaders' posts",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("The comment shows a need, not a fan, an employee or a vendor",
+              "The commenter",
+              "A message that picks up their question"),
+     "lead": {"who": "VP Sales", "where": "Logistics software company, 200 people",
+              "why": "Commented on a competitor's launch post asking whether it works with their CRM.",
+              "src": "LinkedIn comment · today", "score": 87},
+     "message": "Noticed your question about CRM support on the launch post. It's the first thing our "
+                "customers ask too. Want to see how we handle it?",
+     "fits": ("technology-saas", "it-services", "financial-services")},
+    {"slug": "unhappy-with-a-rival", "group": "brand", "name": "Unhappy with a rival", "strength": 3,
+     "sign": "Complaints about a competitor, or asks for an alternative.", "agent": "Lead Finder",
+     "finds": "People who say in public that a competitor is letting them down, or ask for an alternative to "
+              "it. They know the category, they have a budget, and they are ready to switch.",
+     "where": ("LinkedIn posts and comments about the competitors you name",
+               "Reddit threads asking for an alternative", "Your customer profile, to keep only the people who fit"),
+     "flow": ("A real complaint or a search for an alternative",
+              "The person, on LinkedIn or in the thread",
+              "A reply that answers the complaint, without knocking the rival"),
+     "lead": {"who": "Head of Sales", "where": "Recruitment agency, 70 people",
+              "why": "Asked on Reddit for an alternative to a competitor after a price rise.",
+              "src": "Reddit thread · 2 days ago", "score": 90},
+     "message": "We moved a few teams your size over after the same price change. Happy to share what the "
+                "switch involved, if that helps.",
+     "fits": ("technology-saas", "it-services", "agencies", "professional-services")},
+    {"slug": "experts-audience", "group": "brand", "name": "An expert's audience", "strength": 2,
+     "sign": "People commenting on an industry expert's posts.", "agent": "Lead Finder",
+     "finds": "People who engage with the experts your buyers follow. A comment on a post about your "
+              "subject says the topic is on their mind, and the comment itself gives you the opening line.",
+     "where": ("Comments on the experts you and we choose", "Posts on the subjects you sell into",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("The comment shows the topic matters to them",
+              "The commenter",
+              "A message that opens with their comment"),
+     "lead": {"who": "Head of People", "where": "Hospital group, 2,000 staff",
+              "why": "Commented on an HR expert's post about nurse retention: “this is our number one issue”.",
+              "src": "LinkedIn comment · 2 days ago", "score": 84},
+     "message": "Your comment on retention stuck with me. Early turnover often starts in the first weeks of "
+                "onboarding. Would a short call be useful?",
+     "fits": ("healthcare", "education", "professional-services")},
+    {"slug": "hashtags-you-track", "group": "brand", "name": "Hashtags you track", "strength": 2,
+     "sign": "Posts under the hashtags your buyers use.", "agent": "Lead Finder",
+     "finds": "People posting under the hashtags of your field, such as #revops, #ecommerce or "
+              "#procurement. Hashtags catch conversations that keywords miss, and show who is active in "
+              "your buyers' world this week.",
+     "where": ("LinkedIn posts under the hashtags agreed on the call",
+               "The words in each post, so a hashtag alone is never enough",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("The post is about a need you meet, not just the tag",
+              "The author",
+              "A message that picks up the post"),
+     "lead": {"who": "Head of Demand Generation", "where": "Cybersecurity company, 250 people",
+              "why": "Posted under #demandgen that pipeline from paid search is drying up.",
+              "src": "LinkedIn post · 2 days ago", "score": 84},
+     "message": "Your #demandgen post about paid search drying up rang true. We've seen the same; happy to "
+                "share what's working for security companies instead.",
+     "fits": ("technology-saas", "it-services", "agencies", "ecommerce")},
+    {"slug": "posting-about-the-problem", "group": "need", "name": "Posting about the problem", "strength": 3,
+     "sign": "A LinkedIn post that names the problem you solve.", "agent": "Lead Finder",
+     "finds": "People who write in public about the exact problem you solve: rising costs, a process "
+              "that keeps breaking, a tool they have outgrown. Someone describing the pain this week is "
+              "far likelier to take a meeting than someone who merely fits your profile.",
+     "where": ("LinkedIn posts from the last few weeks", "The words your buyers use, agreed on the call",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("The post names your problem, and the author fits your profile",
+              "The author, or the person who buys at their company",
+              "An email or LinkedIn message that answers the post"),
+     "lead": {"who": "Head of Operations", "where": "Accounting firm, 120 people",
+              "why": "Posted that month-end close still takes them nine days, and asked how others do it.",
+              "src": "LinkedIn post · 3 days ago", "score": 92},
+     "message": "Saw your post about the nine-day close. Shortening it for firms your size is what we do. "
+                "Worth 20 minutes to compare notes?",
+     "fits": ("technology-saas", "professional-services", "agencies", "financial-services")},
+    {"slug": "asking-for-recommendations", "group": "need", "name": "Asking for recommendations", "strength": 3,
+     "sign": "“Can anyone recommend…” posts and Reddit threads.", "agent": "Lead Finder",
+     "finds": "People asking their network or a community to recommend a supplier like you. It is the "
+              "clearest buying sign there is: they have a need, a budget in mind, and they are choosing now.",
+     "where": ("LinkedIn posts asking for recommendations", "Reddit and community threads in your field",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("They are choosing now, and they fit your profile",
+              "The person asking",
+              "A direct message, or a reply in the thread, the same day"),
+     "lead": {"who": "Founder", "where": "D2C skincare brand, 15 people",
+              "why": "Asked their network to recommend a performance marketing agency before a launch.",
+              "src": "LinkedIn post · yesterday", "score": 95},
+     "message": "Saw you're looking for help before the launch. Happy to share what we'd check first in "
+                "your ad accounts, no strings. Would Thursday suit?",
+     "fits": ("agencies", "ecommerce", "professional-services", "technology-saas")},
+    {"slug": "tenders-and-rfps", "group": "need", "name": "Tenders and RFPs", "strength": 3,
+     "sign": "A published request for proposals in your field.", "agent": "Lead Finder",
+     "finds": "Organisations that have published a tender or a request for proposals for what you sell. "
+              "We find them while there is still time to respond, with the deadline and the named contact.",
+     "where": ("Public procurement portals and tender notices", "Requests for proposals posted on the open web",
+               "The services and regions agreed on the call"),
+     "flow": ("Open, in your field and region, with time left to respond",
+              "The contact named on the tender",
+              "An email before the deadline, with the angle that wins it"),
+     "lead": {"who": "Operations Director", "where": "Logistics firm, 300 people",
+              "why": "Published a tender for a customer-portal rebuild, closing in 3 weeks.",
+              "src": "Tender notice · yesterday", "score": 88},
+     "message": "Saw the portal tender. Before you write the brief, would a 20-minute look at what similar "
+                "firms asked for help?",
+     "fits": ("it-services", "professional-services", "education", "healthcare")},
+    {"slug": "hiring-for-the-work", "group": "change", "name": "Hiring for the work you do", "strength": 2,
+     "sign": "Job ads for the roles your service replaces or supports.", "agent": "Lead Finder",
+     "finds": "Companies advertising jobs for the work you sell, such as an SEO executive, a sales "
+              "development rep or a quality analyst. A job ad shows a need and a budget today: you can offer "
+              "to cover the gap while they hire, or to support the new hire.",
+     "where": ("LinkedIn job ads, read together for each company", "The job titles agreed on the call",
+               "Who decides there, found by company and role"),
+     "flow": ("Several roles, or one that is clearly your work",
+              "The person the new hire would report to",
+              "An offer to cover the gap, or to support the hire"),
+     "lead": {"who": "Head of Marketing", "where": "Online education company, 120 people",
+              "why": "Advertising for a performance marketing manager and a paid social executive.",
+              "src": "Job ads · this week", "score": 86},
+     "message": "Saw you're hiring for paid search and social. While you find the right people, we could "
+                "keep the campaigns moving. Worth a call?",
+     "fits": ("agencies", "technology-saas", "ecommerce", "education", "it-services")},
+    {"slug": "new-in-the-job", "group": "change", "name": "New in the job", "strength": 3,
+     "sign": "A buyer who has just started a role.", "agent": "Job Change Alert",
+     "finds": "Buyers who have just started a new role at a company that fits. New leaders review their "
+              "suppliers and set their plans in their first months, which is when they are most open to a "
+              "new conversation.",
+     "where": ("Job changes of the roles you sell to", "Companies that fit your profile",
+               "Your customer profile, to keep only the companies that fit"),
+     "flow": ("Started in the last few months, in a role you sell to",
+              "The new leader",
+              "Congratulations, and one useful idea for their first months"),
+     "lead": {"who": "New Head of Marketing", "where": "Property developer, 400 people",
+              "why": "Started the role 3 weeks ago, and the company is reviewing its agencies.",
+              "src": "Job change · 3 weeks ago", "score": 90},
+     "message": "Congratulations on the new role. New marketing leads often review their agencies early on; "
+                "happy to share what we'd look at first.",
+     "fits": ("real-estate", "technology-saas", "agencies", "ecommerce")},
+    {"slug": "champion-moved", "group": "change", "name": "Your champion moved", "strength": 3,
+     "sign": "A past customer or user starts at a new company.", "agent": "Job Change Alert",
+     "finds": "People who bought from you or used your product, now at a new company. They already trust "
+              "you, and people tend to bring the tools and partners they know to a new job.",
+     "where": ("Your past customers and the users you name", "Their job changes, as they happen",
+               "Your customer profile, to check the new company fits"),
+     "flow": ("The new company fits your profile",
+              "Your former champion",
+              "A personal note from the person they worked with"),
+     "lead": {"who": "VP Customer Success", "where": "Insurance software company, 300 people",
+              "why": "Was your customer at their last company; started here last month.",
+              "src": "Job change · 4 weeks ago", "score": 93},
+     "message": "Congratulations on the move. It was good working with you at your last company; happy to "
+                "help you get the same set-up running here.",
+     "fits": ("technology-saas", "agencies", "it-services", "financial-services")},
+    {"slug": "raised-money", "group": "change", "name": "Raised money", "strength": 2,
+     "sign": "A funding round, announced in the last few weeks.", "agent": "Lead Finder",
+     "finds": "Companies that have just raised money. A round comes with plans to hire, launch and grow, "
+              "the budget to buy help, and leaders who are setting priorities now.",
+     "where": ("Funding announcements and business databases", "Companies that fit your profile",
+               "The leaders who own what you sell"),
+     "flow": ("The round is recent, and the company fits your profile",
+              "The leader who owns your area",
+              "Congratulations, and how you help after a raise"),
+     "lead": {"who": "COO", "where": "Fintech, 60 people",
+              "why": "Announced a Series A this week, with plans to double the team.",
+              "src": "Funding news · 2 days ago", "score": 85},
+     "message": "Congratulations on the round. Growing the team after a raise is where we usually help "
+                "first. Open to a quick call about your plans?",
+     "fits": ("technology-saas", "financial-services", "healthcare", "ecommerce")},
+    {"slug": "news-that-opens-a-door", "group": "change", "name": "Launching or expanding", "strength": 2,
+     "sign": "A launch, a new market or a new office in the news.", "agent": "Market Radar",
+     "finds": "Companies in the news for something that creates a need: a product launch, a new market, a "
+              "new office or a partnership. The news is your reason to write, and it dates the need.",
+     "where": ("Company news and press releases", "Launch and expansion announcements",
+               "Moves by the companies in your market"),
+     "flow": ("The news creates a need you meet",
+              "The leader who owns the change",
+              "A note that starts from the news"),
+     "lead": {"who": "Head of Operations", "where": "Healthcare provider, 900 staff",
+              "why": "Announced two new clinics opening in the spring.",
+              "src": "Press release · 2 days ago", "score": 83},
+     "message": "Congratulations on the two new clinics. Getting a new site booked up is where we usually "
+                "help first. Open to a quick call?",
+     "fits": ("healthcare", "real-estate", "financial-services", "technology-saas")},
+    {"slug": "growing-fast", "group": "change", "name": "Growing fast", "strength": 1,
+     "sign": "A company adding people quickly.", "agent": "Lead Finder",
+     "finds": "Companies whose headcount is rising fast. Growth stretches every process and tool, and the "
+              "people running them look for help before something breaks.",
+     "where": ("Headcount growth from business databases", "Companies that fit your profile",
+               "The roles that buy from you"),
+     "flow": ("Growth that stretches the thing you fix",
+              "The leader of the stretched team",
+              "A note about what breaks at their new size"),
+     "lead": {"who": "VP Operations", "where": "Logistics company, 450 people",
+              "why": "Headcount up a third in a year, with new sites opening.",
+              "src": "Company growth · this quarter", "score": 79},
+     "message": "Your team has grown fast this year. The processes built for half the size are usually the "
+                "first to strain; happy to compare notes.",
+     "fits": ("technology-saas", "it-services", "professional-services", "ecommerce")},
+    {"slug": "uses-a-tool", "group": "change", "name": "Uses a tool you replace", "strength": 2,
+     "sign": "Companies using a rival's product, or one you work with.", "agent": "Lead Finder",
+     "finds": "Companies that use a competitor's product, or a tool yours works with. A rival's customer is "
+              "a switch to win before their renewal; a partner's customer is an easy fit.",
+     "where": ("The technologies each company uses, from business databases",
+               "The rivals and partners named on the call", "Your customer profile, to keep only the companies that fit"),
+     "flow": ("Uses the tool, and fits your profile",
+              "The person who owns the tool",
+              "A message about switching, or about working with it"),
+     "lead": {"who": "Head of Customer Support", "where": "Online travel company, 300 people",
+              "why": "Uses a rival's call recording tool, and is hiring two quality analysts.",
+              "src": "Tools used · checked today", "score": 82},
+     "message": "Teams on your current call recording tool often tell us scoring calls takes too long. Is "
+                "that true for you?",
+     "fits": ("technology-saas", "it-services", "ecommerce", "financial-services")},
+    {"slug": "lookalikes", "group": "fit", "name": "Lookalikes of your best customers", "strength": 1,
      "sign": "Companies and roles that match your best accounts.", "agent": "Lead Finder",
      "finds": "Companies that look like your best customers, by industry, size, place and the tools they "
               "use, and the people in the roles that buy from you. Steady volume to sit beside the "
-              "sharper signs.",
+              "sharper signals.",
      "where": ("Business databases of companies and roles", "Your best customers, named on the call",
                "Your customer profile"),
+     "flow": ("Same industry, size, place and tools as your best customers",
+              "The people in the roles that buy from you",
+              "A short email built on what they share with your customers"),
      "lead": {"who": "Head of Growth", "where": "Online furniture retailer, 90 people",
               "why": "Same size, market and tools as three of your best customers.",
               "src": "Profile match · today", "score": 80},
      "message": "We work with a few retailers very like yours on paid search. One question: which channel "
                 "carries the most weight for you right now?",
      "fits": ("ecommerce", "technology-saas", "agencies", "professional-services")},
-    {"slug": "several-signs-at-once", "group": "match", "name": "Several signs at once",
-     "sign": "Two or more signs at one company in a short window.", "agent": "People & Signals",
-     "finds": "Companies where two or more signs land close together: news, a new leader, a post about "
-              "the problem, visits to your site. One sign can be chance; several in a fortnight is a "
-              "company that is moving.",
-     "where": ("Every play we run for you, combined by company", "The people at each company and their roles",
-               "Your customer profile"),
-     "lead": {"who": "CFO", "where": "Healthcare software company, 150 people",
-              "why": "New CFO this month, a funding round, and two visits to your pricing page.",
-              "src": "3 signs · last 14 days", "score": 94},
-     "message": "Congratulations on the new role and the round. When finance changes hands, this is "
-                "usually the first thing reviewed. Worth a short call?",
-     "fits": ("technology-saas", "financial-services", "healthcare")},
-    {"slug": "local-businesses", "group": "match", "name": "Local businesses like your customers",
+    {"slug": "same-event", "group": "fit", "name": "Going to the same event", "strength": 2,
+     "sign": "Speakers and attendees of events in your market.", "agent": "Event & Conference Intelligence",
+     "finds": "The events your buyers go to, and the speakers and exhibitors at them. A shared event is a "
+              "natural reason to meet, before, during or after it.",
+     "where": ("Conference agendas, speaker and exhibitor lists", "Events in your market and regions",
+               "Your customer profile, to keep only the people who fit"),
+     "flow": ("The event is in your market, and they fit your profile",
+              "Speakers, exhibitors and attendees",
+              "A note to meet before, at or after the event"),
+     "lead": {"who": "Director of Admissions", "where": "University, 15,000 students",
+              "why": "Speaking at a higher-education marketing conference next month.",
+              "src": "Event agenda · next month", "score": 82},
+     "message": "Saw you're speaking at the conference next month. We'll be there too. Coffee before your "
+                "session?",
+     "fits": ("education", "healthcare", "it-services", "agencies")},
+    {"slug": "local-businesses", "group": "fit", "name": "Local businesses like your customers", "strength": 1,
      "sign": "Every business of one type in a city, scored.", "agent": "Local Business Radar",
      "finds": "Every business of the kind you serve in the cities you choose, such as clinics, agencies "
               "or showrooms, scored by how established they are and how well they show up online.",
      "where": ("Map listings and reviews", "Each business's website and how it ranks",
                "The business types and cities agreed on the call"),
+     "flow": ("Scored on reviews, website and ads",
+              "The owner or manager",
+              "An email that shows one thing we found"),
      "lead": {"who": "Practice Owner", "where": "Dental clinic, 3 locations",
               "why": "Strong reviews but no ads running, and a website that loads slowly on phones.",
               "src": "Map listing · checked today", "score": 81},
      "message": "Your reviews are excellent, but a patient searching on a phone may not get far enough to "
                 "see them. Can I show you what we found?",
      "fits": ("healthcare", "real-estate", "professional-services")},
+    {"slug": "several-signs-at-once", "group": "combo", "name": "Several signals at once", "strength": 3,
+     "sign": "Two or more signals at one company in a short window.", "agent": "People & Signals",
+     "finds": "Companies where two or more signals land close together: news, a new leader, a post about "
+              "the problem, visits to your site. One signal can be chance; several in a fortnight is a "
+              "company that is moving.",
+     "where": ("Every signal we watch for you, combined by company", "The people at each company and their roles",
+               "Your customer profile"),
+     "flow": ("Two or more signals at the company within weeks",
+              "The person closest to the signals",
+              "A message that ties the signals together"),
+     "lead": {"who": "CFO", "where": "Healthcare software company, 150 people",
+              "why": "New CFO this month, a funding round, and two visits to your pricing page.",
+              "src": "3 signals · last 14 days", "score": 94},
+     "message": "Congratulations on the new role and the round. When finance changes hands, this is "
+                "usually the first thing reviewed. Worth a short call?",
+     "fits": ("technology-saas", "financial-services", "healthcare")},
 )
-PLAYS_BY_SLUG = {p["slug"]: p for p in PLAYS}
+SIGNALS_BY_SLUG = {s["slug"]: s for s in SIGNALS}
+# The eight on the home page: the strong ones, one or two from each place they come from.
+HOME_SIGNALS = ("visitors-on-your-site", "engaging-with-your-posts", "talking-about-your-product",
+                "posting-about-the-problem", "asking-for-recommendations", "tenders-and-rfps",
+                "hiring-for-the-work", "new-in-the-job")
+
+# Recipes: signals that mean more together. A company that shows two of them close together ranks first
+# (Several signals at once), and the message ties them together.
+RECIPES = (
+    {"name": "The new leader rebuilding", "signals": ("new-in-the-job", "hiring-for-the-work"),
+     "why": "A new head of the team, and job ads for it: they are rebuilding, and open to help while they hire."},
+    {"name": "Money to spend", "signals": ("raised-money", "growing-fast"),
+     "why": "A fresh round and a rising headcount: the plans are set and the budgets are being handed out."},
+    {"name": "Ready to switch", "signals": ("uses-a-tool", "unhappy-with-a-rival"),
+     "why": "They use a rival's product and say it lets them down: write before the renewal comes round."},
+    {"name": "Already looking at you", "signals": ("visitors-on-your-site", "engaging-with-your-posts"),
+     "why": "Reading your pricing page and commenting on your posts: you are on the shortlist."},
+    {"name": "Meet before you bid", "signals": ("tenders-and-rfps", "same-event"),
+     "why": "A tender in your field, and the buyer at an event you go to: meet them before you write the bid."},
+    {"name": "A familiar face with a budget", "signals": ("champion-moved", "raised-money"),
+     "why": "Your former champion joins a company that has just raised money: trust, and a budget to act on it."},
+)
 
 # The markets we book meetings in, each with its own page (/industries/<slug>). Every sample is a role
-# and a kind of company, never a real person or company. "plays" are slugs from PLAYS above.
+# and a kind of company, never a real person or company. "signals" are slugs from SIGNALS above.
 INDUSTRIES = (
     {"slug": "technology-saas", "name": "B2B software", "short": "Software",
      "headline": "Meetings with the people who buy software like yours.",
@@ -195,7 +422,7 @@ INDUSTRIES = (
              "in with your sales team.",
      "buyers": ("Heads of department who own the problem", "Founders and COOs at smaller companies",
                 "Finance and IT, who sign off"),
-     "plays": ("posting-about-the-problem", "rivals-audience", "visitors-on-your-site", "several-signs-at-once"),
+     "signals": ("posting-about-the-problem", "rivals-audience", "visitors-on-your-site", "several-signs-at-once"),
      "samples": (
         {"lead": {"who": "Head of Customer Success", "where": "SaaS company, 180 people",
                   "why": "Posted that churn doubled after a price change and asked what others track.",
@@ -218,13 +445,13 @@ INDUSTRIES = (
      "faq": (("Do you book meetings with our sales team or with the founder?",
               "Whoever takes first calls today. The calendar link goes where you tell us."),
              ("Can you avoid our existing customers and open deals?",
-              "Yes. Share the list and we exclude them from every play."))},
+              "Yes. Share the list and we exclude them from every signal we watch."))},
     {"slug": "agencies", "name": "Marketing and creative agencies", "short": "Agencies",
      "headline": "New clients for your agency, found while they're still choosing.",
      "lead": "Agency work is bought when something changes: a launch, a new marketing lead, a campaign that "
              "isn't working. We find the companies at that moment and book them in with you.",
      "buyers": ("Heads of marketing and growth", "Founders of growing brands", "Marketing directors who just started"),
-     "plays": ("asking-for-recommendations", "new-in-the-job", "posting-about-the-problem", "lookalikes"),
+     "signals": ("asking-for-recommendations", "new-in-the-job", "hiring-for-the-work", "posting-about-the-problem"),
      "samples": (
         {"lead": {"who": "Founder", "where": "D2C skincare brand, 15 people",
                   "why": "Asked their network to recommend a performance marketing agency before a launch.",
@@ -247,14 +474,14 @@ INDUSTRIES = (
      "faq": (("Can we use this to win clients and to serve them?",
               "Yes. We book meetings for your agency, and our ad agents can check your clients' accounts."),
              ("Do you approach our existing clients?",
-              "No. Share your client list and we exclude it from every play."))},
+              "No. Share your client list and we exclude it from every signal we watch."))},
     {"slug": "professional-services", "name": "Consultancies and professional services",
      "short": "Professional services",
      "headline": "Meetings with the firms that need your expertise this quarter.",
      "lead": "Consulting is bought by people with a named problem and a deadline. We find them in what "
              "they post, the tenders they publish and the changes at their companies.",
      "buyers": ("Partners and managing directors", "COOs and CFOs", "Heads of operations, people and finance"),
-     "plays": ("posting-about-the-problem", "tenders-and-rfps", "experts-audience", "lookalikes"),
+     "signals": ("posting-about-the-problem", "tenders-and-rfps", "experts-audience", "lookalikes"),
      "samples": (
         {"lead": {"who": "Head of Operations", "where": "Accounting firm, 120 people",
                   "why": "Posted that month-end close still takes nine days, and asked how others do it.",
@@ -283,7 +510,7 @@ INDUSTRIES = (
      "lead": "IT buyers move when something forces them: an audit, a breach in the news, a migration, a "
              "tender. We watch for those moments and book you in while the decision is open.",
      "buyers": ("IT directors and CIOs", "Heads of security", "Operations leaders at smaller firms without IT teams"),
-     "plays": ("tenders-and-rfps", "rivals-audience", "visitors-on-your-site", "same-event"),
+     "signals": ("tenders-and-rfps", "rivals-audience", "visitors-on-your-site", "same-event"),
      "samples": (
         {"lead": {"who": "IT Director", "where": "Insurance broker, 250 people",
                   "why": "Three visits to your managed-security page this week from the company's network.",
@@ -304,14 +531,14 @@ INDUSTRIES = (
              "convert and watch which services and places bring real enquiries.",
      "faq": (("Can you target only companies in our region?",
               "Yes. Regions are part of the customer profile we agree on the call."),
-             ("Do you need access to our website for the visitors play?",
-              "Only a small script we give you. The other plays need nothing from your site."))},
+             ("Do you need access to our website for the website visitors signal?",
+              "Only a small script we give you. The other signals need nothing from your site."))},
     {"slug": "financial-services", "name": "Financial services and fintech", "short": "Financial services",
      "headline": "Meetings with finance leaders at the moment they're deciding.",
      "lead": "Finance buyers change suppliers around events: funding, a new CFO, an audit, a new market. "
              "We find those moments and book you in with the people who decide.",
      "buyers": ("CFOs and finance directors", "Heads of risk and compliance", "Founders of growing fintechs"),
-     "plays": ("news-that-opens-a-door", "several-signs-at-once", "rivals-audience", "visitors-on-your-site"),
+     "signals": ("news-that-opens-a-door", "several-signs-at-once", "rivals-audience", "visitors-on-your-site"),
      "samples": (
         {"lead": {"who": "CFO", "where": "Healthcare software company, 150 people",
                   "why": "New CFO this month, a funding round, and two visits to your pricing page.",
@@ -340,7 +567,7 @@ INDUSTRIES = (
      "lead": "Healthcare buyers are busy and careful. We find them through what they publish, the events "
              "they attend and the problems they raise, and book you in with a reason they'll recognise.",
      "buyers": ("Practice owners and managers", "Hospital operations and HR leaders", "Heads of digital and IT"),
-     "plays": ("experts-audience", "tenders-and-rfps", "same-event", "local-businesses"),
+     "signals": ("experts-audience", "tenders-and-rfps", "same-event", "local-businesses"),
      "samples": (
         {"lead": {"who": "Practice Owner", "where": "Dental clinic, 3 locations",
                   "why": "Strong reviews but no ads running, and a website that loads slowly on phones.",
@@ -368,7 +595,7 @@ INDUSTRIES = (
      "lead": "Property moves on news: a new project, an expansion, a new leader. We find developers and "
              "firms at those moments, and run the ads that bring buyers to site visits.",
      "buyers": ("Developers' marketing and sales heads", "Brokerage owners", "Property managers and investors"),
-     "plays": ("news-that-opens-a-door", "new-in-the-job", "local-businesses", "lookalikes"),
+     "signals": ("news-that-opens-a-door", "new-in-the-job", "local-businesses", "lookalikes"),
      "samples": (
         {"lead": {"who": "New Head of Marketing", "where": "Property developer, 400 people",
                   "why": "Started the role 3 weeks ago; was a customer at their last company.",
@@ -397,7 +624,7 @@ INDUSTRIES = (
      "lead": "Education buys on a calendar: tenders, term dates and conferences. We find the people and "
              "the moments, and book you in before the decision is made.",
      "buyers": ("Directors of admissions and marketing", "IT and operations leads", "Heads and principals"),
-     "plays": ("tenders-and-rfps", "same-event", "experts-audience", "posting-about-the-problem"),
+     "signals": ("tenders-and-rfps", "same-event", "experts-audience", "posting-about-the-problem"),
      "samples": (
         {"lead": {"who": "Director of Admissions", "where": "University, 15,000 students",
                   "why": "Speaking at a higher-education marketing conference next month.",
@@ -417,15 +644,15 @@ INDUSTRIES = (
      "perf": "Applicants search and compare for months. Our agents check programmes, places and seasons "
              "daily so spend rises when applicants are deciding and falls when they aren't.",
      "faq": (("Can you plan around our intake dates?",
-              "Yes. Seasonality is one of the things our agents check, and plays can follow your calendar."),
+              "Yes. Seasonality is one of the things our agents check, and the signals we watch can follow your calendar."),
              ("Do you contact students?",
               "No. Meetings are with staff and decision makers; ads reach applicants."))},
     {"slug": "ecommerce", "name": "E-commerce and D2C brands", "short": "E-commerce",
      "headline": "More from your ads, and meetings with the partners you want.",
      "lead": "For online brands the ads are the business. Our agents check every product, search term and "
-             "audience daily, and our plays find the partners and wholesale buyers you want to meet.",
+             "audience daily, and our signals find the partners and wholesale buyers you want to meet.",
      "buyers": ("Founders and heads of growth", "Retail and wholesale buyers", "Marketplace and partnership leads"),
-     "plays": ("lookalikes", "asking-for-recommendations", "new-in-the-job", "news-that-opens-a-door"),
+     "signals": ("lookalikes", "asking-for-recommendations", "new-in-the-job", "news-that-opens-a-door"),
      "samples": (
         {"lead": {"who": "Head of Growth", "where": "Online furniture retailer, 90 people",
                   "why": "Same size, market and tools as three of your best customers.",
@@ -496,7 +723,7 @@ COMPARE_ROWS = (
     ("Fits better when", ("You want someone in the team for years and can manage them",
                           "You want a broad marketing programme more than meetings",
                           "You want meetings only, and a price per meeting suits you",
-                          "Someone on your team has time to build plays and write messages",
+                          "Someone on your team has time to build flows and write messages",
                           "You want a promised number of meetings for a fixed fee, and ads paid on results")),
 )
 
@@ -609,30 +836,34 @@ FAQ_PERFORMANCE = (
      "We write the copy, and our Video Studio makes video ads."),
 )
 
-FAQ_PLAYS = (
+FAQ_SIGNALS = (
     ("What is a buying signal?",
      "Something a person or company does in public that shows they may need what you sell soon: a post "
-     "about the problem, a request for recommendations, a tender, funding news, a new leader in the role or "
-     "repeat visits to your pricing page. Sales teams also call it a trigger event."),
+     "about the problem, a request for recommendations, a tender, a job ad, a funding round, a new leader in "
+     "the role or repeat visits to your pricing page. Sales teams also call it a trigger event."),
     ("Is this the same as intent data?",
      "It is a kind of intent data. Many intent data tools sell topic scores worked out from anonymous "
-     "reading across a network of websites. Every sign we use is one you can check: each lead comes with a "
-     "link to the sign that found it."),
+     "reading across a network of websites. Every signal we use is one you can check: each lead comes with "
+     "a link to the signal that found it."),
+    ("What is a flow?",
+     "What happens once a signal appears: we check it fits your profile, find the person who buys, write "
+     "to them in your name and book the interested ones into your calendar. Each signal's page shows its "
+     "own flow."),
     ("Where do the signals come from?",
-     "From public sources: LinkedIn posts and comments, Reddit threads, published tenders, company news, job "
-     "changes and event speaker and attendee lists, plus business data providers for company and contact "
-     "details. Website visits come from a small script on your own site."),
+     "From public sources: LinkedIn posts, comments, hashtags and job ads, Reddit threads, tenders, company "
+     "news, job changes and event speaker lists, plus business data providers for funding, headcount, the "
+     "tools a company uses and contact details. Website visits come from a small script on your site."),
     ("How fresh are the signals?",
-     "We look every morning, so a new sign is picked up within a day. Each lead shows when its sign "
+     "We look every morning, so a new signal is picked up within a day. Each lead shows when its signal "
      "appeared, such as a post from 2 days ago or a role started 3 weeks ago."),
-    ("Which plays suit my market?",
+    ("Which signals suit my market?",
      "We choose them with you on the call, from who you sell to and how they buy. Software and agency "
      "buyers often post about their problems; schools and public bodies publish tenders; local businesses "
-     "are found by type and city. Each play's page lists the industries it suits."),
-    ("Do I need to do anything for a play to run?",
-     "Only for Visitors on your site, where you add a small script we give you to your website. The other "
-     "plays run from public sources and need nothing from you beyond the customer profile we agree on the "
-     "call."),
+     "are found by type and city. Each signal's page lists the industries it suits."),
+    ("What do you need from me?",
+     "The customer profile we agree on the call. A few signals need a little more: the script on your "
+     "website for Visitors on your site, the pages and leaders to watch for Engaging with your posts, and "
+     "a list of past customers for Your champion moved."),
 )
 
 FAQ_PRICING = (
@@ -687,14 +918,15 @@ ADS_DECK = (
     {"c": "ink", "k": "Ad strength", "b": "Two ad groups", "l": "Below Good; three headlines suggested", "s": "2"},
 )
 
-# One line icon per industry and per group of plays (templates/site/_parts.html draws them).
+# One line icon per industry and per group of signals (templates/site/_parts.html draws them).
 INDUSTRY_ICONS = {
     "technology-saas": "code", "agencies": "megaphone", "professional-services": "briefcase",
     "it-services": "server", "financial-services": "coins", "healthcare": "heart",
     "real-estate": "home", "education": "cap", "ecommerce": "cart",
 }
-PLAY_ICONS = {"say": "chat", "do": "bolt", "match": "target"}
+SIGNAL_ICONS = {"site": "eye", "brand": "megaphone", "need": "chat", "change": "bolt", "fit": "target",
+                "combo": "spark"}
 
-# The tickers: (address, words) for each play and each industry.
-PLAY_LINKS = tuple(("/plays/" + p["slug"], p["name"]) for p in PLAYS)
+# The tickers: (address, words) for each signal and each industry.
+SIGNAL_LINKS = tuple(("/signals/" + s["slug"], s["name"]) for s in SIGNALS)
 INDUSTRY_LINKS = tuple(("/industries/" + i["slug"], i["name"]) for i in INDUSTRIES)

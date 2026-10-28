@@ -9,17 +9,17 @@ Two services, sold on their own or together:
 
 ## Services
 
-- [GTM Engineering]({{ site_url }}/gtm-engineering): what we do, the system behind it, and the plays we run
+- [GTM Engineering]({{ site_url }}/gtm-engineering): what we do, the system behind it, and the signals we watch
 - [Performance Marketing]({{ site_url }}/performance-marketing): Google Ads and Meta, checked daily, paid on results
 - [Pricing]({{ site_url }}/pricing): the fixed fee, what counts as a meeting, and a worked example of the shortfall credit
 - [How it works]({{ site_url }}/how-it-works): six steps from the first call to booked meetings
 - [Book a call]({{ site_url }}/book): a 30-minute call, then a meeting plan in writing within 3 working days
 
-## Plays: the buying signs we turn into meetings
+## Signals: the buying signals we turn into meetings
 
-- [All plays]({{ site_url }}/plays): what a play is, and every one we run, by the kind of sign
-{% for p in site.PLAYS -%}
-- [{{ p.name }}]({{ site_url }}/plays/{{ p.slug }}): {{ p.sign }}
+- [All signals]({{ site_url }}/signals): what a signal and its flow are, every signal we watch by where it comes from, and the recipes that combine them
+{% for s in site.SIGNALS -%}
+- [{{ s.name }}]({{ site_url }}/signals/{{ s.slug }}): {{ s.sign }}
 {% endfor %}
 ## Industries
 

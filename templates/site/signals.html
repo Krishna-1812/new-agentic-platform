@@ -1,0 +1,108 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% set n = site.SIGNALS|length %}
+{% block main %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">Signals</span>
+  <h1 class="d1 rv"><span class="ln"><span>Every buying signal,</span></span> <span class="ln"><span>and the flow</span></span> <span class="ln"><span><span class="it">it</span> <span class="mk">starts.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">{{ n }} signals</span>
+    <p class="lead rv fade">A signal is something a person or company does in public that shows they may need what you sell. A flow is what we do next: check it, find the person who buys, write to them in your name and book the meeting. On the call we choose the signals that suit your market.</p>
+    <div class="btns rv fade"><a class="btn btn-1" href="/book" data-cta="hero">Get your meeting plan</a><a class="btn btn-2" href="#library">Browse the library</a></div>
+  </div>
+</header>
+
+{{ ui.ticker(site.SIGNAL_LINKS, "Every signal") }}
+
+<section class="wrap sec">
+  {% call ui.head("02", "The flow", "Every signal starts the same five steps. What changes is what we check, who we write to and what we say: each signal's page shows its own.") %}<span class="ln"><span>One signal, five steps,</span></span> <span class="ln"><span><span class="it">one meeting.</span></span></span>{% endcall %}
+  <div style="margin-top:var(--s8)">{{ ui.flow() }}</div>
+</section>
+
+<section class="wrap sec-sm" id="library">
+  <span class="rule rule-ink rv"></span>
+  <div class="dir-bar" style="margin-top:var(--s7)">
+    <div>
+      <span class="lbl">03 &mdash; The library</span>
+      <h2 class="d3 rv" style="margin-top:var(--s3)"><span class="ln"><span>{{ n }} signals, <span class="it">by where they come from.</span></span></span></h2>
+    </div>
+    <label class="srch sl-srch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="dirSearch" type="search" placeholder="Search signals: hiring, funding, Reddit&hellip;" aria-label="Search the signals"></label>
+  </div>
+  <div class="chips sl-chips" id="dirChips" role="group" aria-label="Show signals from">
+    <button type="button" class="chip on" data-cat="all" aria-pressed="true" data-note="Every signal we watch, from your own website to the wider market.">All <span class="sl-count">{{ n }}</span></button>
+    {% for key, label in site.SIGNAL_GROUPS %}<button type="button" class="chip" data-cat="{{ key }}" aria-pressed="false" data-note="{{ site.SIGNAL_GROUP_NOTES[key] }}">{{ label }} <span class="sl-count">{{ site.SIGNALS|selectattr('group', 'equalto', key)|list|length }}</span></button>{% endfor %}
+  </div>
+  <p class="sl-note" id="dirNote" aria-live="polite">Every signal we watch, from your own website to the wider market.</p>
+  <div class="dir sl-dir" id="dirCards">
+    {% for s in site.SIGNALS %}{{ ui.signal_card(s) }}{% endfor %}
+  </div>
+  <p class="empty" id="dirEmpty">No signal matches that yet. Tell us what you'd like to watch for on the call, and we'll tell you if we can.</p>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("04", "Recipes", "Some signals mean more together. A company that shows two of them close together ranks first, and the message ties them together.") %}<span class="ln"><span>Stronger</span></span> <span class="ln"><span><span class="it">together.</span></span></span>{% endcall %}
+  <div class="rcps" style="margin-top:var(--s7)">
+    {% set colours = ['c-orange', 'c-amber', 'c-sky', 'c-ink', 'c-card', 'c-red'] %}
+    {% for r in site.RECIPES %}
+    <article class="blk rcp {{ colours[loop.index0 % colours|length] }} rv fade">
+      <span class="lbl">Recipe {{ '%02d'|format(loop.index) }}</span>
+      <h3>{{ r.name }}</h3>
+      <div class="rcp-mix">
+        {% for slug in r.signals %}{% set s = site.SIGNALS_BY_SLUG[slug] %}{% if not loop.first %}<span class="rcp-plus" aria-label="and">+</span>{% endif %}<a class="rcp-chip" href="/signals/{{ s.slug }}">{{ s.name }}</a>{% endfor %}
+      </div>
+      <p>{{ r.why }}</p>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="btns sec-foot"><a class="btn btn-2" href="/signals/several-signs-at-once">How combined signals rank</a></div>
+</section>
+
+<section class="inkband" style="margin-top:var(--sec-sm)">
+  <div class="wrap">
+    <span class="lbl">05 &middot; How strong is each signal</span>
+    <h2 class="d3 rv" style="margin-top:var(--s3)"><span class="ln"><span>Not every signal</span></span> <span class="ln"><span><span class="it">is a buyer.</span></span></span></h2>
+    <div class="strs">
+      {% for level in (3, 2, 1) %}
+      <div class="strs-col rv fade">
+        {{ ui.strength(level) }}
+        <p>{{ site.STRENGTH_NOTES[level] }}</p>
+        <ul>{% for s in site.SIGNALS if s.strength == level %}<li><a href="/signals/{{ s.slug }}">{{ s.name }}</a></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="note" style="color:var(--ink3)">Our starting guide. Each lead's own score also weighs how well it fits your profile and how recent the signal is.</p>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {% call ui.head("06", "Buying signals", "A buying signal is something a person or company does in public that shows they may need what you sell soon. Sales teams also call it intent data or a trigger event.") %}<span class="ln"><span>A sign that someone</span></span> <span class="ln"><span><span class="it">may buy soon.</span></span></span>{% endcall %}
+  <div class="split split-top" style="margin-top:var(--s7)">
+    <div>
+      <span class="lbl">A signal you can check</span>
+      <p class="lead rv fade" style="margin-top:var(--s4)">Every lead comes with a link to the signal that found it, so you can see why we wrote. No score worked out from data you can&rsquo;t see.</p>
+    </div>
+    <div>
+      <span class="lbl">Every signal, every lead</span>
+      <ul class="ticks rv fade" style="margin-top:var(--s4)">
+        <li>Matched against the customer profile we agree on the call</li>
+        <li>Contact details verified, duplicates removed</li>
+        <li>Nobody contacted twice, whichever signal found them</li>
+        <li>Sent in your name, after you approve the messages</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-sm" style="padding-top:0">
+  <span class="rule rv"></span>
+  <div class="faq-grid">
+    {% call ui.head("07", "Questions") %}<span class="ln"><span>About</span></span> <span class="ln"><span><span class="it">the signals.</span></span></span>{% endcall %}
+    {{ ui.faq(faqs) }}
+  </div>
+</section>
+
+{{ ui.cta("Tell us who you want to meet.", "We'll pick the signals that suit your market and tell you how many meetings we can promise.", "Get your meeting plan") }}
+
+{% endblock %}

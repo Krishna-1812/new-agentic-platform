@@ -84,8 +84,9 @@ def test_the_sitemap_lists_every_page_of_the_site_and_nothing_else(client):
     locs = [u.find("s:loc", ns).text for u in root.findall("s:url", ns)]
     assert locs == [SITE + path for path in PAGES]
     assert len(set(locs)) == len(locs)
-    for p in site_pages.PLAYS:
-        assert SITE + "/plays/" + p["slug"] in locs
+    for s in site_pages.SIGNALS:
+        assert SITE + "/signals/" + s["slug"] in locs
+    assert not any("/plays" in loc for loc in locs)
     for i in site_pages.INDUSTRIES:
         assert SITE + "/industries/" + i["slug"] in locs
     assert not any("old-site" in loc or "/login" in loc for loc in locs)
@@ -153,8 +154,9 @@ def test_a_query_string_never_makes_a_second_address(client):
     assert '<link rel="canonical" href="%s/book">' % SITE in html
 
 
-def test_every_play_and_industry_has_its_own_search_title():
-    assert set(site_seo.PLAY_TITLES) == set(site_pages.PLAYS_BY_SLUG)
+def test_every_signal_and_industry_has_its_own_search_title():
+    assert set(site_seo.SIGNAL_TITLES) == set(site_pages.SIGNALS_BY_SLUG)
+    assert all(len(t) <= 60 for t in site_seo.SIGNAL_TITLES.values())
     assert set(site_seo.INDUSTRY_META) == set(site_pages.INDUSTRIES_BY_SLUG)
     for title, description in site_seo.INDUSTRY_META.values():
         assert len(title) <= 60 and 100 <= len(description) <= 160, title
@@ -209,30 +211,30 @@ def test_the_price_in_the_markup_is_the_price_on_the_page(client):
     assert service["offers"]["price"] == 0 and "free account audit" in _text(perf).lower()
 
 
-def test_the_lists_of_plays_and_industries_are_marked_up_as_lists(client):
-    for path, links in (("/plays", site_pages.PLAY_LINKS), ("/industries", site_pages.INDUSTRY_LINKS)):
+def test_the_lists_of_signals_and_industries_are_marked_up_as_lists(client):
+    for path, links in (("/signals", site_pages.SIGNAL_LINKS), ("/industries", site_pages.INDUSTRY_LINKS)):
         items = _nodes(_html(client, path), "ItemList")[0]["itemListElement"]
         assert [i["url"] for i in items] == [SITE + href for href, _name in links]
 
 
-def test_the_plays_page_explains_buying_signals_in_the_words_people_search(client):
-    """"Plays" is our word; buyers search for buying signals, intent data and trigger events."""
-    html = _html(client, "/plays")
+def test_the_signals_page_explains_buying_signals_in_the_words_people_search(client):
+    """Buyers search for buying signals, intent data and trigger events."""
+    html = _html(client, "/signals")
     text = _text(html)
     for term in ("buying signal", "intent data", "trigger event"):
         assert term in text.lower(), term
     page = next(n for n in _schema(html)["@graph"] if n.get("@id", "").endswith("#webpage"))
     assert "FAQPage" in page["@type"] and "CollectionPage" in page["@type"]
-    assert [q["name"] for q in page["mainEntity"]] == [q for q, _a in site_pages.FAQ_PLAYS]
-    assert _nodes(html, "ItemList"), "the list of plays stays marked up"
+    assert [q["name"] for q in page["mainEntity"]] == [q for q, _a in site_pages.FAQ_SIGNALS]
+    assert _nodes(html, "ItemList"), "the list of signals stays marked up"
 
 
 def test_the_plain_questions_come_first_where_people_land():
     assert site_pages.FAQ_HOME[0][0] == "What does %s do?" % appmod.BRAND["name"]
     assert site_pages.FAQ_GTM[0][0] == "What is GTM engineering?"
     assert site_pages.FAQ_PERFORMANCE[0][0] == "What is performance marketing?"
-    assert site_pages.FAQ_PLAYS[0][0] == "What is a buying signal?"
-    for q, a in site_pages.FAQ_HOME + site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PLAYS:
+    assert site_pages.FAQ_SIGNALS[0][0] == "What is a buying signal?"
+    for q, a in site_pages.FAQ_HOME + site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_SIGNALS:
         assert q.endswith("?") and a.endswith(".") and len(a) <= 400, q
 
 
@@ -274,15 +276,18 @@ def test_llms_txt_summarises_the_site_with_a_link_to_every_page(client):
     assert site_pages.GTM_FEE in body and "&amp;" not in body and "&rsquo;" not in body
 
 
-def test_llms_full_txt_carries_every_play_industry_question_and_the_price(client):
+def test_llms_full_txt_carries_every_signal_industry_question_and_the_price(client):
     r = client.get("/llms-full.txt")
     assert r.status_code == 200 and r.content_type == "text/plain; charset=utf-8"
     body = r.get_data(as_text=True)
-    for p in site_pages.PLAYS:
-        assert "### " + p["name"] in body and p["finds"] in body and p["message"] in body
+    for s in site_pages.SIGNALS:
+        assert "#### " + s["name"] in body and s["finds"] in body and s["message"] in body
+        assert "we write to %s%s" % (s["flow"][1][0].lower(), s["flow"][1][1:]) in body
+    for r in site_pages.RECIPES:
+        assert "- %s (" % r["name"] in body and r["why"] in body
     for i in site_pages.INDUSTRIES:
         assert "### " + i["name"] in body and i["lead"] in body
-    for q, a in site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PRICING + site_pages.FAQ_PLAYS:
+    for q, a in site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PRICING + site_pages.FAQ_SIGNALS:
         assert "Q: %s\nA: %s" % (q, a) in body, q
     for q, answers in site_pages.COMPARE_ROWS:
         assert "| %s | %s |" % (q, " | ".join(answers)) in body
