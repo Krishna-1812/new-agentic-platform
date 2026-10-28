@@ -91,6 +91,13 @@ Page: {{ site_url }}/plays/{{ p.slug }}
 - Sample lead: {{ p.lead.who }}, {{ p.lead.where }}. {{ p.lead.why }} ({{ p.lead.src }})
 - Sample first message, sent in the client's name: "{{ p.message }}"
 {% endfor %}
+### Questions about the signals
+
+{% for q, a in site.FAQ_PLAYS -%}
+Q: {{ q }}
+A: {{ a }}
+
+{% endfor -%}
 
 ## Industries
 

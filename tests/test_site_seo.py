@@ -215,11 +215,24 @@ def test_the_lists_of_plays_and_industries_are_marked_up_as_lists(client):
         assert [i["url"] for i in items] == [SITE + href for href, _name in links]
 
 
+def test_the_plays_page_explains_buying_signals_in_the_words_people_search(client):
+    """"Plays" is our word; buyers search for buying signals, intent data and trigger events."""
+    html = _html(client, "/plays")
+    text = _text(html)
+    for term in ("buying signal", "intent data", "trigger event"):
+        assert term in text.lower(), term
+    page = next(n for n in _schema(html)["@graph"] if n.get("@id", "").endswith("#webpage"))
+    assert "FAQPage" in page["@type"] and "CollectionPage" in page["@type"]
+    assert [q["name"] for q in page["mainEntity"]] == [q for q, _a in site_pages.FAQ_PLAYS]
+    assert _nodes(html, "ItemList"), "the list of plays stays marked up"
+
+
 def test_the_plain_questions_come_first_where_people_land():
     assert site_pages.FAQ_HOME[0][0] == "What does %s do?" % appmod.BRAND["name"]
     assert site_pages.FAQ_GTM[0][0] == "What is GTM engineering?"
     assert site_pages.FAQ_PERFORMANCE[0][0] == "What is performance marketing?"
-    for q, a in site_pages.FAQ_HOME + site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE:
+    assert site_pages.FAQ_PLAYS[0][0] == "What is a buying signal?"
+    for q, a in site_pages.FAQ_HOME + site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PLAYS:
         assert q.endswith("?") and a.endswith(".") and len(a) <= 400, q
 
 
@@ -269,7 +282,7 @@ def test_llms_full_txt_carries_every_play_industry_question_and_the_price(client
         assert "### " + p["name"] in body and p["finds"] in body and p["message"] in body
     for i in site_pages.INDUSTRIES:
         assert "### " + i["name"] in body and i["lead"] in body
-    for q, a in site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PRICING:
+    for q, a in site_pages.FAQ_GTM + site_pages.FAQ_PERFORMANCE + site_pages.FAQ_PRICING + site_pages.FAQ_PLAYS:
         assert "Q: %s\nA: %s" % (q, a) in body, q
     for q, answers in site_pages.COMPARE_ROWS:
         assert "| %s | %s |" % (q, " | ".join(answers)) in body

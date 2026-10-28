@@ -609,6 +609,32 @@ FAQ_PERFORMANCE = (
      "We write the copy, and our Video Studio makes video ads."),
 )
 
+FAQ_PLAYS = (
+    ("What is a buying signal?",
+     "Something a person or company does in public that shows they may need what you sell soon: a post "
+     "about the problem, a request for recommendations, a tender, funding news, a new leader in the role or "
+     "repeat visits to your pricing page. Sales teams also call it a trigger event."),
+    ("Is this the same as intent data?",
+     "It is a kind of intent data. Many intent data tools sell topic scores worked out from anonymous "
+     "reading across a network of websites. Every sign we use is one you can check: each lead comes with a "
+     "link to the sign that found it."),
+    ("Where do the signals come from?",
+     "From public sources: LinkedIn posts and comments, Reddit threads, published tenders, company news, job "
+     "changes and event speaker and attendee lists, plus business data providers for company and contact "
+     "details. Website visits come from a small script on your own site."),
+    ("How fresh are the signals?",
+     "We look every morning, so a new sign is picked up within a day. Each lead shows when its sign "
+     "appeared, such as a post from 2 days ago or a role started 3 weeks ago."),
+    ("Which plays suit my market?",
+     "We choose them with you on the call, from who you sell to and how they buy. Software and agency "
+     "buyers often post about their problems; schools and public bodies publish tenders; local businesses "
+     "are found by type and city. Each play's page lists the industries it suits."),
+    ("Do I need to do anything for a play to run?",
+     "Only for Visitors on your site, where you add a small script we give you to your website. The other "
+     "plays run from public sources and need nothing from you beyond the customer profile we agree on the "
+     "call."),
+)
+
 FAQ_PRICING = (
     ("Is there a contract or minimum term?",
      "We agree the terms on the call and put them in your meeting plan, along with the number and the price."),

@@ -25,6 +25,21 @@
 </section>
 {% endfor %}
 
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("05", "Buying signals", "A buying signal is something a person or company does in public that shows they may need what you sell soon. Sales teams also call it intent data or a trigger event.") %}<span class="ln"><span>A sign that someone</span></span> <span class="ln"><span><span class="it">may buy soon.</span></span></span>{% endcall %}
+  <div class="split split-top" style="margin-top:var(--s7)">
+    <div>
+      <span class="lbl">What a play is</span>
+      <p class="lead rv fade">One buying signal, and what we do when it shows: where we look for it, who at the company we write to, and the first message, sent in your name.</p>
+    </div>
+    <div>
+      <span class="lbl">A sign you can check</span>
+      <p class="lead rv fade">Every lead comes with a link to the sign that found it, so you can see why we wrote. No score worked out from data you can&rsquo;t see.</p>
+    </div>
+  </div>
+</section>
+
 <section class="inkband" style="margin-top:var(--sec-sm)">
   <div class="wrap split">
     <div>
@@ -37,6 +52,13 @@
       <li>Nobody contacted twice, whichever play found them</li>
       <li>A link to the sign that found them, so you can see why</li>
     </ul>
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <div class="faq-grid">
+    {% call ui.head("06", "Questions") %}<span class="ln"><span>About</span></span> <span class="ln"><span><span class="it">the signals.</span></span></span>{% endcall %}
+    {{ ui.faq(faqs) }}
   </div>
 </section>
 

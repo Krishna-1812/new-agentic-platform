@@ -17,7 +17,7 @@ sitemap and in the structured data.
 import site_pages as S
 from brand import BRAND
 
-UPDATED = "2026-10-27"
+UPDATED = "2026-10-28"
 
 # What the business is, in one paragraph: the structured data's description and the top of llms.txt.
 SUMMARY = ("%s is a GTM engineering and performance marketing agency that works with AI agents. It finds "

@@ -999,7 +999,7 @@ def plays_page():
     return _site("plays.html", "plays", "Buying signals we turn into B2B meetings: %d plays" % len(site_pages.PLAYS),
                  "The %d buying signs we watch for every morning, from posts and tenders to new leaders and "
                  "visits to your website, and how each one becomes a meeting." % len(site_pages.PLAYS),
-                 crumbs=[("Plays", "/plays")])
+                 crumbs=[("Plays", "/plays")], faqs=site_pages.FAQ_PLAYS)
 
 
 @app.route("/plays/<slug>")
