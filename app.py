@@ -1458,9 +1458,24 @@ def auth_google():
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it. The sitemap
 # and the llms.txt files are what search engines and AI assistants read first.
-ROBOTS_PUBLIC_PATHS = ["/$", "/gtm-engineering", "/performance-marketing", "/how-it-works", "/pricing",
-                       "/book", "/signals", "/plays", "/industries", "/agents", "/compare", "/about", "/outreach-policy",
-                       "/privacy", "/terms", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
+# Everything else is closed, because a client workspace lives at the top level (/<account>) and can't be
+# named here. So the pages that are open are read from the sitemap: a page added to the site is open to
+# crawlers the moment it is listed, and can never be left out by hand (/signals was, for a day). Then the
+# addresses that move to a listed page (/plays), and the files every page needs.
+ROBOTS_MOVED_PATHS = ["/plays"]
+ROBOTS_FILES = ["/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
+
+
+def _robots_public_paths():
+    sections = []
+    for path, _page in site_seo.pages():
+        top = "/" + path.strip("/").split("/")[0] if path != "/" else "/$"
+        if top not in sections:
+            sections.append(top)
+    return sections + ROBOTS_MOVED_PATHS + ROBOTS_FILES
+
+
+ROBOTS_PUBLIC_PATHS = _robots_public_paths()
 # Crawled but never listed: every page under these says noindex, and a crawler can only read that on a page
 # it may fetch. Blocked instead, the footer's links to them could still be listed as bare addresses.
 ROBOTS_NOINDEX_PATHS = ["/old-site", "/login"]
