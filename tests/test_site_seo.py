@@ -108,6 +108,18 @@ def test_every_listed_page_opens_and_robots_lets_it_be_read(client, path):
     assert _robots_allows(client.get("/robots.txt").get_data(as_text=True), path), path
 
 
+def test_a_page_added_to_the_sitemap_is_open_to_crawlers_without_touching_robots(client):
+    """robots.txt reads its open sections from the sitemap, so a new one can't be left out by hand."""
+    listed = list(appmod.site_seo.pages()) + [("/guides/a-new-guide", "guide")]
+    with patch.object(appmod.site_seo, "pages", lambda: listed):
+        with patch.object(appmod, "ROBOTS_PUBLIC_PATHS", appmod._robots_public_paths()):
+            body = client.get("/robots.txt").get_data(as_text=True)
+    assert _robots_allows(body, "/guides") and _robots_allows(body, "/guides/a-new-guide")
+    assert not _robots_allows(body, "/acme") and not _robots_allows(body, "/acme/agents/x")
+    # The address that moved keeps its 301 readable.
+    assert _robots_allows(body, "/plays/lookalikes")
+
+
 def test_robots_points_at_the_sitemap_and_lets_ai_assistants_read_the_summaries(client):
     body = client.get("/robots.txt").get_data(as_text=True)
     assert "Sitemap: %s/sitemap.xml" % SITE in body.splitlines()
