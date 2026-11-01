@@ -3,7 +3,7 @@ paid marketing consultants (/partners/consultants), and the page that introduces
 
 They are outreach landing pages, so each one carries its own application form, and their copy holds a
 few lines: the team's location is said as what it gives a partner (hours that cover theirs), never as a
-price, and the consultant's commission rate is set in the partner agreement, not on the page.
+price, and the consultant's commission is one rate (site_pages.PARTNER_COMMISSION) everywhere it is named.
 """
 
 import html as html_lib
@@ -109,10 +109,28 @@ def test_the_team_is_placed_by_its_hours_never_by_its_price(client, path):
         assert word not in text, (path, word)
 
 
-def test_the_commission_rate_is_left_to_the_partner_agreement(client):
-    text = _text(_html(client, "/partners/consultants"))
-    assert "recurring commission" in text.lower() and "partner agreement" in text
-    assert not re.search(r"\d+\s?%", text), re.search(r".{40}\d+\s?%.{20}", text)
+def test_the_commission_is_one_rate_everywhere_it_is_named(client):
+    rate = site_pages.PARTNER_COMMISSION
+    assert rate == "20%"
+    for path in ("/partners", "/partners/consultants"):
+        text = _text(_html(client, path))
+        assert rate in text, path
+        assert set(re.findall(r"\d+\s?%", text)) <= {rate}, (path, set(re.findall(r"\d+\s?%", text)))
+    consultants = _text(_html(client, "/partners/consultants"))
+    assert "%s recurring commission" % rate in consultants and "partner agreement" in consultants
+    assert rate in dict(site_pages.FAQ_CONSULTANT)["How much commission do I earn?"]
+    assert rate in client.get("/llms-full.txt").get_data(as_text=True)
+
+
+def test_linkedin_ads_is_among_the_channels_we_run_for_partners(client):
+    agencies = _text(_html(client, "/partners/agencies"))
+    assert "LinkedIn Ads" in agencies and "Google Ads, Meta and LinkedIn Ads" in agencies
+    assert "LinkedIn Ads" in [name for _ic, name, _items in site_pages.AGENCY_SERVICES]
+    assert "LinkedIn Ads" in dict(site_pages.FAQ_AGENCY)["Which channels do you run?"]
+    # The agents read Google Ads and Meta; no partner page says they read every account.
+    for path in ("/partners", "/partners/agencies", "/partners/consultants"):
+        text = _text(_html(client, path))
+        assert "16 agents read every account" not in text and "Agents on every account" not in text, path
 
 
 def test_our_hours_fill_nine_hours_of_each_partners_day():

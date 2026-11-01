@@ -190,7 +190,7 @@ def white_label_service(site_url):
             "serviceType": "White-label PPC and paid social management for agencies",
             "url": site_url + "/partners/agencies", "audience": {"@type": "BusinessAudience",
                                                                   "audienceType": "Marketing agencies"},
-            "description": ("Google Ads and Meta for an agency's clients, run by our team under the agency's "
+            "description": (S.PARTNER_CHANNELS + " for an agency's clients, run by our team under the agency's "
                             "brand: builds, daily optimisation, tracking and reports in the agency's template. "
                             "The agency keeps the client relationship and sets its own price. Priced per "
                             "account, per dedicated specialist or per project."),

@@ -145,7 +145,7 @@ Two ways to work with us without being our client. Our team is in India and work
 
 Page: {{ site_url }}/partners/agencies
 
-We run Google Ads and Meta for an agency's clients under the agency's name. The agency keeps the client relationship, the brand and the margin; we do the builds, the daily work and the reports, in the agency's template.
+We run {{ site.PARTNER_CHANNELS }} for an agency's clients under the agency's name. The agency keeps the client relationship, the brand and the margin; we do the builds, the daily work and the reports, in the agency's template.
 
 What the agency keeps:
 {% for i in site.AGENCY_YOU -%}
@@ -172,7 +172,7 @@ A: {{ a }}
 
 Page: {{ site_url }}/partners/consultants
 
-For senior paid marketing people who now consult, freelance or work as fractional CMOs. The consultant wins the client, or takes a lead we pass them, and stays the client's main contact; our team does the delivery. The consultant earns a recurring commission: a share of the client's monthly fee for as long as the client stays. The rate is set in the partner agreement.
+For senior paid marketing people who now consult, freelance or work as fractional CMOs. The consultant wins the client, or takes a lead we pass them, and stays the client's main contact; our team does the delivery. The consultant earns a recurring commission: {{ site.PARTNER_COMMISSION }} of the client's monthly fee for as long as the client stays, set out in the partner agreement.
 
 How it works:
 {% for _ic, name, what in site.CONSULTANT_STEPS -%}

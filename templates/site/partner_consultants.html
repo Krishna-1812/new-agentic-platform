@@ -2,7 +2,7 @@
 {% import "site/_parts.html" as ui with context %}
 {#- The partner programme for senior paid marketing consultants (/partners/consultants). An outreach
     landing page: the consultant wins the client and stays their lead, our team runs the accounts, and
-    the consultant earns a recurring commission. The rate is in the partner agreement, never on the page.
+    the consultant earns a recurring commission (site_pages.PARTNER_COMMISSION of every monthly fee).
     The application form at the end posts to the same intake as /book. -#}
 {% block main %}
 
@@ -13,9 +13,9 @@
   <div class="hero-foot">
     <span class="idx rv fade">01 / Partner programme</span>
     <div class="rv fade">
-      <p class="lead">A partner programme for senior paid marketing people who now work for themselves. Bring in clients, or take the leads we pass you, and stay the person they trust. Our team in India does every hour of the delivery. You earn a recurring commission for as long as the client stays.</p>
+      <p class="lead">A partner programme for senior paid marketing people who now work for themselves. Bring in clients, or take the leads we pass you, and stay the person they trust. Our team in India does every hour of the delivery. You earn {{ site.PARTNER_COMMISSION }} of the client&rsquo;s fee every month, for as long as they stay.</p>
       <ul class="promise is-sky">
-        <li>{{ ui.tick() }}Recurring commission</li>
+        <li>{{ ui.tick() }}{{ site.PARTNER_COMMISSION }} recurring commission</li>
         <li>{{ ui.tick() }}Leads passed to you</li>
         <li>{{ ui.tick() }}No delivery work</li>
       </ul>
@@ -80,10 +80,10 @@
 
 <section class="wrap sec-sm" id="commission">
   <span class="rule rv"></span>
-  {% call ui.head("05", "Your commission", "Not a one-off referral fee: a share of the client's fee, every month they stay.") %}<span class="ln"><span>Paid every month,</span></span> <span class="ln"><span><span class="it">not once.</span></span></span>{% endcall %}
+  {% call ui.head("05", "Your commission", "Not a one-off referral fee: " ~ site.PARTNER_COMMISSION ~ " of the client's fee, every month they stay.") %}<span class="ln"><span>Paid every month,</span></span> <span class="ln"><span><span class="it">not once.</span></span></span>{% endcall %}
   <div class="split split-top" style="margin-top:var(--s8)">
-    <div class="months rv" role="img" aria-label="Commission paid in month 1, month 2 and every month after, for as long as the client stays">
-      <div class="months-hd"><span class="lbl">One client</span><span class="lbl">Commission paid</span></div>
+    <div class="months rv" role="img" aria-label="{{ site.PARTNER_COMMISSION }} of the fee paid in month 1, month 2 and every month after, for as long as the client stays">
+      <div class="months-hd"><span class="lbl">One client</span><span class="lbl">{{ site.PARTNER_COMMISSION }} of the fee, paid</span></div>
       <div class="months-stack">
       <div class="months-grid">
         {% for m in range(1, 12) %}<span class="mo"><b>{{ '%02d'|format(m) }}</b><i>Month</i></span>{% endfor %}<span class="mo mo-on"><b>&infin;</b><i>And on</i></span>
@@ -105,7 +105,7 @@
   <div class="wrap">
     <div class="stats">
       <div class="stat rv fade"><b>0</b><span>Hours you spend in ad accounts</span></div>
-      <div class="stat rv fade"><b class="num" data-count="16">16</b><span>Agents on every client account, every morning</span></div>
+      <div class="stat rv fade"><b class="num" data-count="16">16</b><span>Agents on every Google Ads and Meta account, every morning</span></div>
       <div class="stat rv fade"><b class="num" data-count="12">12</b><span>Commission payments a year, per client</span></div>
       <div class="stat rv fade"><b class="num" data-count="1">1</b><span>Working day to hear back from us</span></div>
     </div>
@@ -140,7 +140,7 @@
       <div class="ledger next">
         <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>We reply within one working day</h4><p>With a few times for a call.</p></div></div>
         <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>A 30-minute call</h4><p>Your background, your network, and the clients you could bring.</p></div></div>
-        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Your partner agreement</h4><p>The commission rate, how leads reach you, and how we work together.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Your partner agreement</h4><p>Your {{ site.PARTNER_COMMISSION }} commission in writing, how leads reach you, and how we work together.</p></div></div>
       </div>
     </div>
     <div class="book-card">

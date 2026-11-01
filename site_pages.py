@@ -938,14 +938,21 @@ INDUSTRY_LINKS = tuple(("/industries/" + i["slug"], i["name"]) for i in INDUSTRI
 # team does the delivery, for a recurring commission. Our team is in India; that is said as what it
 # gives a partner (hours that cover theirs), never as a price.
 
+# The consultant's commission: this share of every monthly fee their client pays, for as long as the
+# client stays. Every mention on the site reads it from here.
+PARTNER_COMMISSION = "20%"
+
+# The channels we run for a partner's clients. The 16 agents read the Google Ads and Meta accounts.
+PARTNER_CHANNELS = "Google Ads, Meta and LinkedIn Ads"
+
 PARTNER_KINDS = (
     {"slug": "agencies", "c": "orange", "k": "For agencies", "name": "White-label paid media",
      "line": "Your clients and your brand. Our team does the work behind it.",
-     "points": ("Google Ads and Meta run under your name", "No hiring, no bench between clients",
+     "points": (PARTNER_CHANNELS + " run under your name", "No hiring, no bench between clients",
                 "Mutual NDA before any client's name")},
     {"slug": "consultants", "c": "sky", "k": "For consultants", "name": "The partner programme",
      "line": "You win the client and stay their lead. We run the accounts. You're paid every month.",
-     "points": ("A recurring commission", "Leads passed to you", "No delivery work")},
+     "points": ("A " + PARTNER_COMMISSION + " recurring commission", "Leads passed to you", "No delivery work")},
 )
 
 # The agency page's hero deck: one client account, from the handover to the report.
@@ -975,16 +982,17 @@ AGENCY_US = (
 AGENCY_SERVICES = (
     ("search", "Google Ads", ("Search, Shopping and Performance Max", "Display and remarketing",
                               "Keyword research and negative lists")),
-    ("megaphone", "Meta ads", ("Facebook and Instagram", "Prospecting and retargeting",
-                               "Creative tests and catalogue campaigns")),
+    ("megaphone", "Meta ads", ("Facebook and Instagram", "Prospecting, retargeting and catalogue campaigns",
+                               "Creative tests, and video ads from our Video Studio")),
+    ("briefcase", "LinkedIn Ads", ("Sponsored content, message ads and lead gen forms",
+                                   "Targeting by job title, seniority, company and industry",
+                                   "Matched audiences from account lists")),
     ("chart", "Tracking and reporting", ("GA4, Tag Manager and conversion tracking",
                                          "Dashboards in your brand", "A monthly report in your template")),
     ("shield", "Audits and pitches", ("About 50 checks on a Google Ads account",
                                       "Meta account checks", "Findings written for your pitch")),
-    ("pen", "Ads and pages", ("Ad copy and headline tests", "Video ads from our Video Studio",
-                              "Landing pages checked against their ads")),
-    ("spark", "The agents", ("16 agents read every account every morning",
-                             "Budget leaks flagged before month end", "A person makes every change")),
+    ("spark", "The agents", ("16 agents read every Google Ads and Meta account each morning",
+                             "Landing pages checked against their ads", "A person makes every change")),
 )
 
 # The three ways an agency can work with us: (name, what it is, who it suits).
@@ -1052,8 +1060,9 @@ FAQ_AGENCY = (
     ("Can we start with one account?",
      "Yes, and we suggest it: one pilot account lets you judge the work before you hand over more."),
     ("Which channels do you run?",
-     "Google Ads (Search, Shopping, Performance Max, Display and remarketing) and Meta (Facebook and "
-     "Instagram), with the tracking and reporting around them."),
+     "Google Ads (Search, Shopping, Performance Max, Display and remarketing), Meta (Facebook and "
+     "Instagram) and LinkedIn Ads (sponsored content, message ads and lead gen forms), with the tracking "
+     "and reporting around them."),
     ("Where is the team, and how do time zones work?",
      "In India, working 09:30 to 18:30 India time. For agencies in the US, that is your night, so work "
      "briefed by the end of your day can be done by the start of your next. UK and European agencies share "
@@ -1061,7 +1070,8 @@ FAQ_AGENCY = (
     ("Who do I talk to day to day?",
      "One named account lead who knows every one of your accounts, in your Slack or by email."),
     ("How do you keep the quality up?",
-     "Every campaign is QA-checked before it goes live, every account is read by 16 agents each morning, "
+     "Every campaign is QA-checked before it goes live, every Google Ads and Meta account is read by 16 "
+     "agents each morning, "
      "and your account lead makes, and explains, every change."),
 )
 
@@ -1070,7 +1080,7 @@ CONSULTANT_DECK = (
     {"c": "orange", "k": "A lead for you", "b": "Head of Marketing", "l": "Asked who should run their Meta ads", "s": "→"},
     {"c": "amber", "k": "Your call", "b": "You pitch", "l": "With a free account audit from us", "s": "50"},
     {"c": "sky", "k": "They sign", "b": "We deliver", "l": "Every hour of the account work", "s": "16"},
-    {"c": "ink", "k": "Your commission", "b": "Every month", "l": "For as long as they stay", "s": "%"},
+    {"c": "ink", "k": "Your commission", "b": PARTNER_COMMISSION + " every month", "l": "For as long as they stay", "s": PARTNER_COMMISSION},
 )
 
 # Who the programme is for: (icon, who, what that looks like).
@@ -1128,21 +1138,21 @@ CONSULTANT_LEADS = (
 
 # How the commission works: (question, answer), the ledger beside the months.
 CONSULTANT_TERMS = (
-    ("What it is", "A share of the client's monthly fee, not a one-off referral fee."),
+    ("What it is", PARTNER_COMMISSION + " of the client's monthly fee, not a one-off referral fee."),
     ("When it's paid", "Every month, once the client has paid us."),
     ("How long", "For as long as the client stays with us."),
     ("Which clients", "Clients you bring, and clients from leads we pass you."),
-    ("The rate", "Set in your partner agreement. We go through it on the first call."),
+    ("In writing", "The rate and the terms are set out in your partner agreement."),
 )
 
 FAQ_CONSULTANT = (
     ("How does the partner programme work?",
      "You find or take on a client who needs paid marketing, stay their main contact and lead their "
-     "strategy, and our team runs their Google Ads and Meta day to day. You earn a share of the client's "
-     "fee every month they stay."),
+     "strategy, and our team runs their " + PARTNER_CHANNELS + " day to day. You earn " + PARTNER_COMMISSION +
+     " of the client's fee every month they stay."),
     ("How much commission do I earn?",
-     "A share of every monthly fee the client pays, for as long as they stay. The rate is in your partner "
-     "agreement, and we go through it on the first call."),
+     PARTNER_COMMISSION + " of every monthly fee the client pays, for as long as they stay. It's written "
+     "into your partner agreement."),
     ("Where do the leads come from?",
      "From the same buying signals we watch for our own clients, pointed at companies that need paid "
      "marketing help: people asking for agency recommendations, people unhappy with the agency they have, "
