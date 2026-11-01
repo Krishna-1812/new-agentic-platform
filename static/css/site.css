@@ -29,7 +29,9 @@
         padding: var(--s2) var(--s4); border-radius: var(--r-pill); }
 .skip:focus { top: var(--s3); }
 
-/* ── The masthead carries six pages, longer names than the old six ── */
+/* ── The masthead carries seven pages, longer names than the old six. A name never breaks
+      over two lines: below the width they all fit on one, the burger takes over. ── */
+.nv-link, .nv-signin { white-space: nowrap; }
 .nv-link[aria-current="page"] { color: var(--ink); }
 .nv-link[aria-current="page"]::after { transform: scaleX(1); }
 @media (max-width: 1320px) { .nv, .nv-links { gap: var(--s5); } .nv-links { margin-left: var(--s3); } }

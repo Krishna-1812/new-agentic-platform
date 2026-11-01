@@ -21,6 +21,7 @@ NAV = (
     ("/industries", "Industries"),
     ("/how-it-works", "How it works"),
     ("/pricing", "Pricing"),
+    ("/partners", "Partners"),
 )
 
 # The buying signals we watch for (/signals), each with the flow it starts: what we check, who we write
