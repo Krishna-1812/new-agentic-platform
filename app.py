@@ -1029,15 +1029,15 @@ def signal_page(slug):
 @app.route("/partners")
 def partners_page():
     return _site("partners.html", "partners", "Partner with us: agencies and paid media consultants",
-                 "Two ways to work with us: white-label Google Ads and Meta for agencies, and a recurring "
-                 "commission for consultants who bring in clients.", crumbs=[("Partners", "/partners")])
+                 "Two ways to work with us: white-label Google Ads, Meta and LinkedIn Ads for agencies, and a "
+                 "%s recurring commission for consultants." % site_pages.PARTNER_COMMISSION, crumbs=[("Partners", "/partners")])
 
 
 @app.route("/partners/agencies")
 def partner_agencies_page():
     return _site("partner_agencies.html", "partner-agencies", "White-label PPC and paid media for agencies",
-                 "Google Ads and Meta for your clients, run by our team under your brand. You keep the client "
-                 "and the margin; no hiring. NDA signed first.",
+                 "Google Ads, Meta and LinkedIn Ads for your clients, run by our team under your brand. You keep "
+                 "the client and the margin; no hiring. NDA signed first.",
                  crumbs=[("Partners", "/partners"), ("For agencies", "/partners/agencies")],
                  faqs=site_pages.FAQ_AGENCY)
 
@@ -1046,8 +1046,8 @@ def partner_agencies_page():
 def partner_consultants_page():
     return _site("partner_consultants.html", "partner-consultants",
                  "Partner programme for paid marketing consultants",
-                 "Win the client and stay their lead; our team runs the Google Ads and Meta. A recurring "
-                 "commission every month, and leads passed to you.",
+                 "Win the client and stay their lead; our team runs the ads. %s of the client's fee every "
+                 "month they stay, and leads passed to you." % site_pages.PARTNER_COMMISSION,
                  crumbs=[("Partners", "/partners"), ("For consultants", "/partners/consultants")],
                  faqs=site_pages.FAQ_CONSULTANT,
                  signals=[site_pages.SIGNALS_BY_SLUG[s] for s in site_pages.CONSULTANT_SIGNALS])
