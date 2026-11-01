@@ -58,6 +58,16 @@ def test_each_partner_page_opens_with_its_heading_and_is_listed(client, path, he
     assert "Allow: /partners" in client.get("/robots.txt").get_data(as_text=True)
 
 
+def test_partners_is_in_the_main_menu_and_marked_on_every_partner_page(client):
+    assert ("/partners", "Partners") in site_pages.NAV
+    assert '<a class="nv-link" href="/partners">Partners</a>' in _html(client, "/")
+    for path in PARTNER_PAGES:
+        assert '<a class="nv-link" href="/partners" aria-current="page">Partners</a>' in _html(client, path), path
+    # Seven names in the masthead: none of them may break over two lines.
+    css = open(os.path.join(ROOT, "static", "css", "site.css"), encoding="utf-8").read()
+    assert ".nv-link, .nv-signin { white-space: nowrap; }" in css
+
+
 def test_the_footer_and_the_hub_lead_to_both_programmes(client):
     assert '<a href="/partners">Partners</a>' in _html(client, "/")
     hub = _html(client, "/partners")
