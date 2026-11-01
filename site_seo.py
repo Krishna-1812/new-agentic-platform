@@ -17,7 +17,7 @@ sitemap and in the structured data.
 import site_pages as S
 from brand import BRAND
 
-UPDATED = "2026-10-28"
+UPDATED = "2026-11-01"
 
 # What the business is, in one paragraph: the structured data's description and the top of llms.txt.
 SUMMARY = ("%s is a GTM engineering and performance marketing agency that works with AI agents. It finds "
@@ -125,6 +125,8 @@ def pages():
     out += [("/signals/" + s["slug"], "signal") for s in S.SIGNALS]
     out += [("/industries", "industries")]
     out += [("/industries/" + i["slug"], "industry") for i in S.INDUSTRIES]
+    out += [("/partners", "partners"), ("/partners/agencies", "partner-agencies"),
+            ("/partners/consultants", "partner-consultants")]
     out += [("/agents", "agents"), ("/compare", "compare"), ("/about", "about"), ("/book", "book"),
             ("/outreach-policy", "outreach"), ("/privacy", "privacy"), ("/terms", "terms")]
     return out
@@ -183,6 +185,18 @@ def performance_service(site_url):
                                        "the account is missing.")}}
 
 
+def white_label_service(site_url):
+    return {"@type": "Service", "@id": site_url + "/partners/agencies#service", "name": "White-label paid media",
+            "serviceType": "White-label PPC and paid social management for agencies",
+            "url": site_url + "/partners/agencies", "audience": {"@type": "BusinessAudience",
+                                                                  "audienceType": "Marketing agencies"},
+            "description": ("Google Ads and Meta for an agency's clients, run by our team under the agency's "
+                            "brand: builds, daily optimisation, tracking and reports in the agency's template. "
+                            "The agency keeps the client relationship and sets its own price. Priced per "
+                            "account, per dedicated specialist or per project."),
+            "provider": {"@id": site_url + "/#organization"}}
+
+
 def _breadcrumbs(site_url, url, crumbs):
     trail = [("Home", site_url + "/")] + [(name, site_url + path) for name, path in crumbs]
     return {"@type": "BreadcrumbList", "@id": url + "#breadcrumb",
@@ -198,7 +212,7 @@ def _item_list(url, name, items):
 
 # The kind of page each one is, where schema.org has a better word than WebPage.
 _PAGE_TYPES = {"about": "AboutPage", "book": "ContactPage", "signals": "CollectionPage",
-               "industries": "CollectionPage"}
+               "industries": "CollectionPage", "partners": "CollectionPage"}
 
 
 def graph(site_url, page, url, title, description, crumbs=(), faqs=()):
@@ -219,10 +233,15 @@ def graph(site_url, page, url, title, description, crumbs=(), faqs=()):
         nodes.append(gtm_service(site_url))
     if page in ("home", "performance", "pricing"):
         nodes.append(performance_service(site_url))
+    if page == "partner-agencies":
+        nodes.append(white_label_service(site_url))
+    if page == "partners":
+        nodes.append(_item_list(url, "Partner programmes", [(site_url + "/partners/" + k["slug"], k["name"])
+                                                             for k in S.PARTNER_KINDS]))
     if page == "signals":
         nodes.append(_item_list(url, "Buying signals", [(site_url + h, n) for h, n in S.SIGNAL_LINKS]))
     if page == "industries":
         nodes.append(_item_list(url, "Industries", [(site_url + h, n) for h, n in S.INDUSTRY_LINKS]))
-    if page in ("signals", "industries") and not faqs:
+    if page in ("signals", "industries", "partners") and not faqs:
         webpage["mainEntity"] = {"@id": url + "#list"}
     return {"@context": "https://schema.org", "@graph": nodes}

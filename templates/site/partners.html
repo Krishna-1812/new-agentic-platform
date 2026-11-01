@@ -1,0 +1,43 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{#- Partners (/partners): the two ways to work with us without being our client. -#}
+{% block main %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">Partners</span>
+  <h1 class="d1 rv"><span class="ln"><span>Grow with us.</span></span> <span class="ln"><span><span class="mk">Two ways in.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">01 / Partners</span>
+    <div class="rv fade">
+      <p class="lead">For agencies that want paid media for their clients without hiring for it, and for senior paid marketing consultants who want a team behind them. You keep the client. Our team in India does the work.</p>
+    </div>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <div class="pks">
+    {% for k in site.PARTNER_KINDS %}
+    <a class="pk c-{{ k.c }}" href="/partners/{{ k.slug }}">
+      <span class="lbl">{{ k.k }}</span>
+      <h2 class="d2">{{ k.name }}</h2>
+      <p class="pk-line">{{ k.line }}</p>
+      <ul class="ticks">{% for p in k.points %}<li>{{ p }}</li>{% endfor %}</ul>
+      <span class="pk-go">See how it works {{ ui.arrow() }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("02", "Either way", "What every partner gets behind them.") %}<span class="ln"><span>Your name in front.</span></span> <span class="ln"><span><span class="it">Our team behind.</span></span></span>{% endcall %}
+  <div class="cells cells-3" style="margin-top:var(--s8)">
+    <div class="cell"><div class="cell-idx">{{ ui.icon('calendar') }}<span class="idx">01</span></div><h3>Hours that cover yours</h3><p>Our team works {{ site.TEAM_HOURS }}: through the US night, a UK morning and an Australian afternoon.</p></div>
+    <div class="cell"><div class="cell-idx">{{ ui.icon('spark') }}<span class="idx">02</span></div><h3>16 agents on every account</h3><p>Every account read each morning, and every change made by a person on our team.</p></div>
+    <div class="cell"><div class="cell-idx">{{ ui.icon('shield') }}<span class="idx">03</span></div><h3>Your clients stay yours</h3><p>NDA first, your client&rsquo;s own ad accounts, and a named account lead who answers to you.</p></div>
+  </div>
+</section>
+
+{{ ui.cta("Not sure which fits?", "Tell us how you work, and we'll tell you which way in suits you.") }}
+
+{% endblock %}

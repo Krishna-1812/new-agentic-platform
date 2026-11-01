@@ -27,6 +27,12 @@ Two services, sold on their own or together:
 {% for i in site.INDUSTRIES -%}
 - [{{ i.name }}]({{ site_url }}/industries/{{ i.slug }}): {{ i.headline }}
 {% endfor %}
+## Partners: working with us without being our client
+
+- [Partners]({{ site_url }}/partners): the two partner programmes
+{% for k in site.PARTNER_KINDS -%}
+- [{{ k.name }}]({{ site_url }}/partners/{{ k.slug }}): {{ k.k }}. {{ k.line }}
+{% endfor %}
 ## More
 
 - [The agents]({{ site_url }}/agents): every agent behind the work, and what each one does

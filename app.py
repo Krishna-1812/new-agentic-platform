@@ -612,7 +612,11 @@ def _demo_request_to_email(d: dict) -> bool:
 
 # The Book a call page's extra answers: (form field, label in the message).
 _BOOK_FIELDS = (("website", "Website"), ("sells", "Sells"), ("meet", "Wants to meet"),
-                ("spend", "Monthly ad spend"), ("country", "Buyers in"))
+                ("spend", "Monthly ad spend"), ("country", "Buyers in"),
+                # The partner pages' application forms (/partners/agencies, /partners/consultants).
+                ("based", "Based in"), ("linkedin", "LinkedIn"), ("years", "Years in paid marketing"),
+                ("clients", "Clients to bring"), ("network", "Network"))
+_FORM_SOURCES = ("old site", "book page", "partner page")
 
 
 @app.route("/api/demo-request", methods=["POST"])
@@ -638,7 +642,7 @@ def api_demo_request():
     ua = request.headers.get("User-Agent", "")[:200]
     now = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
     vid = (request.cookies.get("p2_vid") or data.get("vid") or "").strip()[:64]
-    source = data.get("source") if data.get("source") in ("old site", "book page") else "login page"
+    source = data.get("source") if data.get("source") in _FORM_SOURCES else "login page"
     row = [now, name, email, company, interest, message, ip, ua, source, vid]
     payload = {"name": name, "email": email, "company": company,
                "interest": interest, "message": message, "ts": now, "ip": ip}
@@ -1017,6 +1021,36 @@ def signal_page(slug):
                  signal=signal, group_label=dict(site_pages.SIGNAL_GROUPS)[signal["group"]], related=related,
                  recipes=[r for r in site_pages.RECIPES if slug in r["signals"]],
                  industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in signal["fits"]])
+
+
+# Partners: agencies that hand us their clients' paid media under their own brand, and consultants who win
+# and keep the client while we run the accounts. Each page carries its own application form, so it can be
+# the one link in an outreach message.
+@app.route("/partners")
+def partners_page():
+    return _site("partners.html", "partners", "Partner with us: agencies and paid media consultants",
+                 "Two ways to work with us: white-label Google Ads and Meta for agencies, and a recurring "
+                 "commission for consultants who bring in clients.", crumbs=[("Partners", "/partners")])
+
+
+@app.route("/partners/agencies")
+def partner_agencies_page():
+    return _site("partner_agencies.html", "partner-agencies", "White-label PPC and paid media for agencies",
+                 "Google Ads and Meta for your clients, run by our team under your brand. You keep the client "
+                 "and the margin; no hiring. NDA signed first.",
+                 crumbs=[("Partners", "/partners"), ("For agencies", "/partners/agencies")],
+                 faqs=site_pages.FAQ_AGENCY)
+
+
+@app.route("/partners/consultants")
+def partner_consultants_page():
+    return _site("partner_consultants.html", "partner-consultants",
+                 "Partner programme for paid marketing consultants",
+                 "Win the client and stay their lead; our team runs the Google Ads and Meta. A recurring "
+                 "commission every month, and leads passed to you.",
+                 crumbs=[("Partners", "/partners"), ("For consultants", "/partners/consultants")],
+                 faqs=site_pages.FAQ_CONSULTANT,
+                 signals=[site_pages.SIGNALS_BY_SLUG[s] for s in site_pages.CONSULTANT_SIGNALS])
 
 
 # The signals were called plays until October 2026: their old addresses move to the new ones for good.

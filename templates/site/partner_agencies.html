@@ -1,0 +1,220 @@
+{% extends "site/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{#- White-label paid media for agencies (/partners/agencies). An outreach landing page: the agency keeps
+    the client, the brand and the margin; our team in India does the delivery behind it. The application
+    form at the end posts to the same intake as /book. -#}
+{% block main %}
+
+<header class="wrap hero hero-play">
+  {{ ui.deck(site.AGENCY_DECK, "YOUR BRAND • OUR TEAM • NO HIRING •") }}
+  <span class="lbl rv fade">Partners &middot; For agencies</span>
+  <h1 class="d1 rv"><span class="ln"><span>Your clients.</span></span> <span class="ln"><span>Your <span class="it">brand.</span></span></span> <span class="ln"><span><span class="mk">Our team.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">01 / White label</span>
+    <div class="rv fade">
+      <p class="lead">We run Google Ads and Meta for your clients under your agency&rsquo;s name. You keep the relationship, the brand and the margin. Our team in India does the builds, the daily work and the reports, so you never hire for a new paid client again.</p>
+      <ul class="promise">
+        <li>{{ ui.tick() }}Under your brand</li>
+        <li>{{ ui.tick() }}Mutual NDA before any client&rsquo;s name</li>
+        <li>{{ ui.tick() }}Start with one pilot account</li>
+      </ul>
+    </div>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="#apply" data-cta="hero">Plan a pilot account</a>
+      <a class="btn btn-2" href="#handover">How a handover works</a>
+    </div>
+  </div>
+</header>
+
+{{ ui.ticker([(None, 'Campaign builds'), (None, 'Search terms'), (None, 'Negative keywords'), (None, 'Bids and budgets'), (None, 'Performance Max'), (None, 'Meta creative tests'), (None, 'Conversion tracking'), (None, 'Monthly reports'), (None, 'Pitch audits'), (None, 'Landing page checks')], "The work we take off your team") }}
+
+<section class="wrap said">
+  <p class="said-t" id="said">Every new paid client asks the same question: hire for them, or turn them down? <span class="said-b c-amber">A hire takes months</span> and stays on the payroll when the client leaves. <span class="said-b c-sky">Saying no</span> sends the client to a rival. <span class="said-b c-orange">We&rsquo;re the third answer:</span> a team that grows and shrinks with your client&nbsp;list.</p>
+</section>
+
+<section class="wrap sec">
+  <span class="rule rv"></span>
+  {% call ui.head("02", "Who does what", "You stay in front of the client. We work behind the curtain, in your name, on the hours you'd rather spend winning the next one.") %}<span class="ln"><span>Front of house is yours.</span></span> <span class="ln"><span><span class="it">We take the back.</span></span></span>{% endcall %}
+  <div class="stage rv" style="margin-top:var(--s8)">
+    <div class="stage-side stage-front">
+      <span class="lbl">You &middot; front of house</span>
+      <h3>What your client sees</h3>
+      <ul class="ticks">{% for i in site.AGENCY_YOU %}<li>{{ i }}</li>{% endfor %}</ul>
+    </div>
+    <div class="stage-seam" aria-hidden="true"><span><b class="stage-arrow">&larr;</b> Your clients see this side</span></div>
+    <div class="stage-side stage-back">
+      <span class="lbl">Us &middot; back of house</span>
+      <h3>What we do behind it</h3>
+      <ul class="ticks">{% for i in site.AGENCY_US %}<li>{{ i }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="services">
+  <span class="rule rv"></span>
+  {% call ui.head("03", "What we run", "The same team, agents and checks we use on our own clients' accounts, under your agency's name.") %}<span class="ln"><span>Everything in the account,</span></span> <span class="ln"><span><span class="it">every day.</span></span></span>{% endcall %}
+  <div class="cells cells-3" style="margin-top:var(--s8)">
+    {% for ic, name, items in site.AGENCY_SERVICES %}
+    <div class="cell">
+      <div class="cell-idx">{{ ui.icon(ic) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
+      <h3>{{ name }}</h3>
+      <ul class="ticks">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{{ ui.kin([['Builds', 'Bids', 'Budgets', 'Reports'], ['Your name', 'Our team', 'No hiring', 'Your margin']]) }}
+
+<section class="wrap sec-sm" id="handover">
+  <span class="rule rv"></span>
+  {% call ui.head("04", "How a handover works", "Five steps from the first call to a report you send under your own logo.") %}<span class="ln"><span>One pilot account,</span></span> <span class="ln"><span><span class="it">then as many as you like.</span></span></span>{% endcall %}
+  <div class="story" id="story" style="margin-top:var(--s8)">
+    <div class="story-steps">
+      {% for name, what in site.AGENCY_STEPS %}
+      <div class="story-step{% if loop.first %} on{% endif %}"><span class="idx">{{ '%02d'|format(loop.index) }}</span><div><h4>{{ name }}</h4><p>{{ what }}</p></div></div>
+      {% endfor %}
+    </div>
+    <div class="story-fig">
+      <div class="rv"><div class="wipe wipe-pad">
+        <div class="wl" role="img" aria-label="A sample monthly report in the agency's own brand">
+          <div class="wl-hd"><span class="wl-logo">Your logo</span><span class="wl-meta">Monthly report<br>Sample client &middot; October</span></div>
+          <div class="wl-kpis">
+            <div><span>Spend</span><b>$36,400</b></div>
+            <div><span>Conversions</span><b>1,142</b></div>
+            <div><span>Cost per conversion</span><b>$31.87</b><em>9% better</em></div>
+          </div>
+          <div class="wl-bars" aria-hidden="true">{% for h in [38, 44, 41, 52, 49, 58, 55, 63, 61, 70, 74, 82] %}<i style="height:{{ h }}%"></i>{% endfor %}</div>
+          <ul class="wl-notes">
+            <li>Performance Max split by margin: the top products now get 60% of the budget</li>
+            <li>42 search terms added as negatives, about $410 a month saved</li>
+            <li>Next month: two new Meta creative tests</li>
+          </ul>
+          <div class="wl-ft"><span>Prepared by <b>Your agency</b></span><span class="pill">Our name appears nowhere</span></div>
+        </div>
+      </div></div>
+      <p class="fig-cap" style="margin-top:var(--s4)">Sample report, sample numbers. Yours carries your logo, colours and template.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="hours">
+  <span class="rule rv"></span>
+  {% call ui.head("05", "Our hours, your clock", "Our team works " ~ site.TEAM_HOURS ~ ". Here is where that falls in your day, wherever your agency is.") %}<span class="ln"><span>Brief us as you log off.</span></span> <span class="ln"><span><span class="it">It&rsquo;s done when you log on.</span></span></span>{% endcall %}
+  <div class="zones rv" style="margin-top:var(--s8)">
+    <div class="z-row z-scale" aria-hidden="true"><span></span><div class="z-ticks">{% for h in ['00:00', '06:00', '12:00', '18:00', '24:00'] %}<span>{{ h }}</span>{% endfor %}</div></div>
+    {% for city, note, work, ours in site.AGENCY_ZONES %}
+    <div class="z-row">
+      <div class="z-city"><b>{{ city }}</b><span>{{ note }}</span></div>
+      <div class="z-track" role="img" aria-label="{{ city }}: your working day {{ '%02d'|format(work[0]) }}:00 to {{ work[1] }}:00; our team {% for a, b in ours %}{{ '%02d'|format(a) }}:00 to {{ '%02d'|format(b) }}:00{% if not loop.last %} and {% endif %}{% endfor %}, your time">
+        <i class="z-work" style="left:{{ '%.3f'|format(work[0] / 24 * 100) }}%;width:{{ '%.3f'|format((work[1] - work[0]) / 24 * 100) }}%"></i>
+        {% for a, b in ours %}<i class="z-ours" style="left:{{ '%.3f'|format(a / 24 * 100) }}%;width:{{ '%.3f'|format((b - a) / 24 * 100) }}%"></i>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="z-key"><span><i class="z-work"></i>Your working day</span><span><i class="z-ours"></i>Our team at work</span><span class="z-note">Winter time; summer time moves it by an hour.</span></div>
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {% call ui.head("06", "Three ways to work", "Pick one, or mix them. Prices are set on the call, once we've seen the accounts.") %}<span class="ln"><span>Per account, per person,</span></span> <span class="ln"><span><span class="it">or per project.</span></span></span>{% endcall %}
+  <div class="models" style="margin-top:var(--s8)">
+    {% for name, what, suits in site.AGENCY_MODELS %}
+    <article class="model c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
+      <span class="model-n">{{ '%02d'|format(loop.index) }}</span>
+      <h3>{{ name }}</h3>
+      <p>{{ what }}</p>
+      <p class="model-suits"><b>Suits</b>{{ suits }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="inkband">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat rv fade"><b>0</b><span>People to hire</span></div>
+      <div class="stat rv fade"><b class="num" data-count="16">16</b><span>Agents on every account, every morning</span></div>
+      <div class="stat rv fade"><b class="num" data-count="1">1</b><span>Named account lead for all your accounts</span></div>
+      <div class="stat rv fade"><b>NDA</b><span>Signed before you name a client</span></div>
+    </div>
+    <div class="split split-top" style="margin-top:var(--s8)">
+      <p class="pull rv fade">Your name on everything. <span class="mk">Ours on nothing.</span></p>
+      <div>
+        <span class="lbl">How we protect your clients</span>
+        <ul class="ticks rv fade" style="margin-top:var(--s4)">
+          <li>A mutual NDA and a non-solicitation agreement, signed first</li>
+          <li>We never approach your clients, and the agreement says so in writing</li>
+          <li>Your clients keep their own ad accounts; you control our access</li>
+          <li>Reports, dashboards and emails in your brand, from your domain</li>
+          <li>We work in your Slack and your project tool, not ours</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {% call ui.head("07", "What changes for you", "What agencies use a partner like us for.") %}<span class="ln"><span>More paid clients,</span></span> <span class="ln"><span><span class="it">the same team.</span></span></span>{% endcall %}
+  <div class="cells cells-4 cells-num" style="margin-top:var(--s8)">
+    {% for name, line in site.AGENCY_WINS %}
+    <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span>{{ ui.icon(['bolt', 'users', 'coins', 'calendar'][loop.index0]) }}</div><h3>{{ name }}</h3><p>{{ line }}</p></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  <div class="faq-grid">
+    {% call ui.head("08", "Questions") %}<span class="ln"><span>About working</span></span> <span class="ln"><span><span class="it">under your name.</span></span></span>{% endcall %}
+    {{ ui.faq(faqs) }}
+  </div>
+</section>
+
+<section class="limeband apply" id="apply" aria-label="Plan a pilot account">
+  <div class="wrap split split-top">
+    <div>
+      <span class="lbl">Next step</span>
+      <h2 class="d2 rv"><span class="ln"><span>Hand us</span></span> <span class="ln"><span><span class="it">one account.</span></span></span></h2>
+      <p class="lead rv fade">Tell us about your agency. We&rsquo;ll send the NDA, then plan a pilot on one of your clients.</p>
+      <div class="ledger next">
+        <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>We reply within one working day</h4><p>With the NDA and a few times for a call.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>A 30-minute call</h4><p>Your clients, your channels, how you report and what you&rsquo;d hand over.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>A pilot plan in writing</h4><p>The account, what we&rsquo;ll do, the launch date and our fee.</p></div></div>
+      </div>
+    </div>
+    <div class="book-card">
+      <form id="bookForm" data-source="partner page" novalidate>
+        <input type="hidden" name="pillar" value="Agency partner">
+        <div class="f-row">
+          <div class="f" id="f-name"><label for="in-name">Your name</label><input id="in-name" name="name" autocomplete="name" required placeholder="Jane Doe" maxlength="120"></div>
+          <div class="f" id="f-email"><label for="in-email">Work email</label><input id="in-email" name="email" type="email" autocomplete="email" required placeholder="jane@agency.com" maxlength="160"></div>
+        </div>
+        <div class="f-row">
+          <div class="f"><label for="in-company">Agency</label><input id="in-company" name="company" autocomplete="organization" maxlength="160"></div>
+          <div class="f"><label for="in-website">Website <span class="opt">optional</span></label><input id="in-website" name="website" inputmode="url" placeholder="agency.com" maxlength="200"></div>
+        </div>
+        <div class="f-row">
+          <div class="f"><label for="in-based">Where is your agency? <span class="opt">optional</span></label><input id="in-based" name="based" placeholder="City or country" maxlength="200"></div>
+          <div class="f"><label for="in-clients">Paid clients you could hand over <span class="opt">optional</span></label>
+            <select id="in-clients" name="clients"><option value="">Choose one</option><option>None yet: we want to add paid media</option><option>1 to 3</option><option>4 to 10</option><option>More than 10</option></select></div>
+        </div>
+        <div class="f"><label for="in-spend">Monthly ad spend across those clients <span class="opt">optional</span></label>
+          <select id="in-spend" name="spend"><option value="">Choose one</option><option>Under $5,000</option><option>$5,000 to $20,000</option><option>$20,000 to $100,000</option><option>Over $100,000</option></select></div>
+        <div class="f"><label for="in-message">What would you hand over first? <span class="opt">optional</span></label><textarea id="in-message" name="message" rows="3" maxlength="2000" placeholder="For example: a Google Ads account for a dental group, about $8,000 a month"></textarea></div>
+        <p class="f-err" id="formErr" role="alert"></p>
+        <button class="btn btn-1 f-submit" id="formSend" type="submit">Send</button>
+        <p class="f-note">We use your answers to prepare for the call and nothing else. <a href="/privacy">Privacy</a></p>
+      </form>
+      <div class="f-done" id="formDone" role="status">
+        <span class="mark"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
+        <h3>Thanks. We&rsquo;ll reply within one working day.</h3>
+        <p>With the NDA and a few times for the call.</p>
+        <a class="btn btn-2" href="/performance-marketing">Meanwhile, see how we check accounts</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
