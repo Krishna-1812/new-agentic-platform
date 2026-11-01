@@ -116,7 +116,7 @@
     }
   }
 
-  /* ── The booking form (/book) ──
+  /* ── The booking form (/book, and the application form on each partner page) ──
      Posts to the same intake as before (the Sheet, Slack and email). */
   var form = doc.getElementById("bookForm");
   if (!form) return;
@@ -144,19 +144,26 @@
     doc.getElementById("f-email").classList.toggle("bad", !EMAIL.test(email));
     if (!name || !EMAIL.test(email)) { err.textContent = "Please enter your name and a valid work email."; return; }
     err.textContent = "";
+    var label = btn.textContent;
     btn.disabled = true; btn.classList.add("loading"); btn.textContent = "Sending…";
     var vid = ""; try { vid = localStorage.getItem("p2_vid") || ""; } catch (_) {}
-    fetch("/api/demo-request", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    var body = {
         name: name, email: email, company: val("company"), website: val("website"),
         sells: val("sells"), meet: val("meet"), pillar: val("pillar"), spend: val("spend"),
-        country: val("country"), message: val("message"), source: "book page", vid: vid
-      })
+        country: val("country"), message: val("message"), source: "book page", vid: vid,
+        // The partner pages' own questions (/partners/agencies, /partners/consultants).
+        based: val("based"), linkedin: val("linkedin"), years: val("years"), clients: val("clients"),
+        network: val("network")
+      };
+    // A partner page's form says where it was sent from.
+    if (form.getAttribute("data-source")) body.source = form.getAttribute("data-source");
+    fetch("/api/demo-request", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
-        btn.disabled = false; btn.classList.remove("loading"); btn.textContent = "Send";
+        btn.disabled = false; btn.classList.remove("loading"); btn.textContent = label;
         if (res.ok && res.d && res.d.ok) {
           var box = btn.getBoundingClientRect();
           form.hidden = true;
@@ -169,7 +176,7 @@
         }
       })
       .catch(function () {
-        btn.disabled = false; btn.classList.remove("loading"); btn.textContent = "Send";
+        btn.disabled = false; btn.classList.remove("loading"); btn.textContent = label;
         err.textContent = "We couldn’t send that just now. Please try again in a moment.";
       });
   });

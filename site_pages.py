@@ -930,3 +930,238 @@ SIGNAL_ICONS = {"site": "eye", "brand": "megaphone", "need": "chat", "change": "
 # The tickers: (address, words) for each signal and each industry.
 SIGNAL_LINKS = tuple(("/signals/" + s["slug"], s["name"]) for s in SIGNALS)
 INDUSTRY_LINKS = tuple(("/industries/" + i["slug"], i["name"]) for i in INDUSTRIES)
+
+
+# ── Partners (/partners) ────────────────────────────────────────────────────────────────────────────
+# Two ways to work with us without being our client: agencies that hand us their clients' paid media
+# under their own brand, and senior paid marketing consultants who win and keep the client while our
+# team does the delivery, for a recurring commission. Our team is in India; that is said as what it
+# gives a partner (hours that cover theirs), never as a price.
+
+PARTNER_KINDS = (
+    {"slug": "agencies", "c": "orange", "k": "For agencies", "name": "White-label paid media",
+     "line": "Your clients and your brand. Our team does the work behind it.",
+     "points": ("Google Ads and Meta run under your name", "No hiring, no bench between clients",
+                "Mutual NDA before any client's name")},
+    {"slug": "consultants", "c": "sky", "k": "For consultants", "name": "The partner programme",
+     "line": "You win the client and stay their lead. We run the accounts. You're paid every month.",
+     "points": ("A recurring commission", "Leads passed to you", "No delivery work")},
+)
+
+# The agency page's hero deck: one client account, from the handover to the report.
+AGENCY_DECK = (
+    {"c": "orange", "k": "Handed over", "b": "One client account", "l": "Mutual NDA signed first", "s": "01"},
+    {"c": "amber", "k": "Built", "b": "Search and Shopping", "l": "QA-checked, then sent to you", "s": "02"},
+    {"c": "sky", "k": "Checked daily", "b": "By 16 agents", "l": "Every change made by your account lead", "s": "16"},
+    {"c": "ink", "k": "Reported", "b": "In your template", "l": "Your logo on it, never ours", "s": "✓"},
+)
+
+# Who does what: the agency keeps the front of the house, we take the back.
+AGENCY_YOU = (
+    "The client relationship: every call, every email, every renewal",
+    "Your brand on every report, deck and dashboard",
+    "Your pricing and your margin",
+    "The strategy sign-off: nothing goes live without you",
+)
+AGENCY_US = (
+    "Campaign builds, launches and QA",
+    "Daily work: search terms, bids, budgets, audiences and creative tests",
+    "Tracking: GA4, Tag Manager and conversions",
+    "Reports in your template, ready for you to send",
+    "Account audits for your new-business pitches",
+)
+
+# What we run for an agency's clients: (icon, name, what's included).
+AGENCY_SERVICES = (
+    ("search", "Google Ads", ("Search, Shopping and Performance Max", "Display and remarketing",
+                              "Keyword research and negative lists")),
+    ("megaphone", "Meta ads", ("Facebook and Instagram", "Prospecting and retargeting",
+                               "Creative tests and catalogue campaigns")),
+    ("chart", "Tracking and reporting", ("GA4, Tag Manager and conversion tracking",
+                                         "Dashboards in your brand", "A monthly report in your template")),
+    ("shield", "Audits and pitches", ("About 50 checks on a Google Ads account",
+                                      "Meta account checks", "Findings written for your pitch")),
+    ("pen", "Ads and pages", ("Ad copy and headline tests", "Video ads from our Video Studio",
+                              "Landing pages checked against their ads")),
+    ("spark", "The agents", ("16 agents read every account every morning",
+                             "Budget leaks flagged before month end", "A person makes every change")),
+)
+
+# The three ways an agency can work with us: (name, what it is, who it suits).
+AGENCY_MODELS = (
+    ("Per account", "We run whole client accounts, end to end, for a fixed monthly fee per account set by its "
+     "spend and channels. You know our fee before you quote, so you set your own margin.",
+     "Agencies adding paid media to what they sell"),
+    ("A dedicated specialist", "A named specialist, or a small team, works only on your accounts: in your "
+     "Slack and your project tool, with an email address on your domain if you want one.",
+     "Agencies with a steady book of paid clients"),
+    ("Overflow and projects", "New builds, audits, account rebuilds, migrations and busy-season help, "
+     "scoped and priced per project.",
+     "Busy months and one-off work"),
+)
+
+# The handover, step by step: (name, what happens).
+AGENCY_STEPS = (
+    ("An intro call and an NDA", "We sign a mutual NDA and a non-solicitation agreement before you tell us a "
+     "single client's name."),
+    ("One pilot account", "Start with one client, and judge the work before you hand over more."),
+    ("Access and a brief", "You add us to the client's own ad accounts, which stay theirs, and share the "
+     "brief: goals, margins, history and what the client has been promised."),
+    ("Build and sign-off", "Campaigns are built, QA-checked and sent to you to approve before anything "
+     "goes live."),
+    ("Run, report, repeat", "Daily checks and changes, a weekly note for you, and a monthly report in your "
+     "template, ready for you to send."),
+)
+
+# Where an agency's day falls against ours. Our working day is 09:30 to 18:30 in India (UTC+5:30); each row
+# is (city, how it falls for them, their working hours, our hours on their clock), hours on the client's
+# own 24-hour clock, winter time.
+TEAM_HOURS = "09:30 to 18:30 India time"
+AGENCY_ZONES = (
+    ("New York", "Done while you sleep", (9, 18), ((23, 24), (0, 8))),
+    ("London", "Your whole morning", (9, 18), ((4, 13),)),
+    ("Sydney", "Your afternoon", (9, 18), ((15, 24),)),
+)
+
+# What changes for an agency: (headline, line).
+AGENCY_WINS = (
+    ("Say yes", "Take on the paid client you'd have turned away, the week they ask."),
+    ("No hiring", "No recruiting, no notice periods, no bench to pay between clients."),
+    ("Known margin", "A fixed fee per account, so you know your margin before you quote."),
+    ("Your team's time", "Your people spend their days on clients and new business, not in ad accounts."),
+)
+
+FAQ_AGENCY = (
+    ("What is white-label paid media?",
+     "Paid advertising that a partner runs for your clients under your agency's name. We build, run and "
+     "report on the campaigns; you sell them, present them and keep the client relationship. Your clients "
+     "see your brand, not ours."),
+    ("Will my clients know you exist?",
+     "Only if you tell them. Reports go out in your template, and if a client ever needs to speak to the "
+     "person running their account, we join as part of your team, from an address on your domain, and only "
+     "when you ask."),
+    ("Who owns the ad accounts?",
+     "Your client does. You add us to their accounts with the access the work needs, and you can remove it "
+     "at any time."),
+    ("What stops you approaching my clients?",
+     "A mutual NDA and a non-solicitation agreement, both signed before you share a client's name. We never "
+     "approach your clients, while we work together or for the period the agreement sets after it."),
+    ("How is it priced?",
+     "Per account, per specialist or per project, agreed on the call once we've seen the accounts. You know "
+     "our fee before you quote your client, so you set your own margin."),
+    ("Can we start with one account?",
+     "Yes, and we suggest it: one pilot account lets you judge the work before you hand over more."),
+    ("Which channels do you run?",
+     "Google Ads (Search, Shopping, Performance Max, Display and remarketing) and Meta (Facebook and "
+     "Instagram), with the tracking and reporting around them."),
+    ("Where is the team, and how do time zones work?",
+     "In India, working 09:30 to 18:30 India time. For agencies in the US, that is your night, so work "
+     "briefed by the end of your day can be done by the start of your next. UK and European agencies share "
+     "their morning with us, and Australian agencies their afternoon. We agree a daily window for calls."),
+    ("Who do I talk to day to day?",
+     "One named account lead who knows every one of your accounts, in your Slack or by email."),
+    ("How do you keep the quality up?",
+     "Every campaign is QA-checked before it goes live, every account is read by 16 agents each morning, "
+     "and your account lead makes, and explains, every change."),
+)
+
+# The consultant page's hero deck: one lead, from the sign we found to the commission.
+CONSULTANT_DECK = (
+    {"c": "orange", "k": "A lead for you", "b": "Head of Marketing", "l": "Asked who should run their Meta ads", "s": "→"},
+    {"c": "amber", "k": "Your call", "b": "You pitch", "l": "With a free account audit from us", "s": "50"},
+    {"c": "sky", "k": "They sign", "b": "We deliver", "l": "Every hour of the account work", "s": "16"},
+    {"c": "ink", "k": "Your commission", "b": "Every month", "l": "For as long as they stay", "s": "%"},
+)
+
+# Who the programme is for: (icon, who, what that looks like).
+CONSULTANT_FOR = (
+    ("briefcase", "Former agency leaders", "You ran a paid media team or an agency, and now consult on your own."),
+    ("chart", "Heads of performance", "You led paid marketing in-house, and now advise companies independently."),
+    ("users", "Fractional CMOs", "You own the strategy for a few companies, and want a team for the execution."),
+    ("target", "Senior freelancers at capacity", "You turn work away because there are only so many hours."),
+)
+CONSULTANT_FIT = (
+    "You've spent years in paid marketing, at an agency or in-house",
+    "People in your network ask you who should run their ads",
+    "You'd rather advise and win clients than build campaigns",
+    "You're happy to hold a monthly review call with each client",
+)
+
+# Who does what for a consultant's client.
+CONSULTANT_YOU = (
+    "Be the client's main contact and trusted adviser",
+    "Take the first call, and the monthly review",
+    "Agree the goals and the strategy with the client",
+)
+CONSULTANT_US = (
+    "Every hour of the delivery: builds, daily changes, tracking",
+    "A free account audit to open each pitch",
+    "Reports ready before each review call",
+    "A named account lead behind you",
+)
+
+# How it works: (icon, step, what happens). Drawn as a flow (static/css/site.css .flow).
+CONSULTANT_STEPS = (
+    ("search", "A lead", "We pass you companies our signals find that need paid marketing help, or you bring your own."),
+    ("chat", "Your call", "You take the conversation. We give you a free account audit to open it with."),
+    ("doc", "They sign", "The client signs with us, and you stay their lead contact."),
+    ("spark", "We deliver", "Our team runs the accounts every day. You join the monthly review."),
+    ("coins", "You're paid", "Your commission arrives every month the client stays."),
+)
+
+# The signals that point to a company needing paid marketing help, from the library (/signals).
+CONSULTANT_SIGNALS = ("asking-for-recommendations", "unhappy-with-a-rival", "hiring-for-the-work",
+                      "new-in-the-job", "raised-money", "tenders-and-rfps")
+
+# Sample leads, as a partner would get them. Roles and made-up companies, never people.
+CONSULTANT_LEADS = (
+    {"who": "Head of Marketing", "where": "D2C skincare brand · 40 people · UK", "score": 91,
+     "why": "Asked in a founders' group who should run their Meta ads after their freelancer left.",
+     "src": "Community post · asking for recommendations", "meeting": ""},
+    {"who": "Founder", "where": "B2B software · 60 people · US", "score": 84,
+     "why": "Has advertised for a PPC manager for five weeks. Help now, while they hire, is an easy yes.",
+     "src": "Job ad · hiring for the work", "meeting": ""},
+    {"who": "New VP of Growth", "where": "Fintech · 120 people · Australia", "score": 88,
+     "why": "Started six weeks ago and is reviewing every agency the company uses.",
+     "src": "New in the job · LinkedIn", "meeting": "Call with you, Tuesday"},
+)
+
+# How the commission works: (question, answer), the ledger beside the months.
+CONSULTANT_TERMS = (
+    ("What it is", "A share of the client's monthly fee, not a one-off referral fee."),
+    ("When it's paid", "Every month, once the client has paid us."),
+    ("How long", "For as long as the client stays with us."),
+    ("Which clients", "Clients you bring, and clients from leads we pass you."),
+    ("The rate", "Set in your partner agreement. We go through it on the first call."),
+)
+
+FAQ_CONSULTANT = (
+    ("How does the partner programme work?",
+     "You find or take on a client who needs paid marketing, stay their main contact and lead their "
+     "strategy, and our team runs their Google Ads and Meta day to day. You earn a share of the client's "
+     "fee every month they stay."),
+    ("How much commission do I earn?",
+     "A share of every monthly fee the client pays, for as long as they stay. The rate is in your partner "
+     "agreement, and we go through it on the first call."),
+    ("Where do the leads come from?",
+     "From the same buying signals we watch for our own clients, pointed at companies that need paid "
+     "marketing help: people asking for agency recommendations, people unhappy with the agency they have, "
+     "companies hiring for a paid media role and new marketing leaders. We pass you the ones that fit your "
+     "industries and region."),
+    ("Do I have to do any of the delivery?",
+     "No. Our team builds and runs the accounts. You stay the client's main contact, take the review calls "
+     "and bring your judgement to the strategy."),
+    ("Who does the client sign with?",
+     "With us, and we bill them. You're named as their partner lead, and your commission is paid from what "
+     "they pay."),
+    ("Can I bring my existing clients?",
+     "Yes, and they earn commission the same way."),
+    ("Who is the programme for?",
+     "Senior people with years in paid marketing, at an agency or in-house, who now consult, freelance or "
+     "work as fractional CMOs. We read every application and reply within one working day."),
+    ("Is it exclusive?",
+     "No. Keep your own practice and your other work; the programme sits alongside it."),
+    ("What happens if a client leaves?",
+     "Commission stops when their fees stop. We tell you early if an account looks at risk, so you can "
+     "step in."),
+)

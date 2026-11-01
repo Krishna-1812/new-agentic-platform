@@ -15,6 +15,7 @@ What is held here:
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 import pytest
 
@@ -306,13 +307,18 @@ def test_a_message_is_written_from_the_signal_and_to_the_person_who_decides():
 
 # == the run ==============================================================================================
 
+def _this_month():
+    """A run keys a hiring company by the month it runs in, so a test of the run builds its signal the same way."""
+    return datetime.now(timezone.utc).strftime("%Y-%m")
+
+
 @pytest.mark.usefixtures("jobs_on")
 def test_a_run_keeps_posts_comments_and_hiring_companies_each_as_its_kind(monkeypatch):
     fake = FakeStore()
     fake.install(monkeypatch)
     out = {}
     d, posts = deps([92, 40], out)
-    signal = jobs.by_company([jobs.normalize(job(1), "seo")], "2026-10")
+    signal = jobs.by_company([jobs.normalize(job(1), "seo")], _this_month())
     found = [com.normalize(comment(1), {"post": posts[0], "verdict": verdict(92), "offer": "callvibe"}),
              com.normalize(comment(2, text="We sell this, DM me"), {"post": posts[0], "verdict": verdict(92), "offer": "callvibe"})]
     reads = []
@@ -352,7 +358,7 @@ def test_a_hiring_companys_decision_maker_is_emailed_once_saleshandy_reveals_the
     fake.install(monkeypatch)
     out = {}
     d, _ = deps([], out)
-    sig = jobs.by_company([jobs.normalize(job(1), "seo")], "2026-10")
+    sig = jobs.by_company([jobs.normalize(job(1), "seo")], _this_month())
 
     def people(leads, offers):
         leads[0]["post"]["contacts"] = [{"id": "s1", "name": "Meera Shah", "key": "sh/s1"}]

@@ -38,6 +38,9 @@ PAGES = {
     "/compare": "Hire, retain, subscribe",
     "/about": "We get paid when you get buyers",
     "/outreach-policy": "How we reach people",
+    "/partners": "Grow with us",
+    "/partners/agencies": "Your clients",
+    "/partners/consultants": "You win them",
     "/privacy": "Privacy",
     "/terms": "Terms of",
 }
