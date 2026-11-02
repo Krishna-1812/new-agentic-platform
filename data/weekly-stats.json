@@ -1,10 +1,9 @@
 {
   "counts": {
-    "News Mention": 5,
-    "Product Launch": 1
+    "News Mention": 6
   },
   "total": 6,
   "companies": 50,
-  "generated_at": "2026-10-26T15:25:58.627382+00:00",
-  "cutoff": "2026-10-19T15:25:58.626990+00:00"
+  "generated_at": "2026-11-02T18:44:08.500686+00:00",
+  "cutoff": "2026-10-26T18:44:08.500230+00:00"
 }
