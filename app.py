@@ -74,6 +74,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
 from flask import has_request_context as _has_request_context  # noqa: E402
 from tracker import request_timing as _request_timing  # noqa: E402
 from tracker import paid_catalog  # noqa: E402
+from tracker import warmly_client as _warmly  # noqa: E402
 _request_timing.install(g, _has_request_context)
 
 
@@ -953,9 +954,14 @@ def _site(template, page, title, description, crumbs=(), faqs=(), noindex=False,
                                                  crumbs=crumbs, faqs=faqs)
     verify = {"google-site-verification": _verification_code("GOOGLE_SITE_VERIFICATION"),
               "msvalidate.01": _verification_code("BING_SITE_VERIFICATION")}
+    # Warmly's website script, on the pages WARMLY_PIXEL_PATHS names (the partner pages unless set):
+    # the privacy policy names those pages whenever the script is configured.
+    warmly_id = _warmly.pixel_id()
     return render_template("site/" + template, page=page, title=title, description=description, faqs=faqs,
                            schema=schema, noindex=noindex, verify=verify, site=site_pages, site_url=SITE_URL,
-                           year=datetime.now(IST).year, **kw)
+                           year=datetime.now(IST).year,
+                           warmly_pixel=warmly_id if _warmly.pixel_on(request.path) else "",
+                           warmly_paths=_warmly.pixel_paths() if warmly_id else [], **kw)
 
 
 @app.route("/gtm-engineering")
@@ -2446,6 +2452,14 @@ def agent_feedback_add_reason(feedback_id):
     return jsonify({"saved": ok})
 
 
+@app.route("/admin/warmly/status")
+@admin_required
+def admin_warmly_status():
+    """Is Warmly connected: the Railway variables still missing, the credits left this month, the tools
+    this organisation may call, and where the website script runs. Reads only free calls."""
+    return jsonify(_warmly.status())
+
+
 @app.route("/admin/agent-feedback")
 @admin_required
 def admin_agent_feedback():
@@ -3465,7 +3479,7 @@ def app_settings():
 
 
 
-LEGAL_UPDATED = "13 October 2026"
+LEGAL_UPDATED = "2 November 2026"
 
 
 def _legal_page(page):

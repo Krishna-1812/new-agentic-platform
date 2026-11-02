@@ -57,6 +57,10 @@
     the page before it is drawn, and press.css lifts the cover after 3s if
     press-play.js never arrives. -#}
 <script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');{% if page == 'home' %}try{if(/ vt/.test(document.documentElement.className)&&!sessionStorage.getItem('nx-intro')&&document.referrer.indexOf(location.origin)!==0)document.documentElement.className+=' intro-on'}catch(e){}{% endif %}</script>
+{% if warmly_pixel %}{#- Warmly identifies the companies reading this page (WARMLY_PIXEL_PATHS); never for a browser
+    that asks not to be tracked, as the privacy policy says. -#}
+<script>(function(){var n=navigator;if(n.doNotTrack==="1"||window.doNotTrack==="1"||n.globalPrivacyControl===true)return;var s=document.createElement("script");s.id="warmly-script-loader";s.src="https://opps-widget.getwarmly.com/warmly.js?clientId={{ warmly_pixel }}";s.defer=true;document.head.appendChild(s)})();</script>
+{% endif -%}
 {% block head %}{% endblock %}
 </head>
 <body data-page="{{ page }}">
