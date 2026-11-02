@@ -22,6 +22,10 @@ OFFER_QUERIES = {
                  '"call center QA" software', '"call analytics" tool recommend'],
     "markify": ['"looking for a marketing agency"', '"recommend a PPC agency"', '"looking for an SEO agency"',
                 '"hire a marketing agency"', '"Google Ads agency" recommend'],
+    "agency_partners": ['"white label PPC"', '"white label" Google Ads agency', '"outsource PPC" agency',
+                        '"PPC fulfillment"', 'agency overflow PPC'],
+    "consultant_partners": ['"freelance PPC" too many clients', '"PPC consultant" help delivery', '"fractional CMO" execution',
+                            '"going freelance" PPC', '"freelance media buyer" overwhelmed'],
 }
 
 

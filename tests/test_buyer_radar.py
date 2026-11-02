@@ -207,7 +207,7 @@ def test_settings_are_checked():
 def test_the_estimate_is_capped_and_honest_about_a_month():
     s = br.merged({"source": "apify"})
     e = br.estimate(s)
-    n = sum(len(o["queries"]) for o in br.OFFERS.values())
+    n = sum(len(br.OFFERS[k]["queries"]) for k in br.DEFAULTS["offers"])
     assert e["queries"] == n and e["posts"] == n * 25
     assert e["apify_usd"] == pytest.approx(n * 25 * 0.002)
     assert e["typical_usd"] < e["worst_usd"] and e["claude_usd"] > 0
@@ -431,7 +431,7 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     d, posts = deps([92, 40, 75, 10], out)
     s = br.merged({"source": "apify"})
     summary = br.run(1, "acct:7", s, started_by="mia@x.com", deps=d)
-    assert out["search"] == (sum(len(o["queries"]) for o in br.OFFERS.values()), "3months", 25, pytest.approx(1.6))
+    assert out["search"] == (sum(len(br.OFFERS[k]["queries"]) for k in br.DEFAULTS["offers"]), "3months", 25, pytest.approx(1.6))
     assert (summary["posts"], summary["read"], summary["kept"], summary["strong"], summary["drafted"]) == (4, 4, 2, 2, 2)
     assert [x["score"] for x in fake.leads.values()] == [92, 75], "best first, below 50 not kept"
     assert fake.leads[1]["email"] == "buyer1@acme.com", "the address in the post is kept"
@@ -537,7 +537,7 @@ def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_
     d, _ = deps([92, 40], out)
     summary = br.run(1, "acct:7", br.merged({}), started_by="mia@x.com", deps=d)
     assert br.merged({})["source"] == "unipile", "Unipile is the default: nothing to pay per post"
-    n = sum(len(o["queries"]) for o in br.OFFERS.values())
+    n = sum(len(br.OFFERS[k]["queries"]) for k in br.DEFAULTS["offers"])
     assert out["unipile"] == (n, "3months", 25, 50) and "search" not in out, "the room left today, not more"
     assert out["jobs"][3] == 50, "posts and job ads share it"
     assert summary["source"] == "unipile" and summary["unipile_results"] == 2 and summary["kept"] == 1
@@ -554,7 +554,7 @@ def test_search_with_is_unipile_or_apify_and_the_estimate_follows_it():
     with pytest.raises(ValueError):
         br.clean_settings({"source": "phantom"})
     uni, apify = br.estimate(br.merged({})), br.estimate(br.merged({"source": "apify"}))
-    n = sum(len(o["queries"]) for o in br.OFFERS.values())
+    n = sum(len(br.OFFERS[k]["queries"]) for k in br.DEFAULTS["offers"])
     assert uni["source"] == "unipile" and uni["apify_usd"] == 0 and apify["apify_usd"] == pytest.approx(n * 25 * 0.002)
     big = br.estimate(br.merged({"per_query": 100}))
     assert big["posts"] + big["jobs"] == 900, "a Unipile run reads at most the day's limit"

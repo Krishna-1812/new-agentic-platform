@@ -131,6 +131,80 @@ OFFERS = {
             '"recommend an agency" OR "agency recommendations" OR "can anyone recommend an agency"',
         ],
     },
+    # Partner Radar (2026-11-02): the two partner programmes on /partners. Here the buyer is itself an
+    # agency or a consultant, so each offer's "buyers" says so, and the judge follows it (buyer_radar_judge,
+    # PARTNER_RULE). The claims are only what the partner pages say and the team has confirmed: the
+    # channels, the team in India, white-label delivery, and the consultant's recurring 20%.
+    "agency_partners": {
+        "label": "Partners: agencies",
+        "site": "https://northaxis.com/partners/agencies",
+        "sells": ("Northaxis runs paid media white-label for marketing agencies: Google Ads, Meta and LinkedIn Ads "
+                  "for the agency's clients, delivered under the agency's name by Northaxis's team in India, whose "
+                  "working day covers the US night and the UK morning. The agency keeps the client, the relationship "
+                  "and the margin, and handles client servicing; Northaxis does the daily work (set-up, optimisation, "
+                  "reporting), so the agency adds paid media without hiring for it."),
+        "buyers": ("Owners, founders, managing directors and heads of paid media or client services at marketing, "
+                   "digital, creative, SEO, web and branding agencies (usually 2 to 100 people), mostly in the US, UK, "
+                   "Canada, Australia and Europe. For this offer an agency is the buyer, not a seller: an agency asking "
+                   "for a white-label, overflow or outsourced PPC or paid media partner scores 85 to 100; an agency "
+                   "saying it is stretched, turning work away or has lost its paid media person 70 to 90; an SEO, web "
+                   "or branding agency wanting to offer paid ads to its clients 60 to 80; an agency hiring a PPC, "
+                   "Google Ads, paid social or paid media role 55 to 75; an agency only promoting its own services 0 to "
+                   "20. Freelancers, in-house marketers and brands are not buyers of this offer."),
+        "decision_makers": ["C-Suite", "Marketing"],
+        "jobs": ["PPC specialist", "Google Ads specialist", "paid media manager", "paid social specialist",
+                 "PPC account manager", "performance marketing specialist"],
+        "queries": [
+            '"white label PPC" OR "white-label PPC" OR "white label Google Ads"',
+            '"white label paid media" OR "white label Facebook ads" OR "white label Meta ads"',
+            '"looking for a white label" OR "recommend a white label" OR "white label partner"',
+            '"outsource PPC" AND (agency OR agencies)',
+            '"PPC partner" AND (agency OR "white label" OR overflow)',
+            '"overflow work" AND (PPC OR "paid media" OR "Google Ads")',
+            '"fulfilment partner" AND (marketing OR PPC OR ads)',
+            'subcontract AND (PPC OR "Google Ads" OR "Meta ads")',
+            '"agency owners" AND ("paid ads" OR PPC) AND (hire OR outsource)',
+            '"our agency is hiring" AND (PPC OR "paid media" OR "Google Ads")',
+            '("turning away clients" OR "at full capacity") AND agency',
+            '"white label" AND agency AND ("LinkedIn ads" OR "paid social")',
+        ],
+    },
+    "consultant_partners": {
+        "label": "Partners: consultants",
+        "site": "https://northaxis.com/partners/consultants",
+        "sells": ("Northaxis's partner programme for senior paid marketing consultants and freelancers: the "
+                  "consultant wins and looks after the client, Northaxis's team in India does the Google Ads, Meta "
+                  "and LinkedIn Ads work, and the consultant earns a recurring 20% commission on every monthly fee "
+                  "the client pays, for as long as the client stays. Northaxis also passes its partners leads to talk "
+                  "to. The consultant stays the client's strategist without doing the daily account work."),
+        "buyers": ("Senior paid marketing people (about eight or more years; former heads of performance, paid media, "
+                   "growth or digital at brands or agencies) now working as independent consultants, freelancers or "
+                   "fractional CMOs or heads of growth, in the US, UK, Canada, Australia, Europe or India. For this "
+                   "offer the consultant is the buyer, not a seller: one saying they have more clients than time, are "
+                   "turning work down or want a delivery or execution partner scores 80 to 100; one saying they have "
+                   "just gone independent or launched their consultancy 75 to 95; a senior paid media person who has "
+                   "just left a job and is open to consulting or fractional work 60 to 80; a consultant only promoting "
+                   "their services 30 to 50. Junior freelancers, people looking for a salaried job, agencies and brands "
+                   "are not buyers of this offer."),
+        "decision_makers": ["C-Suite", "Marketing"],
+        # a company advertising for a contractor or a fractional leader is work a consultant partner could take
+        "jobs": ["fractional CMO", "freelance PPC consultant", "contract paid media manager", "interim head of marketing",
+                 "freelance Google Ads specialist"],
+        "queries": [
+            '("gone freelance" OR "going independent" OR "went independent") AND (marketing OR PPC OR "paid media")',
+            '"fractional CMO" AND ("new clients" OR "taking on" OR capacity)',
+            '"fractional head of growth" OR "fractional performance marketing" OR "fractional paid media"',
+            '"paid media consultant" AND (launch OR "new chapter" OR independent)',
+            '"PPC consultant" AND ("new chapter" OR "open for" OR "taking on")',
+            '"performance marketing consultant" AND ("new chapter" OR independent OR freelance)',
+            '"open to consulting" AND (marketing OR "paid media" OR growth)',
+            '"more clients than" AND (marketing OR consultant OR freelance)',
+            '("delivery partner" OR "execution partner") AND (marketing OR ads OR freelance)',
+            '"freelance Google Ads" AND (busy OR capacity OR "help with")',
+            '"starting my own" AND (consultancy OR agency) AND marketing',
+            '"after years at" AND (consultant OR freelance) AND marketing',
+        ],
+    },
 }
 
 # == settings =============================================================================================
@@ -147,7 +221,7 @@ LEAD_SOURCES = {k: v for k, v in ALL_LEAD_SOURCES.items() if k not in RETIRED_SO
 DEFAULTS = {
     "source": "unipile",              # who runs the search: Unipile (free per post, as our LinkedIn account) or Apify
     "sources": [k for k in ALL_LEAD_SOURCES if k not in RETIRED_SOURCES],   # where leads come from (LEAD_SOURCES)
-    "offers": ["callvibe", "markify"],
+    "offers": ["callvibe", "markify"],   # the partner offers are switched on per workspace, in Settings
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
     "job_queries": {},                # offer -> its own job titles, in place of OFFERS[offer]["jobs"]
     "job_locations": [],              # places the job ads are in ("India", "London"); none is anywhere

@@ -32,6 +32,12 @@ INTENT_LABELS = {"seeking_vendor": "Looking for a vendor", "asking_recommendatio
                  "fits_profile": "Fits your customer profile"}
 ROLES = ("buyer", "seller", "job_seeker", "other")
 
+# Partner Radar: two offers are sold to agencies and consultants, who would otherwise read as sellers.
+PARTNER_RULE = (
+    " Some offers are sold to agencies, consultants or freelancers (their WHO BUYS IT says so): someone of that "
+    "kind showing the need such an offer describes is a 'buyer' for that offer, not a 'seller', scored as its WHO "
+    "BUYS IT says.")
+
 JUDGE_SYSTEM = (
     "You find buyers on LinkedIn for a sales team. You are given what each of the team's offers sells and "
     "who buys it, then numbered LinkedIn posts. For each post decide, from the post alone:\n"
@@ -52,7 +58,7 @@ JUDGE_SYSTEM = (
     "- region: the country or city if stated, else ''.\n"
     "- deadline: any date or timing they give, else ''.\n"
     "- reason: why, in one sentence, quoting a few words of the post.\n"
-    "Never invent facts that are not in the post or headline. Use the post numbers given.")
+    "Never invent facts that are not in the post or headline. Use the post numbers given." + PARTNER_RULE)
 
 JOB_SYSTEM = (
     "You find companies for a sales team whose open jobs show they need what one of the team's offers "
@@ -72,7 +78,7 @@ JOB_SYSTEM = (
     "performance marketing team\").\n"
     "- company: the company's name. region: the job locations if given, else ''. deadline: ''.\n"
     "- reason: why, in one sentence, naming the roles.\n"
-    "Never invent facts that are not in the jobs given. Use the numbers given.")
+    "Never invent facts that are not in the jobs given. Use the numbers given." + PARTNER_RULE)
 
 COMMENT_SYSTEM = (
     "You find buyers for a sales team in the comments under LinkedIn posts where someone asked for what "
@@ -91,7 +97,7 @@ COMMENT_SYSTEM = (
     "'other' 0 to 10.\n"
     "- need, company (from the headline, else ''), region, deadline, reason as for a post; the reason "
     "quotes a few words of the comment.\n"
-    "Never invent facts that are not in the comment or headline. Use the numbers given.")
+    "Never invent facts that are not in the comment or headline. Use the numbers given." + PARTNER_RULE)
 
 RFP_SYSTEM = (
     "You find work for a sales team in requests for proposals (RFPs), requests for quotation and tenders "
@@ -125,7 +131,7 @@ REDDIT_SYSTEM = (
     "to 60; any seller, job seeker or 'none' offer 0 to 10.\n"
     "- need, company (only if the thread names it, else ''), region, deadline, reason as for a post; the "
     "reason quotes a few words of the thread.\n"
-    "Never invent facts that are not in the thread. Use the numbers given.")
+    "Never invent facts that are not in the thread. Use the numbers given." + PARTNER_RULE)
 
 JUDGE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"],
                 "properties": {"verdicts": {"type": "array", "items": {
