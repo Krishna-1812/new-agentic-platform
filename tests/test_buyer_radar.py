@@ -538,15 +538,22 @@ def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_
     summary = br.run(1, "acct:7", br.merged({}), started_by="mia@x.com", deps=d)
     assert br.merged({})["source"] == "unipile", "Unipile is the default: nothing to pay per post"
     n = sum(len(br.OFFERS[k]["queries"]) for k in br.DEFAULTS["offers"])
-    assert out["unipile"] == (n, "3months", 25, 50) and "search" not in out, "the room left today, not more"
+    assert out["unipile"] == (n, "3months", br.fair_share(50, n, 25), 50) and "search" not in out, \
+        "the room left today, not more, shared out between the searches"
+    assert any("shared out" in x for x in summary["notes"])
     assert out["jobs"][3] == 50, "posts and job ads share it"
     assert summary["source"] == "unipile" and summary["unipile_results"] == 2 and summary["kept"] == 1
     assert not any(s[0] == "apify" for s in fake.spend), "no Apify spend through Unipile"
     assert any("a month at most" in n for n in summary["notes"])
     FakeStore(unipile_today=uni.DAY_MAX).install(monkeypatch)
+    out.clear()
+    spent = br.run(2, "acct:7", br.merged({}), deps=d)
+    assert "unipile" not in out and "jobs" not in out, "LinkedIn is not searched once the day is used up"
+    assert any(x.startswith("LinkedIn was not searched") and "05:30 India time" in x for x in spent["notes"]), \
+        "the profiles, Reddit and RFPs still run, and the run says when LinkedIn comes back"
     with pytest.raises(RuntimeError) as e:
-        br.run(2, "acct:7", br.merged({}), deps=d)
-    assert "Unipile limit" in str(e.value) and "Apify" in str(e.value)
+        br.run(3, "acct:7", br.merged({"sources": ["posts"]}), deps=d)
+    assert "limit of 900 LinkedIn search results" in str(e.value) and "Apify" in str(e.value) and "05:30" in str(e.value)
 
 
 def test_search_with_is_unipile_or_apify_and_the_estimate_follows_it():

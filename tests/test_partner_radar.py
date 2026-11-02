@@ -91,3 +91,13 @@ def test_a_message_for_a_partner_lead_carries_the_partner_page():
                       budget=None, call=call)
     assert out["subject"] == "Paid media under your name"
     assert "https://northaxis.com/partners/agencies" in sent[0] and "white label PPC partner" in sent[0]
+
+
+def test_when_linkedin_results_run_short_every_offer_is_still_searched():
+    st = br.merged({"offers": ["callvibe", "markify", "agency_partners", "consultant_partners"]})
+    queries, offer_of = br.search_order(st)
+    assert [offer_of[q] for q in queries[:4]] == ["callvibe", "markify", "agency_partners", "consultant_partners"]
+    assert len(queries) == sum(len(br.OFFERS[k]["queries"]) for k in st["offers"])
+    assert br.fair_share(900, 10, 25) == 25, "room for all: each search reads what it asks"
+    assert br.fair_share(300, 60, 25) == 5 and br.fair_share(0, 60, 25) == br.FAIR_MIN
+    assert br.fair_share(500, 0, 25) == 25
