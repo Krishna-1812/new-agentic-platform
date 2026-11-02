@@ -328,6 +328,34 @@ def split_room(room, demands):
     return out
 
 
+# Unipile's day is one LinkedIn account's, shared by every workspace; it starts again at midnight UTC.
+UNIPILE_SPENT = ("today's limit of %d LinkedIn search results through Unipile is used up, across every workspace. "
+                 "It starts again at 05:30 India time (midnight UTC); Apify can search LinkedIn now, at about $2 per "
+                 "1,000 posts.")
+FAIR_MIN = 5          # posts a search reads at least, when the day's results are shared out
+
+
+def fair_share(room, searches, per_query):
+    """Posts each search reads when `room` results are left for `searches` searches: per_query when there is
+    room for all, else an equal share (at least FAIR_MIN), so the last searches are not the ones left out."""
+    if searches <= 0:
+        return per_query
+    return max(FAIR_MIN, min(per_query, room // searches))
+
+
+def search_order(settings):
+    """(queries, {query: offer}): one search from each offer in turn, so when the day's results run short
+    every offer was searched, not only the first ones listed."""
+    queries, offer_of = [], {}
+    lists = [(offer, queries_for(settings, offer)) for offer in settings["offers"]]
+    for i in range(max([len(qs) for _, qs in lists] or [0])):
+        for offer, qs in lists:
+            if i < len(qs):
+                queries.append(qs[i])
+                offer_of.setdefault(qs[i], offer)
+    return queries, offer_of
+
+
 def queries_for(settings, offer):
     own = (settings.get("queries") or {}).get(offer)
     return list(own) if own else list(OFFERS[offer]["queries"])
@@ -850,12 +878,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     if problem:
         raise RuntimeError("Claude could not read posts, so LinkedIn was not searched and nothing was charged "
                            "for posts: %s" % problem)
-    queries, offer_of = [], {}
-    if want_posts:
-        for offer in settings["offers"]:
-            for q in queries_for(settings, offer):
-                queries.append(q)
-                offer_of.setdefault(q, offer)
+    queries, offer_of = search_order(settings) if want_posts else ([], {})
     titles = [q for o in settings["offers"] for q in job_queries_for(settings, o)] if want_jobs else []
     places = list(settings.get("job_locations") or [])
     summary["searched"] = len(queries)
@@ -863,14 +886,26 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     if (want_posts and source == "unipile") or want_jobs:
         left = uni.day_max() - store.unipile_results_today()
         if left <= 0:
-            raise RuntimeError("Today's Unipile limit of %d LinkedIn search results is reached, across every "
-                               "workspace. Search with Apify, or again tomorrow." % uni.day_max())
-        room = split_room(left, {"posts": len(queries) * int(settings["per_query"]) if want_posts and source == "unipile" else 0,
-                                 "jobs": len(titles) * max(1, len(places)) * int(settings["jobs_per_query"])})
+            # LinkedIn is spent for today; the sources that do not search LinkedIn still run
+            others = want_icp or want_rfps or want_reddit or (want_posts and source != "unipile")
+            if not others:
+                raise RuntimeError(UNIPILE_SPENT % uni.day_max())
+            summary["notes"].append("LinkedIn was not searched: %s Customer profiles, Reddit and RFPs still ran."
+                                    % (UNIPILE_SPENT % uni.day_max()))
+            if source == "unipile":
+                want_posts = False
+            want_jobs, titles = False, []
+        else:
+            room = split_room(left, {"posts": len(queries) * int(settings["per_query"]) if want_posts and source == "unipile" else 0,
+                                     "jobs": len(titles) * max(1, len(places)) * int(settings["jobs_per_query"])})
     summary["unipile_results"] = 0
     apify_usd, posts = 0.0, []
     if want_posts and source == "unipile":
-        got = deps["unipile_search"](queries, posted=settings["posted"], per_query=settings["per_query"], room=room["posts"])
+        per_query = fair_share(room["posts"], len(queries), int(settings["per_query"]))
+        if per_query < int(settings["per_query"]):
+            summary["notes"].append("Today's LinkedIn results left (%d) were shared out: %d posts a search in place of %d."
+                                    % (room["posts"], per_query, int(settings["per_query"])))
+        got = deps["unipile_search"](queries, posted=settings["posted"], per_query=per_query, room=room["posts"])
         summary["unipile_results"] += int(got.get("results") or 0)
         summary["notes"].extend(got.get("notes") or [])
     elif want_posts:
