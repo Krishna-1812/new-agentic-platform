@@ -98,6 +98,37 @@ DEFAULT_ICPS = {
          "levels": ["C-Level", "Founder", "President/Vice President", "Head", "Director"],
          "departments": ["Marketing", "C-Suite"], "size_min": 11, "size_max": 300},
     ],
+    # Partner Radar: agencies that could hand us their paid media, and consultants who could bring us clients.
+    "agency_partners": [
+        {"name": "Agency founders hiring paid media people", "trigger": "hiring_for",
+         "hiring": ["PPC", "Google Ads", "Paid Media", "Paid Social", "Performance Marketing"],
+         "titles": ["Founder", "Co-Founder", "CEO", "Managing Director", "Owner"],
+         "levels": ["Founder", "Owner", "C-Level"], "departments": ["C-Suite"],
+         "industries": ["Advertising Services", "Marketing Services", "Marketing and Advertising", "Design Services", "Public Relations and Communications Services"], "size_min": 2, "size_max": 100, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+        {"name": "Founders of fast-growing agencies", "trigger": "rapid_growth",
+         "titles": ["Founder", "Co-Founder", "CEO", "Managing Director", "Owner"],
+         "levels": ["Founder", "Owner", "C-Level"], "departments": ["C-Suite"],
+         "industries": ["Advertising Services", "Marketing Services", "Marketing and Advertising", "Design Services", "Public Relations and Communications Services"], "size_min": 2, "size_max": 100, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+        {"name": "New heads of paid media at agencies", "trigger": "new_in_role", "months": 3,
+         "titles": ["Head of Paid Media", "Head of PPC", "Director of Paid Media", "Head of Performance",
+                    "Client Services Director"],
+         "levels": ["Head", "Director", "President/Vice President"],
+         "industries": ["Advertising Services", "Marketing Services", "Marketing and Advertising", "Design Services", "Public Relations and Communications Services"], "size_min": 5, "size_max": 200, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+    ],
+    "consultant_partners": [
+        {"name": "Paid media people who just went independent", "trigger": "new_in_role", "months": 6,
+         "titles": ["Paid Media Consultant", "PPC Consultant", "Google Ads Consultant", "Performance Marketing Consultant",
+                    "Growth Marketing Consultant", "Digital Marketing Consultant"],
+         "size_max": 10, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+        {"name": "Fractional marketing leaders", "trigger": "none",
+         "titles": ["Fractional CMO", "Fractional Head of Growth", "Fractional Marketing Director",
+                    "Fractional Head of Performance", "Fractional VP Marketing"],
+         "size_max": 10, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+        {"name": "Senior freelance paid media specialists", "trigger": "none",
+         "titles": ["Freelance PPC", "Freelance Google Ads", "Freelance Media Buyer", "Freelance Paid Social",
+                    "Independent Marketing Consultant"],
+         "keywords": ["Google Ads", "Meta Ads", "PPC"], "size_max": 10, "locations": ["United States", "United Kingdom", "Australia", "Canada"]},
+    ],
 }
 
 
