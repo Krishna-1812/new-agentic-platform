@@ -5,6 +5,7 @@
     judge_posts(comments, offers, ..., system=COMMENT_SYSTEM, text_of=comment_text)  people in the comments
     judge_posts(rfps, offers, ..., system=RFP_SYSTEM, text_of=rfp_text)              requests for proposals
     judge_posts(threads, offers, ..., system=REDDIT_SYSTEM, text_of=reddit_text)     Reddit threads
+    judge_posts(signals, offers, ..., system=WARMLY_SYSTEM, text_of=warmly_text)     what Warmly sent
     draft(lead, offer, sender, budget=, model=) -> {"subject", "email", "note", "message"}
 
 Both are structured-output calls through contact_lab._json_call, so every call is checked against the
@@ -133,6 +134,26 @@ REDDIT_SYSTEM = (
     "reason quotes a few words of the thread.\n"
     "Never invent facts that are not in the thread. Use the numbers given." + PARTNER_RULE)
 
+WARMLY_SYSTEM = (
+    "You find buyers for a sales team among the companies and people Warmly, a website-visitor and "
+    "buying-signal tool, sent it. You are given what each of the team's offers sells and who buys it, then "
+    "numbered signals: who the person or company is, and what Warmly saw (pages read on the team's own "
+    "site, time spent, research topics, a new job, engagement). For each signal decide, from it alone:\n"
+    "- role: 'buyer' when the person or company fits who buys an offer; 'seller' when they plainly sell the "
+    "same thing to the same buyers and fit no offer's buyers; 'job_seeker' when a careers page is all they "
+    "read; else 'other' (a student, a vendor pitching us, nobody named).\n"
+    "- offer: which offer's key fits them, or 'none'. A partner page read (/partners/agencies, "
+    "/partners/consultants) points to that partner offer; the services pages to the offer they describe.\n"
+    "- intent: 'seeking_vendor' when they read pages that compare, price or book (a partner page, pricing, "
+    "book a call), or are researching the offer's topics; 'pain_point' for weaker interest; else 'none'.\n"
+    "- score 0 to 100, how likely a short message from this offer is welcome now: a fitting person who read "
+    "a partner page or pricing for a minute or more, 75 to 95; a fitting company with no person named, or "
+    "a fitting person seen briefly, 50 to 75; a fit researching the offer's topics or new in a fitting role, "
+    "50 to 70; anyone who fits no offer's buyers, 0 to 20.\n"
+    "- need: what they likely want, in one short sentence in plain English.\n"
+    "- company, region (city or country), deadline (''), reason: why, in one sentence, naming what Warmly saw.\n"
+    "Never invent facts that are not in the signal. Use the numbers given." + PARTNER_RULE)
+
 JUDGE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"],
                 "properties": {"verdicts": {"type": "array", "items": {
                     "type": "object", "additionalProperties": False,
@@ -199,6 +220,11 @@ def reddit_text(n, p):
     return "THREAD %d (posted %s, in r/%s)\nBY: %s\nTEXT: %s" % (
         n, p.get("posted_at") or "date unknown", p.get("subreddit") or "unknown", (p.get("author") or {}).get("name") or "unknown",
         re.sub(r"\s+", " ", p.get("text") or "")[:2500])
+
+
+def warmly_text(n, p):
+    from . import buyer_radar_warmly as wm
+    return wm.text(n, p)
 
 
 def clean_verdict(v, offers):
@@ -381,6 +407,16 @@ def _signal_text(lead):
                 "beyond the website. Leave 'subject', 'email' and 'note' as empty strings: nobody on Reddit is "
                 "emailed." % (a.get("name") or "someone", a.get("headline") or "", re.sub(r"\s+", " ", p.get("text") or "")[:2500],
                                v.get("need") or "")), ""
+    if kind == "warmly":
+        c = (p.get("contacts") or [{}])[0]
+        co = p.get("company") or {}
+        who = ", ".join(x for x in (c.get("name"), c.get("title"), co.get("name")) if x) or \
+            "the team at %s (no name known)" % (co.get("name") or co.get("domain") or "their company")
+        return ("WRITING TO: %s\n\nWHY THEM: %s\n\nWHAT THEY LIKELY WANT: %s\nThey have not asked for anything. "
+                "Never say or hint that you saw them on the website, saw what they read, or that they were "
+                "tracked or identified: open with their role and company and why the offer fits, as a cold "
+                "first message." % (who, re.sub(r"\s+", " ", p.get("text") or "")[:1500], v.get("need") or "")), \
+            (c.get("name") or "").split(" ")[0]
     first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
     body = re.sub(r"\s+", " ", p.get("text") or "")[:2500]
     if kind == "comment":

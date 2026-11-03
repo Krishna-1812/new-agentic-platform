@@ -28,7 +28,7 @@ PARTNER = {"agency_partners": "/partners/agencies", "consultant_partners": "/par
 @pytest.mark.parametrize("key,path", sorted(PARTNER.items()))
 def test_each_partner_offer_points_at_its_page_and_searches_linkedin_as_it_accepts(key, path):
     o = br.OFFERS[key]
-    assert o["label"].startswith("Partners: ") and o["site"] == "https://northaxis.com" + path
+    assert o["label"].startswith("Partners: ") and o["site"] == br.SITE + path
     assert 8 <= len(o["queries"]) <= br.MAX_QUERIES
     for q in o["queries"]:
         assert src.check_query(q) is None and '"' in q, q
@@ -90,7 +90,7 @@ def test_a_message_for_a_partner_lead_carries_the_partner_page():
     out = judge.draft(lead, br.OFFERS["agency_partners"], {"name": "Kris", "title": "Founder"},
                       budget=None, call=call)
     assert out["subject"] == "Paid media under your name"
-    assert "https://northaxis.com/partners/agencies" in sent[0] and "white label PPC partner" in sent[0]
+    assert br.SITE + "/partners/agencies" in sent[0] and "white label PPC partner" in sent[0]
 
 
 def test_when_linkedin_results_run_short_every_offer_is_still_searched():
@@ -101,3 +101,8 @@ def test_when_linkedin_results_run_short_every_offer_is_still_searched():
     assert br.fair_share(900, 10, 25) == 25, "room for all: each search reads what it asks"
     assert br.fair_share(300, 60, 25) == 5 and br.fair_share(0, 60, 25) == br.FAIR_MIN
     assert br.fair_share(500, 0, 25) == 25
+
+
+def test_the_partner_links_go_to_the_live_site():
+    import app as appmod
+    assert br.SITE == appmod.SITE_URL, "the messages link to the site the app serves"

@@ -14832,6 +14832,10 @@ def buyer_radar_status():
                sheet={"email": br_sheet.service_email(), "url": br_sheet.sheet_url(settings.get("sheet_id"))},
                reddit_defaults={k: reddit.OFFER_QUERIES.get(k, []) for k in br.OFFERS},
                icps={k: icp.icps_for(settings, k) for k in br.OFFERS}, triggers=icp.TRIGGERS, levels=icp.LEVELS)
+    try:
+        out["warmly"] = dict(store.warmly_counts(owner), url=_br_warmly_url(settings.get("warmly_token")))
+    except store.StoreUnavailable:
+        out["warmly"] = {"url": _br_warmly_url(settings.get("warmly_token"))}
     return jsonify(out)
 
 
@@ -15192,6 +15196,64 @@ def buyer_radar_icps_suggest():
     if not got:
         return jsonify(error="Claude suggested no profile that could be searched. Try again with notes."), 502
     return jsonify(icps=got)
+
+
+@app.route("/api/lead-finder/warmly/<token>", methods=["POST"])
+def lead_finder_warmly_webhook(token):
+    """Warmly's webhook (Settings > Webhooks, or an Orchestrator "Send Contact/Company to Webhook" step).
+    The token in the address is the workspace's secret: Warmly signs nothing. Each record waits in the
+    workspace's inbox for its next Lead Finder run; our own people are dropped. Answers counts only."""
+    from tracker import buyer_radar_store as store, buyer_radar_warmly as wm
+    if not wm.valid_token(token):
+        return jsonify(ok=False, error="Unknown address."), 404
+    try:
+        owner = store.owner_of_warmly_token(token)
+    except store.StoreUnavailable:
+        return jsonify(ok=False, error="The database is unavailable."), 503
+    if not owner:
+        return jsonify(ok=False, error="Unknown address."), 404
+    body = request.get_json(silent=True, force=True)
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    now = datetime.now(timezone.utc).isoformat()
+    kept = skipped = repeats = 0
+    try:
+        for record in wm.records(body):
+            if len(json.dumps(record, default=str)) > wm.MAX_BYTES:
+                skipped += 1
+                continue
+            signal = wm.normalize(record, now)
+            if not signal:
+                skipped += 1
+            elif store.warmly_add(owner, signal, record):
+                kept += 1
+            else:
+                repeats += 1
+    except store.StoreUnavailable:
+        return jsonify(ok=False, error="The database is unavailable."), 503
+    return jsonify(ok=True, kept=kept, skipped=skipped, repeats=repeats)
+
+
+@app.route(BR + "/api/warmly", methods=["POST"])
+@position2_required
+def buyer_radar_warmly_address():
+    """Makes this workspace's Warmly webhook address, or a new one (the old one stops working)."""
+    from tracker import buyer_radar as br, buyer_radar_store as store, buyer_radar_warmly as wm
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    owner = _mr_email()
+    try:
+        settings = store.get_settings(owner)
+        settings = dict(settings, warmly_token=wm.new_token())
+        store.save_settings(owner, settings, (_get_user() or {}).get("email", ""))
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(url=_br_warmly_url(settings["warmly_token"]), settings=settings, estimate=br.estimate(settings))
+
+
+def _br_warmly_url(token):
+    return (SITE_URL + "/api/lead-finder/warmly/" + token) if token else ""
 
 
 @app.route("/api/buyer-radar/daily", methods=["POST"])

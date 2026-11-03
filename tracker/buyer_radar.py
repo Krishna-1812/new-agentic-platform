@@ -12,6 +12,8 @@ in these places, each switched on in Settings ("sources"):
     rfps       requests for proposals and tenders on the open web, found by Claude's web search every
                rfp_days days (tracker/buyer_radar_rfp.py)
     reddit     Reddit threads asking for it, answered in the thread (tracker/buyer_radar_reddit.py)
+    warmly     the companies and people Warmly's webhook sent since the last run: our site's readers, new
+               hires, research intent (tracker/buyer_radar_warmly.py)
 
 A company found in two places (its job ads and a customer profile, an RFP and a post), in this run or
 the last 60 days, scores higher and says so (multi_signal).
@@ -33,12 +35,17 @@ credit per email found.
 from __future__ import annotations
 
 import logging
+import os
 import re
 from decimal import Decimal
 
 log = logging.getLogger(__name__)
 
 MODEL = "claude-haiku-5-5"
+
+# The public site's address, the same as app.SITE_URL: PUBLIC_BASE_URL, else the custom domain. The partner
+# offers' messages link to their pages there.
+SITE = (os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/") or "https://northaxis.outcomes.digital")
 
 # == the offers ===========================================================================================
 # The searches are LinkedIn's own post search (5 AND/OR/NOT at most). Each one is the exact words a buyer
@@ -137,7 +144,7 @@ OFFERS = {
     # channels, the team in India, white-label delivery, and the consultant's recurring 20%.
     "agency_partners": {
         "label": "Partners: agencies",
-        "site": "https://northaxis.com/partners/agencies",
+        "site": SITE + "/partners/agencies",
         "sells": ("Northaxis runs paid media white-label for marketing agencies: Google Ads, Meta and LinkedIn Ads "
                   "for the agency's clients, delivered under the agency's name by Northaxis's team in India, whose "
                   "working day covers the US night and the UK morning. The agency keeps the client, the relationship "
@@ -171,7 +178,7 @@ OFFERS = {
     },
     "consultant_partners": {
         "label": "Partners: consultants",
-        "site": "https://northaxis.com/partners/consultants",
+        "site": SITE + "/partners/consultants",
         "sells": ("Northaxis's partner programme for senior paid marketing consultants and freelancers: the "
                   "consultant wins and looks after the client, Northaxis's team in India does the Google Ads, Meta "
                   "and LinkedIn Ads work, and the consultant earns a recurring 20% commission on every monthly fee "
@@ -211,7 +218,7 @@ OFFERS = {
 SEARCH_SOURCES = {"unipile": "Unipile", "apify": "Apify"}
 # where leads come from; "posts" through the source above, the rest through Unipile
 ALL_LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads", "icp": "Customer profiles",
-                    "rfps": "RFPs and tenders", "reddit": "Reddit"}
+                    "rfps": "RFPs and tenders", "reddit": "Reddit", "warmly": "Warmly"}
 # Job ads were switched off on 2026-10-25: the team does not want "hiring for it" leads. The search code is
 # kept (put the name out of RETIRED_SOURCES to bring it back); a workspace that still has "jobs" in its saved
 # sources is not searched for it (sources_on), and the leads it left were deleted (buyer_radar_store).
@@ -256,6 +263,7 @@ DEFAULTS = {
     "find_emails": False,             # Saleshandy, one credit per email found, only for leads being emailed
     "senders": {o: {"name": "", "title": "", "email": ""} for o in OFFERS},
     "postal_address": "",             # in every email's footer
+    "warmly_token": "",               # the secret in this workspace's Warmly webhook address; made by the team
 }
 LIMITS = {"per_query": (5, 100), "keep_score": (0, 100), "alert_score": (0, 100), "send_score": (50, 100),
           "daily_email_cap": (0, 100), "daily_linkedin_cap": (0, 80), "jobs_days": (1, 30),
@@ -298,6 +306,8 @@ def search_missing(settings):
     if "rfps" in on:                  # Claude's web search: ANTHROPIC_API_KEY, which every run needs
         return None
     if "reddit" in on and reddit_ready():
+        return None
+    if "warmly" in on:                # Warmly's webhook needs nothing on the service
         return None
     return (post_key if "posts" in on else "UNIPILE_API_KEY" if "jobs" in on else "SALESHANDY_API_KEY" if "icp" in on
             else "REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET")
@@ -819,7 +829,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     from datetime import datetime, timezone
     from . import buyer_radar_comments as comments_src, buyer_radar_icp as icp_src, buyer_radar_jobs as jobs_src
     from . import buyer_radar_judge as judge, buyer_radar_reddit as reddit_src, buyer_radar_rfp as rfp_src
-    from . import buyer_radar_send as send, buyer_radar_source as src
+    from . import buyer_radar_send as send, buyer_radar_source as src, buyer_radar_warmly as warmly_src
     from . import buyer_radar_store as store, contact_lab_search as cls
     from . import buyer_radar_unipile as uni
     from . import buyer_radar_sheet as sheet
@@ -828,6 +838,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                  "check": judge.check, "jobs_search": jobs_src.collect, "job_locations": jobs_src.locations,
                  "comments": comments_src.collect, "people": jobs_src.decision_makers, "icp": icp_src.find,
                  "rfps": rfp_src.collect, "reddit": reddit_src.collect,
+                 "warmly": lambda who: store.warmly_waiting(who, warmly_src.PER_RUN),
                  "sequence": send.sequence_lead,
                  "find_emails": send.find_emails, "send_email": send.email_lead, "send_linkedin": send.linkedin_lead,
                  "slack": send.slack_leads}, **(deps or {}))
@@ -851,7 +862,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     has_unipile = bool(os.environ.get("UNIPILE_API_KEY"))
     token = os.environ.get("APIFY_API_TOKEN", "")
     want_posts, want_jobs, want_icp = "posts" in on, "jobs" in on, "icp" in on and bool(settings.get("icp_per_run"))
-    want_rfps, want_reddit = "rfps" in on, "reddit" in on
+    want_rfps, want_reddit, want_warmly = "rfps" in on, "reddit" in on, "warmly" in on
     post_key = "APIFY_API_TOKEN" if source == "apify" else "UNIPILE_API_KEY"
     checks = {"posts": (want_posts, bool(os.environ.get(post_key)), post_key, "Posts were not searched"),
               "jobs": (want_jobs, has_unipile, "UNIPILE_API_KEY", "Job ads were not searched"),
@@ -859,7 +870,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                       "Customer profiles were not searched"),
               "reddit": (want_reddit, reddit_ready(), "REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET", "Reddit was not searched")}
     missing = [(k, key, what) for k, (want, ok, key, what) in checks.items() if want and not ok]
-    if missing and len(missing) == sum(1 for w, *_ in checks.values() if w) and not want_rfps:
+    if missing and len(missing) == sum(1 for w, *_ in checks.values() if w) and not (want_rfps or want_warmly):
         raise RuntimeError("%s is not set on this service (Railway → web → Variables)." % missing[0][1])
     for k, key, what in missing:
         if k == "reddit":             # on by default, and the page says it is not set up: not a note every run
@@ -887,10 +898,10 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         left = uni.day_max() - store.unipile_results_today()
         if left <= 0:
             # LinkedIn is spent for today; the sources that do not search LinkedIn still run
-            others = want_icp or want_rfps or want_reddit or (want_posts and source != "unipile")
+            others = want_icp or want_rfps or want_reddit or want_warmly or (want_posts and source != "unipile")
             if not others:
                 raise RuntimeError(UNIPILE_SPENT % uni.day_max())
-            summary["notes"].append("LinkedIn was not searched: %s Customer profiles, Reddit and RFPs still ran."
+            summary["notes"].append("LinkedIn was not searched: %s Customer profiles, Reddit, RFPs and Warmly still ran."
                                     % (UNIPILE_SPENT % uni.day_max()))
             if source == "unipile":
                 want_posts = False
@@ -919,7 +930,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         got = {"posts": []}
     if apify_usd:
         spend("apify", "post-search", usd=apify_usd)
-    if got.get("error") and not got.get("posts") and not (want_jobs or want_icp or want_rfps or want_reddit):
+    if got.get("error") and not got.get("posts") and not (want_jobs or want_icp or want_rfps or want_reddit or want_warmly):
         raise RuntimeError("The LinkedIn search did not run: %s" % got["error"])
     if got.get("error"):
         summary["notes"].append(("The post search stopped early (%s); what it found is used." if got.get("posts") else
@@ -945,7 +956,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                 summary["notes"].append("The job search %s (%s)." % (
                     "stopped early" if jg.get("jobs") else "did not run", jg["error"][:120]))
             signals = jobs_src.by_company(jg.get("jobs") or [], datetime.now(timezone.utc).strftime("%Y-%m"))
-    if not posts and not signals and got.get("error") and not (want_icp or want_rfps or want_reddit):
+    if not posts and not signals and got.get("error") and not (want_icp or want_rfps or want_reddit or want_warmly):
         raise RuntimeError("The LinkedIn search did not run: %s" % got["error"])
     summary["posts"] = len(posts)
     summary["companies"] = len(signals)
@@ -988,6 +999,9 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                 lead["email_source"] = "rfp"
                 if r.get("due") and not v.get("deadline"):
                     lead["verdict"] = dict(v, deadline=r["due"])
+            if source == "warmly":
+                found = [c["email"] for c in p.get("contacts") or [] if c.get("email")]
+                lead["emails"], lead["email_source"] = found[:1], "warmly"
             out.append(lead)
         return out
 
@@ -1097,6 +1111,31 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         rfp_leads = kept(rfps, rv, "rfp")
         summary["by_source"]["rfp"] = len(rfp_leads)
         leads += rfp_leads
+
+    # 5b. what Warmly's webhook sent since the last run, read like a post. A signal a run could not read
+    # (the cost cap, or Claude failing on it) waits in the inbox for the next run.
+    if want_warmly and not stopped:
+        try:
+            waiting = deps["warmly"](owner)
+        except store.StoreUnavailable as e:
+            waiting = []
+            summary["notes"].append("Warmly's inbox could not be read (%s)." % e)
+        if waiting:
+            stage("reading Warmly")
+            sigs = [sig for _, sig in waiting]
+            met_w = store.known_posts(owner, [sig["key"] for sig in sigs])
+            fresh_w = [sig for sig in sigs if sig["key"] not in met_w]
+            summary["warmly"] = len(fresh_w)
+            spent_before = budget.spent
+            try:
+                wv = read(fresh_w, system=judge.WARMLY_SYSTEM, text_of=judge.warmly_text)
+            finally:
+                _book_claude(budget, spend, "read-warmly", since=spent_before)
+            summary["read"] += len(wv)
+            store.warmly_taken(owner, [i for i, sig in waiting if sig["key"] in met_w or sig["key"] in wv])
+            warmly_leads = kept(fresh_w, wv, "warmly")
+            summary["by_source"]["warmly"] = len(warmly_leads)
+            leads += warmly_leads
 
     # nobody twice: a person, hiring company or RFP already a lead is not a new one (identities)
     def fresh_only(items):

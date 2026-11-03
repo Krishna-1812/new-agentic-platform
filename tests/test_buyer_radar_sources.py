@@ -398,7 +398,7 @@ def test_the_new_settings_are_checked():
                 {"job_queries": {"markify": ["x"] * 21}}, {"job_queries": {"callvibe": ["x" * 101]}}):
         with pytest.raises(ValueError):
             br.clean_settings(bad)
-    assert br.merged({})["sources"] == ["posts", "comments", "jobs", "icp", "rfps", "reddit"]
+    assert br.merged({})["sources"] == ["posts", "comments", "jobs", "icp", "rfps", "reddit", "warmly"]
 
 
 @pytest.mark.usefixtures("jobs_on")

@@ -297,8 +297,14 @@ class FakeStore:
         monkeypatch.setenv("SALESHANDY_API_KEY", "s")
         for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
                      "unipile_results_today", "mark_seen", "spent_within", "recent_companies", "known_identities",
-                     "add_identities", "backfill_identities", "get_cursor", "set_cursor"):
+                     "add_identities", "backfill_identities", "get_cursor", "set_cursor", "warmly_waiting", "warmly_taken"):
             monkeypatch.setattr(store, name, getattr(self, name))
+
+    def warmly_waiting(self, owner, limit=60):
+        return [(i, sig) for i, sig in enumerate(getattr(self, "warmly", []), 1)][:limit]
+
+    def warmly_taken(self, owner, ids):
+        self.taken = list(getattr(self, "taken", [])) + list(ids)
 
     def known_identities(self, owner, idents):
         return {i for i in idents if i in self.idents}
