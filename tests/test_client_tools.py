@@ -406,6 +406,7 @@ TEAM_ONLY = {
     "/strategic-agents/lead-finder/api/icps/suggest": "the customer profiles are the team's settings",
     "/strategic-agents/lead-finder/api/sheet": "the Google Sheet is the team's setting, and holds the drafted messages",
     "/strategic-agents/lead-finder/api/runs/<int:run_id>/slack": "posts to the agency's Slack channel",
+    "/strategic-agents/lead-finder/api/warmly": "the Warmly address is the workspace's secret key",
 }
 
 

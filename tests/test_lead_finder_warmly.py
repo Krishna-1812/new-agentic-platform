@@ -131,6 +131,14 @@ def test_the_team_makes_the_address_and_a_new_one_replaces_it(mem, monkeypatch):
     assert c.post(BASE + "/api/warmly", json={}, headers={"Origin": "https://evil.example"}).status_code == 403, "same-origin only"
 
 
+def test_a_client_never_sees_or_makes_the_warmly_address(mem, monkeypatch):
+    import app as appmod
+    monkeypatch.setattr(appmod, "viewer_is_client", lambda: True)
+    c = _client(STAFF)
+    assert "warmly" not in c.get(BASE + "/api/status").get_json()
+    assert c.post(BASE + "/api/warmly", json={}, headers=H).status_code == 403
+
+
 # == a run reads them ====================================================================================
 
 def test_a_run_reads_what_warmly_sent_keeps_the_buyers_and_writes_to_them(monkeypatch):
