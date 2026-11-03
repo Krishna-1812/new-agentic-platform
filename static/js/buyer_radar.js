@@ -23,7 +23,7 @@
     'finding decision makers', 'drafting', 'adding to Saleshandy', 'sending emails', 'sending on LinkedIn', 'updating the Google Sheet',
     'posting to Slack', 'done'];
   var STAGE_WORDS = { queued: 'Starting', searching: 'Searching LinkedIn', reading: 'Claude is reading what it found',
-    'reading comments': 'Reading the comments', 'reading Reddit': 'Reading Reddit', 'searching for RFPs': 'Searching the web for RFPs',
+    'reading comments': 'Reading the comments', 'reading Reddit': 'Reading Reddit', 'reading Warmly': 'Reading what Warmly sent', 'searching for RFPs': 'Searching the web for RFPs',
     'finding people': 'Finding people who fit your profiles', 'finding decision makers': 'Finding who decides',
     'adding to Saleshandy': 'Adding to Saleshandy', 'updating the Google Sheet': 'Updating the Google Sheet',
     drafting: 'Writing the messages', 'sending emails': 'Sending emails', 'sending on LinkedIn': 'Sending on LinkedIn',
@@ -31,12 +31,14 @@
   // Where a lead came from: [chip, what it means, the filter's name].
   var SOURCE = { post: ['Post', 'They posted asking for it', 'Posts'], comment: ['Comment', 'They said so under a buyer\'s post', 'Comments'],
     jobs: ['Hiring', 'Their company is hiring for the work', 'Hiring'], icp: ['Profile', 'Fits your customer profile, at a moment that matters', 'Profiles'],
-    rfp: ['RFP', 'They published a request for proposals', 'RFPs'], reddit: ['Reddit', 'They asked on Reddit', 'Reddit'] };
+    rfp: ['RFP', 'They published a request for proposals', 'RFPs'], reddit: ['Reddit', 'They asked on Reddit', 'Reddit'],
+    warmly: ['Warmly', 'Warmly saw them: our site, a new role or research', 'Warmly'] };
   var LEAD_SOURCES = { posts: ['LinkedIn posts', 'People posting that they need it.'],
     comments: ['Their comments', 'People under those posts saying they need it too. Read through Unipile.'],
     icp: ['Customer profiles', 'People who fit your customers at a moment that matters: new in their role, recently funded, hiring, using a rival. From Saleshandy, free to search.'],
     rfps: ['RFPs and tenders', 'Open requests for proposals on the web, found by Claude\'s web search. About $0.03 a search, run once every few days.'],
-    reddit: ['Reddit', 'Threads asking for recommendations, answered in the thread by you. Free; needs a Reddit app\'s keys on the service.'] };
+    reddit: ['Reddit', 'Threads asking for recommendations, answered in the thread by you. Free; needs a Reddit app\'s keys on the service.'],
+    warmly: ['Warmly', 'The companies and people Warmly sends to this workspace\'s webhook address (below): readers of our site, new hires, research intent. Read by Claude in the next search.'] };
   var ICP_LISTS = [['titles', 'Job titles'], ['levels', 'Seniority'], ['departments', 'Departments'], ['industries', 'Industries'],
     ['locations', 'Locations'], ['keywords', 'Company keywords'], ['technologies', 'Products their company uses'], ['hiring', 'Jobs their company advertises']];
 
@@ -205,7 +207,7 @@
       '</div></article>';
   }
 
-  var OPEN = { jobs: 'Open the company', rfp: 'Open the RFP', reddit: 'Open the thread', comment: 'Open the post' };
+  var OPEN = { jobs: 'Open the company', rfp: 'Open the RFP', reddit: 'Open the thread', comment: 'Open the post', warmly: 'Open the profile' };
 
   function renderLeads(leads, filter) {
     if (!leads || !leads.length) {
@@ -486,6 +488,7 @@
           return '<option value="' + h + '"' + (Number(s.daily_hour) === h ? ' selected' : '') + '>' + hourLabel(h) + '</option>';
         }).join('') + '</select></div>' +
         numIn('brDailyN', 'New leads a search, about', s.daily_leads, 0, 100, 5, 'Customer profiles fill what the other places leave, so every day brings about this many. 0: no filling.') + '</div>' +
+      renderWarmly((extra || {}).warmly || {}) +
       '<h4 class="br-set-t">Google Sheet</h4>' +
       '<label class="mr-k" for="brSheet">Sheet link</label><input type="text" id="brSheet" value="' + esc(s.sheet_id ? 'https://docs.google.com/spreadsheets/d/' + s.sheet_id + '/edit' : '') + '" placeholder="https://docs.google.com/spreadsheets/d/...">' +
       '<div class="mr-hint">Every lead gets one row, never twice, with everything Lead Finder knows; status, email and who was written to are kept up to date. ' +
@@ -510,6 +513,22 @@
       '<label class="mr-k" for="brAddr">Postal address for the email footer</label><input type="text" id="brAddr" value="' + esc(s.postal_address || '') + '" placeholder="Company name, street, city, country">' +
       '<div class="mr-hint">Anti-spam laws (CAN-SPAM in the US) ask for one in every commercial email.</div>' +
       '<div class="br-set-foot"><span class="br-set-msg" id="brSetMsg" aria-live="polite"></span><button type="submit" class="mr-btn primary">Save settings</button></div>';
+  }
+
+  // Warmly's webhook address for this workspace: paste it in Warmly (Settings > Webhooks, or an
+  // Orchestrator "Send Contact to Webhook" step). The token in it is the only key, so it can be replaced.
+  function renderWarmly(w) {
+    var has = !!w.url;
+    return '<div id="brWarmly"><h4 class="br-set-t">Warmly</h4>' +
+      '<label class="mr-k" for="brWarmlyUrl">Webhook address</label>' +
+      (has ? '<input type="text" id="brWarmlyUrl" readonly value="' + esc(w.url) + '">' :
+        '<div class="mr-hint" id="brWarmlyUrl">No address yet. Make one, then paste it in Warmly.</div>') +
+      '<div class="mr-hint">In Warmly: Settings &rarr; Webhooks (every identified visitor), or an Orchestrator workflow&rsquo;s ' +
+        '&ldquo;Send Contact to Webhook&rdquo; step (new hires, research intent, partner-page readers). Keep it private: anyone with it can add leads. ' +
+        (has ? (w.waiting || 0) + ' waiting for the next search, ' + (w.week || 0) + ' received this week' +
+          (w.last ? ', the last ' + esc(String(w.last).slice(0, 16).replace('T', ' ')) + ' UTC' : '') + '.' : '') + '</div>' +
+      '<div class="br-dr-acts">' + (has ? '<button type="button" class="mr-btn small ghost" data-warmly="copy">Copy the address</button>' : '') +
+        '<button type="button" class="mr-btn small ghost" data-warmly="make">' + (has ? 'Make a new address' : 'Make the address') + '</button></div></div>';
   }
 
   function readSettings($, offers) {
@@ -619,7 +638,7 @@
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
         $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults,
-          { icps: st.icps, triggers: st.triggers, levels: st.levels, rfpDefaults: st.rfp_defaults, redditDefaults: st.reddit_defaults, sheet: st.sheet });
+          { icps: st.icps, triggers: st.triggers, levels: st.levels, rfpDefaults: st.rfp_defaults, redditDefaults: st.reddit_defaults, sheet: st.sheet, warmly: st.warmly });
         $('brSettings').dataset.drawn = '1';
       }
       $('brRunBtn').disabled = !((st.ready.run == null ? st.ready.search : st.ready.run) && st.ready.claude);
@@ -861,6 +880,31 @@
         .then(function (j) { toast(j.detail || ('Sheet updated: ' + j.added + ' added, ' + j.updated + ' brought up to date' + (j.removed ? ', ' + j.removed + ' removed' : '') + '.')); })
         .catch(function (e) { toast(e.message, true); })
         .then(function () { b.disabled = false; });
+    });
+    $('brSettings').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-warmly]');
+      if (!b) return;
+      if (b.getAttribute('data-warmly') === 'copy') {
+        var box = $('brWarmlyUrl');
+        Promise.resolve().then(function () { return navigator.clipboard.writeText(box.value); })
+          .then(function () { toast('Copied. Paste it in Warmly.'); })
+          .catch(function () { box.select(); toast('Select the address and copy it.'); });
+        return;
+      }
+      var had = !!(state.status && state.status.warmly && state.status.warmly.url);
+      confirmBox(had ? 'Make a new Warmly address?' : 'Make the Warmly address?',
+        had ? 'The old address stops working at once. Paste the new one in Warmly wherever the old one was.' :
+          'An address only Warmly should know. Signals sent to it become leads in the next search.').then(function (yes) {
+        if (!yes) return;
+        b.disabled = true;
+        api('/warmly', { method: 'POST', body: {} })
+          .then(function (j) {
+            state.status.warmly = { url: j.url, waiting: 0, week: 0 };
+            $('brWarmly').outerHTML = renderWarmly(state.status.warmly);
+            toast('The Warmly address is ready. Copy it into Warmly.');
+          })
+          .catch(function (e) { toast(e.message, true); b.disabled = false; });
+      });
     });
     $('brSettings').addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-icp]');

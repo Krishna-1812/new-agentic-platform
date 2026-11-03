@@ -18,6 +18,8 @@ each run kept in started_by; otherwise it is the person's own email.
     br_settings   each owner's settings (tracker/buyer_radar.py DEFAULTS)
     br_suppress   people who opted out, or must never be written to; for every owner
     br_spend      every paid call: Apify, Claude, Saleshandy; read by the admin panel (tracker/admin_spend.py)
+    br_warmly_inbox  what Warmly's webhook sent a workspace, waiting for the next run to read
+                  (tracker/buyer_radar_warmly.py); taken_at is set once a run has read it
 """
 from __future__ import annotations
 
@@ -32,7 +34,7 @@ from .market_radar_store import StoreUnavailable, _connect  # noqa: F401  (re-ex
 log = logging.getLogger(__name__)
 STALE_AFTER_S = 1200
 LEAD_STATUSES = ("new", "contacted", "replied", "dismissed")
-LEAD_SOURCES = ("post", "comment", "jobs", "icp", "rfp", "reddit")
+LEAD_SOURCES = ("post", "comment", "jobs", "icp", "rfp", "reddit", "warmly")
 
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS br_runs (
@@ -112,6 +114,16 @@ SCHEMA = [
         lead_id BIGINT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         PRIMARY KEY (owner, ident))""",
+    """CREATE TABLE IF NOT EXISTS br_warmly_inbox (
+        id BIGSERIAL PRIMARY KEY,
+        owner TEXT NOT NULL,
+        key TEXT NOT NULL,
+        signal JSONB NOT NULL,
+        payload JSONB NOT NULL,
+        received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        taken_at TIMESTAMPTZ,
+        UNIQUE (owner, key))""",
+    "CREATE INDEX IF NOT EXISTS idx_br_warmly_waiting ON br_warmly_inbox (owner, received_at) WHERE taken_at IS NULL",
     """CREATE TABLE IF NOT EXISTS br_cursors (
         owner TEXT NOT NULL,
         key TEXT NOT NULL,
@@ -194,6 +206,45 @@ def daily_owners():
     rows = _exec("SELECT owner FROM br_settings WHERE (settings->>'daily')::boolean IS TRUE ORDER BY owner",
                  fetch="all")
     return [r[0] for r in rows]
+
+
+def owner_of_warmly_token(token):
+    """The workspace whose Warmly webhook address carries this token, or None."""
+    row = _exec("SELECT owner FROM br_settings WHERE settings->>'warmly_token' = %s LIMIT 1", (token,), fetch="one")
+    return row[0] if row else None
+
+
+# == Warmly's webhook inbox ==============================================================================
+
+def warmly_add(owner, signal, payload):
+    """Keeps one signal for the next run; False when the same one is already there."""
+    row = _exec("""INSERT INTO br_warmly_inbox (owner, key, signal, payload) VALUES (%s, %s, %s, %s)
+                   ON CONFLICT (owner, key) DO NOTHING RETURNING id""",
+                (owner, signal["key"], _json(signal), _json(payload)), fetch="one")
+    return bool(row)
+
+
+def warmly_waiting(owner, limit=60):
+    """[(id, signal)] not yet read by a run, oldest first."""
+    rows = _exec("""SELECT id, signal FROM br_warmly_inbox WHERE owner=%s AND taken_at IS NULL
+                    ORDER BY received_at, id LIMIT %s""", (owner, int(limit)), fetch="all")
+    return [(r[0], r[1]) for r in rows]
+
+
+def warmly_taken(owner, ids):
+    if ids:
+        _exec("UPDATE br_warmly_inbox SET taken_at=now() WHERE owner=%s AND id = ANY(%s) AND taken_at IS NULL",
+              (owner, [int(i) for i in ids]))
+
+
+def warmly_counts(owner):
+    """{"waiting", "week", "last"}: signals waiting for a run, received in the last 7 days, and when the
+    last one came."""
+    row = _exec("""SELECT COUNT(*) FILTER (WHERE taken_at IS NULL),
+                          COUNT(*) FILTER (WHERE received_at >= now() - interval '7 days'), MAX(received_at)
+                   FROM br_warmly_inbox WHERE owner=%s""", (owner,), fetch="one")
+    return {"waiting": int(row[0] or 0), "week": int(row[1] or 0), "last": _iso(row[2])} if row else \
+        {"waiting": 0, "week": 0, "last": None}
 
 
 # == runs ================================================================================================
