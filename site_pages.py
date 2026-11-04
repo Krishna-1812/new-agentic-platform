@@ -1022,15 +1022,8 @@ AGENCY_STEPS = (
      "template, ready for you to send."),
 )
 
-# Where an agency's day falls against ours. Our working day is 09:30 to 18:30 in India (UTC+5:30); each row
-# is (city, how it falls for them, their working hours, our hours on their clock), hours on the client's
-# own 24-hour clock, winter time.
+# Our working day, said on the partner pages. India is UTC+5:30.
 TEAM_HOURS = "09:30 to 18:30 India time"
-AGENCY_ZONES = (
-    ("New York", "Done while you sleep", (9, 18), ((23, 24), (0, 8))),
-    ("London", "Your whole morning", (9, 18), ((4, 13),)),
-    ("Sydney", "Your afternoon", (9, 18), ((15, 24),)),
-)
 
 # What changes for an agency: (headline, line).
 AGENCY_WINS = (
