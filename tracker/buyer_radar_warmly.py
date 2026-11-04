@@ -16,11 +16,17 @@ The payload shapes are Warmly's (help.warmly.ai, "Setting Up Webhooks", read 202
 in Title Case ("Business Email", "LinkedIn URL", "Company Name"), the company of a "Website Visit Company"
 in lower case ("domain", "name", "industry"), the signal in "Signal" and the orchestration in
 "Orchestration Name". Signals without a published example (New Hire, Job Change, Social Engager, Job
-Opening) are read from the same names, and kept whole beside what is read, until a live one shows more.
+Opening) are read from the same names; every other field a record carries (the post someone engaged with,
+their comment, a previous title) goes to Claude as it came, under "Other details from Warmly", so a new
+signal type is read without a code change. Each signal has a type (signal_type) that decides what a
+message may say about how we came to write: a public comment or a new role may be mentioned, a website
+visit or research never.
 
     new_token()                       a workspace's new secret
     records(body)                     the records in one webhook request (one object or a list)
     normalize(record, received_at)    a record as a Lead Finder signal, or None (ours, or nobody named)
+    signal_type(signal)               website, social, new_hire, job_change, hiring, research or other
+    extras(record)                    the fields normalize does not read, as "Field: value" lines
     text(n, signal)                   what Claude reads
 """
 from __future__ import annotations
@@ -35,6 +41,19 @@ PER_RUN = 60               # signals a run takes from the inbox; the rest wait f
 TOKEN_RX = re.compile(r"^[A-Za-z0-9_-]{24,64}$")
 # Our own companies: a visit from the team is never a lead.
 OWN_DOMAINS = ("markifydigital.com", "northaxis.com", "outcomes.digital", "callvibe.ai")
+# The fields normalize reads itself; every other field goes to Claude through extras().
+READ = frozenset((
+    "Signal", "signal", "Orchestration Name", "Webhook Sent At", "Business Email", "Email", "email",
+    "LinkedIn URL", "Linkedin URL", "linkedinUrl", "First Name", "Last Name", "Full Name", "Name", "Title",
+    "Job Title", "New Title", "Company Name", "name", "Company", "Website", "domain", "Company Domain",
+    "Industry", "industry", "subIndustry", "Employee Count", "employeesRange", "Country", "Company Country",
+    "country", "IP Country", "City", "Company City", "city", "Seen At", "Pages Viewed", "Pages Viewed Details",
+    "Session Active Seconds", "Bombora Research Intent", "Referrer", "UTM Campaign", "description",
+    "inboundCollectedFields", "Session URL"))
+# Fields Claude never needs: ids, pictures, other ways to reach someone, network details.
+SKIP_RX = re.compile(r"avatar|image|photo|logo|picture|phone|mobile|e-?mail|token|hash|cookie|ip address|"
+                     r"^ip$|session url|webhook|password|secret", re.I)
+MAX_EXTRAS, EXTRAS_CHARS = 20, 1500
 
 
 def new_token():
@@ -72,6 +91,68 @@ def host_of(v):
 def is_ours(domain):
     d = host_of(domain)
     return any(d == o or d.endswith("." + o) for o in OWN_DOMAINS)
+
+
+def signal_type(signal):
+    """What kind of signal a Warmly record is, from its "Signal" name."""
+    s = (signal or "").lower()
+    if "social" in s or "engag" in s:
+        return "social"
+    if "job" in s and "chang" in s:
+        return "job_change"
+    if "hire" in s or "promot" in s:
+        return "new_hire"
+    if "opening" in s or "hiring" in s:
+        return "hiring"
+    if "bombora" in s or "research" in s or "intent" in s:
+        return "research"
+    if "visit" in s or "website" in s or "page" in s:
+        return "website"
+    return "other"
+
+
+def _skip(key):
+    k = str(key)
+    return (k.lower() in ("id", "uuid") or bool(re.search(r"(?:[ _-](?:id|uuid)|Id|ID|Uuid)$", k))
+            or bool(SKIP_RX.search(k)))
+
+
+def _flat(v, depth=0):
+    """A field's value as one short line: lists and objects one level down, nothing deeper."""
+    if isinstance(v, bool):
+        return "yes" if v else "no"
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, str):
+        return _s(v, 300)
+    if isinstance(v, list) and depth == 0:
+        return _s("; ".join(x for x in (_flat(i, 1) for i in v[:5]) if x), 300)
+    if isinstance(v, dict) and depth <= 1:
+        parts = []
+        for k, x in list(v.items())[:8]:
+            got = "" if _skip(k) else _flat(x, depth + 1)
+            if got:
+                parts.append("%s %s" % (_s(k, 40), got))
+        return _s(", ".join(parts), 300)
+    return ""
+
+
+def extras(r):
+    """The fields normalize does not read, as "Field: value" lines, so Claude sees what each signal type
+    carries (the post, the comment, the previous title) without a reader for each."""
+    out, used = [], 0
+    for k, v in r.items():
+        if k in READ or _skip(k):
+            continue
+        val = _flat(v)
+        if not val:
+            continue
+        line = "%s: %s" % (_s(k, 60), val)
+        if len(out) >= MAX_EXTRAS or used + len(line) > EXTRAS_CHARS:
+            break
+        out.append(line)
+        used += len(line)
+    return out
 
 
 def _pages(r):
@@ -145,6 +226,9 @@ def normalize(r, received_at=""):
     chat = r.get("inboundCollectedFields") if isinstance(r.get("inboundCollectedFields"), dict) else {}
     if chat:
         facts.append("Told our chat: " + "; ".join("%s %s" % (k, _s(v, 120)) for k, v in list(chat.items())[:6]))
+    more = extras(r)
+    if more:
+        facts.append("Other details from Warmly:\n" + "\n".join("- " + x for x in more))
     contact = {"name": name, "title": title, "email": email, "linkedin": linkedin,
                "location": ", ".join(x for x in (city, country) if x)}
     return {
@@ -155,7 +239,7 @@ def normalize(r, received_at=""):
                    "url": linkedin, "key": who, "company": not name},
         "company": {"name": company or domain, "domain": domain, "industry": industry, "size": size, "country": country},
         "contacts": [contact] if (name or email or linkedin) else [],
-        "warmly": {"signal": signal, "orchestration": _s(r.get("Orchestration Name"), 120), "pages": pages,
+        "warmly": {"signal": signal, "type": signal_type(signal), "orchestration": _s(r.get("Orchestration Name"), 120), "pages": pages,
                    "topics": topics, "session_url": _s(r.get("Session URL"), 300)},
     }
 
