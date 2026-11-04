@@ -495,34 +495,6 @@ a.rcp-chip:hover { background: #fff; transform: translateY(-2px); }
 .wl-ft b { color: var(--ink); }
 .wl-ft .pill { background: #121213; color: var(--ink-paper); font-weight: var(--fw-semi); }
 
-/* ── Our hours on the agency's clock: a 24-hour track per city ── */
-.zones { display: grid; gap: var(--s5); }
-.z-row { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: var(--s5); align-items: center; }
-.z-city b { display: block; font-family: var(--face-display); font-weight: var(--fw-semi); font-size: clamp(24px, 2.4vw, 34px);
-            letter-spacing: -0.025em; line-height: 1; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 72; }
-.z-city span { display: block; margin-top: var(--s2); font-size: var(--fs-sm); color: var(--acc-tx); font-weight: var(--fw-semi); }
-.z-track { position: relative; height: 64px; border-radius: var(--r); background:
-             repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%), var(--paper2); overflow: hidden; }
-.z-track i { position: absolute; top: 0; bottom: 0; }
-.z-work { background: repeating-linear-gradient(135deg, #D9D5CF 0 6px, transparent 6px 12px); box-shadow: inset 0 0 0 2px #CFCAC2; border-radius: var(--r); }
-.z-ours { background: var(--acc); border-radius: var(--r); top: 12px !important; bottom: 12px !important; mix-blend-mode: multiply; transform-origin: 0 50%; }
-.play .zones .z-ours { transform: scaleX(0); transition: transform 1200ms var(--glide); }
-.play .zones.in .z-ours { transform: scaleX(1); }
-.z-scale { margin-bottom: calc(var(--s3) * -1); }
-.z-ticks { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--ink3); font-variant-numeric: tabular-nums; }
-.z-key { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s6); align-items: center; margin-top: var(--s2); font-size: var(--fs-sm); color: var(--ink2); }
-.z-key span { display: inline-flex; align-items: center; gap: var(--s2); }
-.z-key i { position: static; display: inline-block; width: 28px; height: 14px; }
-.z-key .z-ours { top: auto !important; bottom: auto !important; }
-.z-key .z-note { color: var(--ink3); font-size: var(--fs-xs); }
-@media (max-width: 640px) {
-  .z-row { grid-template-columns: 1fr; gap: var(--s3); }
-  .z-scale { margin-bottom: calc(var(--s3) * -1); }
-  .z-scale > span:first-child { display: none; }
-  .z-track { height: 52px; }
-  .z-ours { top: 10px !important; bottom: 10px !important; }
-}
-
 /* ── Three ways to work: tall colour blocks ── */
 .models { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5); }
 .model { position: relative; display: flex; flex-direction: column; min-height: 360px; padding: clamp(24px, 2.8vw, 40px);

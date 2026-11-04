@@ -98,27 +98,9 @@
   </div>
 </section>
 
-<section class="wrap sec-sm" id="hours">
-  <span class="rule rv"></span>
-  {% call ui.head("05", "Our hours, your clock", "Our team works " ~ site.TEAM_HOURS ~ ". Here is where that falls in your day, wherever your agency is.") %}<span class="ln"><span>Brief us as you log off.</span></span> <span class="ln"><span><span class="it">It&rsquo;s done when you log on.</span></span></span>{% endcall %}
-  <div class="zones rv" style="margin-top:var(--s8)">
-    <div class="z-row z-scale" aria-hidden="true"><span></span><div class="z-ticks">{% for h in ['00:00', '06:00', '12:00', '18:00', '24:00'] %}<span>{{ h }}</span>{% endfor %}</div></div>
-    {% for city, note, work, ours in site.AGENCY_ZONES %}
-    <div class="z-row">
-      <div class="z-city"><b>{{ city }}</b><span>{{ note }}</span></div>
-      <div class="z-track" role="img" aria-label="{{ city }}: your working day {{ '%02d'|format(work[0]) }}:00 to {{ work[1] }}:00; our team {% for a, b in ours %}{{ '%02d'|format(a) }}:00 to {{ '%02d'|format(b) }}:00{% if not loop.last %} and {% endif %}{% endfor %}, your time">
-        <i class="z-work" style="left:{{ '%.3f'|format(work[0] / 24 * 100) }}%;width:{{ '%.3f'|format((work[1] - work[0]) / 24 * 100) }}%"></i>
-        {% for a, b in ours %}<i class="z-ours" style="left:{{ '%.3f'|format(a / 24 * 100) }}%;width:{{ '%.3f'|format((b - a) / 24 * 100) }}%"></i>{% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-    <div class="z-key"><span><i class="z-work"></i>Your working day</span><span><i class="z-ours"></i>Our team at work</span><span class="z-note">Winter time; summer time moves it by an hour.</span></div>
-  </div>
-</section>
-
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {% call ui.head("06", "Three ways to work", "Pick one, or mix them. Prices are set on the call, once we've seen the accounts.") %}<span class="ln"><span>Per account, per person,</span></span> <span class="ln"><span><span class="it">or per project.</span></span></span>{% endcall %}
+  {% call ui.head("05", "Three ways to work", "Pick one, or mix them. Prices are set on the call, once we've seen the accounts.") %}<span class="ln"><span>Per account, per person,</span></span> <span class="ln"><span><span class="it">or per project.</span></span></span>{% endcall %}
   <div class="models" style="margin-top:var(--s8)">
     {% for name, what, suits in site.AGENCY_MODELS %}
     <article class="model c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
@@ -156,7 +138,7 @@
 </section>
 
 <section class="wrap sec">
-  {% call ui.head("07", "What changes for you", "What agencies use a partner like us for.") %}<span class="ln"><span>More paid clients,</span></span> <span class="ln"><span><span class="it">the same team.</span></span></span>{% endcall %}
+  {% call ui.head("06", "What changes for you", "What agencies use a partner like us for.") %}<span class="ln"><span>More paid clients,</span></span> <span class="ln"><span><span class="it">the same team.</span></span></span>{% endcall %}
   <div class="cells cells-4 cells-num" style="margin-top:var(--s8)">
     {% for name, line in site.AGENCY_WINS %}
     <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span>{{ ui.icon(['bolt', 'users', 'coins', 'calendar'][loop.index0]) }}</div><h3>{{ name }}</h3><p>{{ line }}</p></div>
@@ -167,7 +149,7 @@
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
   <div class="faq-grid">
-    {% call ui.head("08", "Questions") %}<span class="ln"><span>About working</span></span> <span class="ln"><span><span class="it">under your name.</span></span></span>{% endcall %}
+    {% call ui.head("07", "Questions") %}<span class="ln"><span>About working</span></span> <span class="ln"><span><span class="it">under your name.</span></span></span>{% endcall %}
     {{ ui.faq(faqs) }}
   </div>
 </section>

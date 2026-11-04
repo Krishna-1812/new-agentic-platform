@@ -143,10 +143,12 @@ def test_linkedin_ads_is_among_the_channels_we_run_for_partners(client):
         assert "16 agents read every account" not in text and "Agents on every account" not in text, path
 
 
-def test_our_hours_fill_nine_hours_of_each_partners_day():
-    for city, _note, work, ours in site_pages.AGENCY_ZONES:
-        assert sum(b - a for a, b in ours) == 9, city
-        assert all(0 <= a < b <= 24 for a, b in list(ours) + [work]), city
+def test_the_agency_page_has_no_hours_chart_and_its_sections_count_in_order(client):
+    html = _html(client, "/partners/agencies")
+    assert 'id="hours"' not in html and "Brief us as you log off" not in html and "z-track" not in html
+    assert not hasattr(site_pages, "AGENCY_ZONES")
+    nums = re.findall(r'<div class="shead-l"><span class="idx">(\d\d)<', html)
+    assert nums == ["%02d" % i for i in range(int(nums[0]), int(nums[0]) + len(nums))], nums
 
 
 def test_the_leads_shown_to_consultants_are_signals_and_roles():
