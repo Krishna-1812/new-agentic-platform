@@ -192,3 +192,91 @@ def test_the_page_shows_the_address_and_lets_the_team_copy_or_replace_it():
     js = open(os.path.join(ROOT, "static", "js", "buyer_radar.js"), encoding="utf-8").read()
     assert "function renderWarmly(w)" in js and 'data-warmly="copy"' in js and 'data-warmly="make"' in js
     assert "warmly: ['Warmly'," in js and "'reading Warmly'" in js
+
+
+# == every signal type, read whole ======================================================================
+
+# Warmly publishes no example for these, so the field names are a guess: what matters is that every field
+# reaches Claude, whatever it is called, and that ids, pictures and phone numbers never do.
+SOCIAL = {
+    "Signal": "Social Engager", "Orchestration Name": "Partners: agencies, social engagers",
+    "LinkedIn URL": "https://www.linkedin.com/in/ana-ruiz/", "First Name": "Ana", "Last Name": "Ruiz",
+    "Title": "Founder", "Company Name": "Ruiz Digital", "Website": "ruizdigital.com", "Industry": "Advertising Services",
+    "Engagement Type": "comment", "Comment": "Same here, we turned down two PPC clients last month.",
+    "Post": {"Author": "Jo Bell", "Content": "Agency owners: what do you do when you are at capacity on paid media?",
+             "URL": "https://www.linkedin.com/posts/jo-bell_123", "authorId": "x9"},
+    "Phone": "+44 7700 900123", "Profile Image": "https://img.example/ana.jpg", "personId": "p-77",
+    "id": "rec-1", "Personal Email": "ana@gmail.com", "Liked At": "2026-11-03T08:00:00Z",
+}
+NEW_HIRE = {
+    "Signal": "New Hire", "LinkedIn URL": "https://www.linkedin.com/in/raj-k/", "First Name": "Raj",
+    "Last Name": "K", "New Title": "Fractional CMO", "Previous Title": "Head of Performance",
+    "Previous Company": "Big Retail Ltd", "Company Name": "Raj K Consulting", "Employee Count": "1-10",
+    "Start Date": "2026-10-20",
+}
+
+
+def test_each_warmly_signal_has_a_type():
+    for name, kind in (("Website Visit Contact", "website"), ("Website Visit Company", "website"),
+                       ("Social Engager", "social"), ("Social engagers", "social"), ("New Hire", "new_hire"),
+                       ("Promotion", "new_hire"), ("Contact changed jobs", "job_change"), ("Job Change", "job_change"),
+                       ("Job Opening", "hiring"), ("Bombora Research Intent", "research"), ("Something New", "other"),
+                       ("", "other")):
+        assert wm.signal_type(name) == kind, name
+    assert wm.normalize(SOCIAL)["warmly"]["type"] == "social"
+
+
+def test_every_field_warmly_sends_reaches_claude_but_ids_pictures_and_phones_do_not():
+    s = wm.normalize(SOCIAL, "2026-11-03T09:00:00Z")
+    read = wm.text(1, s)
+    for seen in ("Other details from Warmly", "Engagement Type: comment", "turned down two PPC clients",
+                 "at capacity on paid media", "linkedin.com/posts/jo-bell_123", "Author Jo Bell", "Liked At"):
+        assert seen in read, seen
+    for hidden in ("+44 7700", "img.example", "p-77", "rec-1", "ana@gmail.com", "x9"):
+        assert hidden not in read, hidden
+    assert "Founder at Ruiz Digital" in read and "Signal" not in s["text"].split("Other details")[1]
+    hire = wm.text(1, wm.normalize(NEW_HIRE))
+    assert "Fractional CMO at Raj K Consulting" in hire and "Previous Title: Head of Performance" in hire
+    assert "Previous Company: Big Retail Ltd" in hire and "Start Date: 2026-10-20" in hire
+
+
+def test_a_huge_record_gives_claude_a_bounded_read():
+    big = dict(SOCIAL, **{"Field %d" % i: "x" * 250 for i in range(60)})
+    more = wm.extras(big)
+    assert len(more) <= wm.MAX_EXTRAS and sum(len(x) for x in more) <= wm.EXTRAS_CHARS
+    assert len(wm.text(1, wm.normalize(big))) < 2400
+    assert wm.extras({"Deep": {"a": {"b": {"c": "too deep"}}}, "List": [[1, 2], {"k": "v"}]}) == ["List: k v"]
+
+
+def _draft_prompt(record):
+    sent = []
+
+    def call(_b, _w, _m, _s, user, _sch, _mx):
+        sent.append(user)
+        return {"subject": "s", "email": "e", "note": "n", "message": "m"}
+    lead = {"post": record, "verdict": {"need": "A partner"}, "source": "warmly"}
+    judge.draft(lead, br.OFFERS["agency_partners"], {"name": "Kris"}, budget=None, call=call)
+    return sent[0]
+
+
+def test_what_a_message_may_say_depends_on_the_signal():
+    social = _draft_prompt(wm.normalize(SOCIAL))
+    assert "You may mention the post's topic" in social and "Never mention a like or a reaction" in social
+    assert "turned down two PPC clients" in social and "saw them on the website" not in social
+    hire = _draft_prompt(wm.normalize(NEW_HIRE))
+    assert "congratulate them" in hire and "Their first name, to greet them by: Raj" in hire
+    research = _draft_prompt(wm.normalize(dict(COMPANY, Signal="Bombora Research Intent")))
+    assert "Never say or hint that you know what they research" in research
+    old = wm.normalize(CONTACT)
+    old["warmly"].pop("type")                                     # a signal stored before types existed
+    assert "Never say or hint that you saw them on the website" in _draft_prompt(old)
+    for prompt in (social, hire, research):
+        assert "Never mention Warmly" in prompt and "tracked or identified" in prompt
+    assert set(judge.WARMLY_MAY_SAY) == {"website", "social", "new_hire", "job_change", "hiring", "research", "other"}
+
+
+def test_the_judge_is_told_how_to_score_each_signal():
+    for words in ("Other details from Warmly", "commented on a LinkedIn post", "only liked one",
+                  "just went independent", "hiring for work the offer does"):
+        assert words in judge.WARMLY_SYSTEM, words
+    assert judge.WARMLY_SYSTEM.endswith(judge.PARTNER_RULE)

@@ -138,7 +138,9 @@ WARMLY_SYSTEM = (
     "You find buyers for a sales team among the companies and people Warmly, a website-visitor and "
     "buying-signal tool, sent it. You are given what each of the team's offers sells and who buys it, then "
     "numbered signals: who the person or company is, and what Warmly saw (pages read on the team's own "
-    "site, time spent, research topics, a new job, engagement). For each signal decide, from it alone:\n"
+    "site, time spent, research topics, a new job, a company hiring, a LinkedIn post they commented on or "
+    "liked). 'Other details from Warmly' are the record's own fields as Warmly sent them: read them too. "
+    "For each signal decide, from it alone:\n"
     "- role: 'buyer' when the person or company fits who buys an offer; 'seller' when they plainly sell the "
     "same thing to the same buyers and fit no offer's buyers; 'job_seeker' when a careers page is all they "
     "read; else 'other' (a student, a vendor pitching us, nobody named).\n"
@@ -148,8 +150,12 @@ WARMLY_SYSTEM = (
     "book a call), or are researching the offer's topics; 'pain_point' for weaker interest; else 'none'.\n"
     "- score 0 to 100, how likely a short message from this offer is welcome now: a fitting person who read "
     "a partner page or pricing for a minute or more, 75 to 95; a fitting company with no person named, or "
-    "a fitting person seen briefly, 50 to 75; a fit researching the offer's topics or new in a fitting role, "
-    "50 to 70; anyone who fits no offer's buyers, 0 to 20.\n"
+    "a fitting person seen briefly, 50 to 75; a fitting person who commented on a LinkedIn post about the "
+    "offer's area, 55 to 80, or only liked one, 45 to 65; a fitting person new in a role where the offer "
+    "fits (just went independent, or now leads paid media at an agency), 55 to 75; a fitting company hiring "
+    "for work the offer does, or researching the offer's topics, 50 to 70; anyone who fits no offer's "
+    "buyers, 0 to 20. A post's own subject decides nothing: what counts is whether the person who engaged "
+    "with it fits an offer's buyers.\n"
     "- need: what they likely want, in one short sentence in plain English.\n"
     "- company, region (city or country), deadline (''), reason: why, in one sentence, naming what Warmly saw.\n"
     "Never invent facts that are not in the signal. Use the numbers given." + PARTNER_RULE)
@@ -220,6 +226,26 @@ def reddit_text(n, p):
     return "THREAD %d (posted %s, in r/%s)\nBY: %s\nTEXT: %s" % (
         n, p.get("posted_at") or "date unknown", p.get("subreddit") or "unknown", (p.get("author") or {}).get("name") or "unknown",
         re.sub(r"\s+", " ", p.get("text") or "")[:2500])
+
+
+# What a message to a Warmly lead may say about how we came to write, by the signal's type
+# (buyer_radar_warmly.signal_type). What the person did in public may be mentioned; what Warmly saw them do
+# in private (read our site, research a topic) never.
+_COLD = ("open with their role and company and why the offer fits, as a cold first message.")
+WARMLY_MAY_SAY = {
+    "website": "Never say or hint that you saw them on the website or saw what they read: " + _COLD,
+    "research": "Never say or hint that you know what they research or read online: " + _COLD,
+    "other": "Never say or hint how you came across them: " + _COLD,
+    "social": ("They engaged in public with a LinkedIn post, shown above. You may mention the post's topic, and "
+               "their comment only if a comment they wrote is quoted above. Never mention a like or a reaction: "
+               "if all they did was react, talk about the topic, not about them."),
+    "new_hire": ("They recently started a new role, shown above, which their LinkedIn shows anyone. You may "
+                 "congratulate them on it in a few words, then say why the offer fits the new role."),
+    "job_change": ("They recently moved to a new role or company, shown above, which their LinkedIn shows "
+                   "anyone. You may congratulate them on the move in a few words, then say why the offer fits."),
+    "hiring": ("Their company is hiring, shown above, which its public job ad says. You may mention the "
+               "opening and offer help with that work in the meantime."),
+}
 
 
 def warmly_text(n, p):
@@ -412,10 +438,10 @@ def _signal_text(lead):
         co = p.get("company") or {}
         who = ", ".join(x for x in (c.get("name"), c.get("title"), co.get("name")) if x) or \
             "the team at %s (no name known)" % (co.get("name") or co.get("domain") or "their company")
+        rule = WARMLY_MAY_SAY.get((p.get("warmly") or {}).get("type"), WARMLY_MAY_SAY["website"])
         return ("WRITING TO: %s\n\nWHY THEM: %s\n\nWHAT THEY LIKELY WANT: %s\nThey have not asked for anything. "
-                "Never say or hint that you saw them on the website, saw what they read, or that they were "
-                "tracked or identified: open with their role and company and why the offer fits, as a cold "
-                "first message." % (who, re.sub(r"\s+", " ", p.get("text") or "")[:1500], v.get("need") or "")), \
+                "%s Never mention Warmly, and never say or hint that they were tracked or identified." % (
+                    who, re.sub(r"\s+", " ", p.get("text") or "")[:1800], v.get("need") or "", rule)), \
             (c.get("name") or "").split(" ")[0]
     first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
     body = re.sub(r"\s+", " ", p.get("text") or "")[:2500]
