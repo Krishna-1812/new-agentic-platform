@@ -366,8 +366,8 @@ def test_one_real_campaign_is_read_two_ways(client):
     figs = dict((w, f) for f, w in c["figures"]) | dict((w, f) for f, w, _ in c["top"])
     assert figs["Impressions"] == "1.28M" and figs["Clicks"] == "16K+" and figs["Total Leads"] == "600+"
     assert figs["Qualified Leads"] == "214" and figs["Site Visits Completed"] == "55"
-    assert figs["Cost Per Site Visit"] == od.HOME_CHAIN_COST[0] and od.HOME_CHAIN_COST[0] in sec
-    assert site.url("case-study/allure-avani") in sec
+    # The cost per site visit, and the link under it, were taken off the home page (2026-11-10).
+    assert "15,455" not in sec and "per site visit" not in sec and "od-chain-cost" not in body
     # Allure Avani's words sit with its campaign, and are not repeated lower down.
     allure = [q for q in od.HOME_QUOTES if q[1] == "Allure Avani"][0]
     assert html.escape(allure[0], quote=False)[:60] in sec or allure[0][:60] in html.unescape(sec)

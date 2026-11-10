@@ -595,11 +595,7 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
 @keyframes od-recede { to { opacity: .55; } }
 .od-chain.in .od-chain-step.is-us { animation: od-rise 700ms var(--spring) 1.6s both; }
 @keyframes od-rise { from { transform: none; } to { transform: translateY(-8px); } }
-.od-chain-end { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s7); align-items: start; margin-top: var(--s8); }
-.od-chain-cost b { display: block; font-size: clamp(56px, 6.4vw, 104px); font-weight: 700; letter-spacing: -0.05em; line-height: .95; color: var(--acc); }
-.od-chain-cost > span { display: block; margin-top: var(--s4); font-size: clamp(17px, 1.4vw, 20px); line-height: 1.45; color: var(--ink2); max-width: 36ch; }
-.od-chain-cost .more { display: inline-flex; align-items: center; gap: var(--s2); margin-top: var(--s5); color: var(--ink); font-weight: var(--fw-semi); }
-.od-chain-cost .more svg { width: 16px; height: 16px; }
+.od-chain-end { max-width: 760px; margin: var(--s8) auto 0; }
 @media (max-width: 900px) {
   .od-chain { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .od-chain-brk, .od-chain-step { grid-row: auto; }
@@ -607,7 +603,6 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
   .od-chain-brk-them { order: 0; } .od-chain-step { order: 1; } .od-chain-brk-us { order: 2; margin-top: var(--s4); } .od-chain-step.is-us { order: 3; }
   .od-chain-step::after { display: none; }
   .od-chain-step { min-height: 120px; }
-  .od-chain-end { grid-template-columns: 1fr; }
 }
 
 /* ── Industries: the outcome each is measured on ── */
