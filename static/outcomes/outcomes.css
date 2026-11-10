@@ -50,13 +50,10 @@
 .od-stats-3 { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
 
 /* ── A client's words, on a colour block ── */
-.od-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--s5); align-items: start; }
+.od-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--s5); align-items: stretch; }
 .od-quote { margin: 0; padding: clamp(28px, 3vw, 44px); border-radius: var(--r-lg); box-shadow: var(--shadow-block); color: #121213;
   display: flex; flex-direction: column; gap: var(--s5); transition: transform 600ms var(--spring); }
 .od-quote.c-orange { background: var(--acc); } .od-quote.c-amber { background: var(--amber); } .od-quote.c-sky { background: var(--sky); }
-.od-quotes .od-quote:nth-child(2) { transform: translateY(28px); }
-.od-quotes .od-quote:nth-child(3) { transform: translateY(8px); }
-.od-quotes .od-quote:hover { transform: none; }
 .od-quote-mark { width: 40px; height: 30px; fill: #121213; opacity: .85; }
 .od-quote blockquote { margin: 0; font-family: var(--face-display); font-weight: 450; font-size: clamp(19px, 1.5vw, 23px); line-height: 1.35;
   letter-spacing: -0.01em; font-variation-settings: 'SOFT' 50, 'WONK' 0, 'opsz' 36; }
@@ -64,7 +61,6 @@
 .od-quote figcaption b { display: block; font-size: 16px; }
 .od-av { width: 40px; height: 40px; border-radius: 50%; background: #121213; color: var(--ink-paper); display: grid; place-items: center;
   font-weight: 700; font-size: 14px; flex: 0 0 auto; }
-@media (max-width: 960px) { .od-quotes .od-quote:nth-child(n) { transform: none; } }
 
 /* ── Case studies: cards, and the index rows ── */
 .od-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: var(--s5); }

@@ -484,3 +484,9 @@ def test_every_card_sits_straight():
     assert turns == [".od-menu:hover .od-menu-btn span, .od-menu.open .od-menu-btn span { transform: rotate(180deg); }"], turns
     # The shared .model card tilts on hover elsewhere; here it only lifts.
     assert ".play .model:hover { transform: translateY(-8px); }" in css
+
+
+def test_quote_cards_in_a_row_sit_level_and_match_in_height():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    assert ".od-quotes { display: grid;" in css and "align-items: stretch; }" in css.split(".od-quotes {", 1)[1].split("\n", 1)[0]
+    assert ".od-quotes .od-quote:nth-child" not in css, "no quote card is pushed lower than the one beside it"
