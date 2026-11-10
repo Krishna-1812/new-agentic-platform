@@ -45,6 +45,37 @@ CLIENTS = (
 HOME_LEAD = ("One connected team for Strategy, Creative, Paid Media, Growth Agents and CRO connected to drive "
              "revenue.")
 HOME_STATS = (("3X", "more qualified leads"), ("40%", "lower customer acquisition cost"))
+# The home page's opening: what makes this not another agency, said in the hero. Every claim here is the
+# site's own (About's values and story, the industry pages' headlines, the case studies' figures).
+HOME_KICKER = "Not another digital marketing agency"
+HOME_HERO_LEAD = ("Most agencies are paid for activity: impressions, clicks, leads. We’re measured on what your "
+                  "business actually banks — orders, admissions, site visits and revenue.")
+# The outcome board in the hero: real results from the case studies and industry pages.
+# (client, what they are, the outcome, the figure, case study slug or None)
+HOME_BOARD = (
+    ("KFI", "Owned eCommerce", "Website revenue", "2×", "kfi"),
+    ("Madge Beauty", "D2C beauty, Australia", "Daily sales", "3×", "madge-beauty"),
+    ("Allure Avani", "Luxury villas, Bangalore", "Site visits", "4×", "allure-avani"),
+    ("Artistic Yoga", "Yoga studios, Dubai", "Unpaid visits a year", "457K+", "artistic-yoga"),
+)
+# The difference, row by row: (what most agencies report, what we are measured on).
+HOME_VS = (
+    ("Impressions and reach", "Revenue and orders"),
+    ("Clicks and click-through rate", "Qualified leads your sales team wants to call"),
+    ("More leads, whatever their quality", "Site visits, admissions and sales"),
+    ("Engagement and “brand awareness”", "Customer acquisition cost and return on ad spend"),
+    ("A polished monthly deck", "The same live dashboards you see"),
+    ("Five vendors who don’t talk to each other", "One connected team and one plan"),
+)
+# One real campaign, read two ways: Allure Avani's funnel from its case study. The first three are what most
+# agencies would report; the last two are what we are measured on.
+HOME_CHAIN = (("1.28M", "Impressions"), ("16K+", "Clicks"), ("600+", "Leads"), ("214", "Qualified leads"),
+              ("55", "Site visits"))
+HOME_CHAIN_SPLIT = 3
+HOME_CHAIN_COST = ("₹15,455", "per site visit")
+# The one outcome each industry is measured on, as its page puts it.
+INDUSTRY_OUTCOME = {"ecommerce-marketing": "Profitable revenue", "education-marketing": "Admissions",
+                    "real-estate-marketing": "Site visits"}
 # How we drive outcomes: (tab, title, line, photo). The live site's five steps and photos, each line said plainly.
 HOME_STEPS = (
     ("Understand", "Understand the business", "We start with your customer journeys, your product and your numbers, "

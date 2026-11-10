@@ -291,8 +291,8 @@ def test_the_same_figures_and_call_length_everywhere(client):
 
 def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(client):
     t = _text(client, site.PREFIX)
-    order = ["We drive", od.HOME_PROBLEM, "every channel that drives revenue", "Understand the business", "Built for the businesses",
-             "Measured impact", "Real numbers", "Core Care Clinic", "In their"]
+    order = ["We drive", od.HOME_PROBLEM, "Not just another", "Most agencies stop at the leads", "Six disciplines",
+             "Understand the business", "Built for the businesses", "Real numbers", "Core Care Clinic", "In their"]
     at = [t.index(x) for x in order]
     assert at == sorted(at), dict(zip(order, at))
     hero = t[:t.index(od.HOME_PROBLEM)]
@@ -301,6 +301,81 @@ def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(cl
         assert name in t and line in t
     for slug, name, headline, line, photo in od.INDUSTRY_CARDS:
         assert headline in t and site.url(slug) in t
+
+
+# == the home page's one argument: outcomes, not activity ===============================================
+
+def _hero(client):
+    t = _text(client, site.PREFIX)
+    return t[:t.index(od.HOME_PROBLEM)]
+
+
+def test_the_hero_says_we_are_not_another_agency_and_shows_it(client):
+    hero = _hero(client)
+    assert od.HOME_KICKER in hero and od.HOME_HERO_LEAD in hero
+    # The outcome board: each row is a real client result that links to its case study.
+    for client_name, what, outcome, fig, slug in od.HOME_BOARD:
+        assert client_name in hero and outcome in hero and fig in hero
+        assert site.url("case-study/" + slug) in hero
+        assert slug in od.CASES_BY_SLUG
+    for fig, what in od.HOME_STATS:
+        assert fig in hero and what in hero
+    # The team photo with stickers is gone from the hero; nothing covers the board.
+    assert "od-float" not in hero and "step-4.webp" not in hero
+
+
+def test_the_board_figures_match_the_case_studies_and_industry_pages():
+    tops = {slug: {label: fig for fig, label, _ in c["top"]} for slug, c in od.CASES_BY_SLUG.items()}
+    assert tops["kfi"]["Website Revenue"] == "2×"
+    assert tops["madge-beauty"]["Sales Growth"] == "3×"
+    assert tops["artistic-yoga"]["Annual Organic Visits"] == "457K+"
+    allure = dict(od.RE_PROOF[0][2])
+    assert od.RE_PROOF[0][0] == "Allure Avani" and allure["Site visits"] == "4x"
+    board = {slug: fig for _, _, _, fig, slug in od.HOME_BOARD}
+    assert board == {"kfi": "2×", "madge-beauty": "3×", "allure-avani": "4×", "artistic-yoga": "457K+"}
+
+
+def test_the_difference_rows_strike_what_most_agencies_report(client):
+    body = client.get(site.PREFIX).get_data(as_text=True)
+    sec = body[body.index('id="difference"'):body.index('id="campaign"')]
+    assert "Not just another" in sec and "digital marketing agency." in sec
+    rows = re.findall(r'<p class="od-vs-them"><span class="od-vs-tag">Most agencies report</span><s>(.*?)</s></p>.*?'
+                      r'<p class="od-vs-us"><span class="od-vs-tag">We&rsquo;re measured on</span>(.*?)</p>', sec, re.S)
+    assert [(html.unescape(a), html.unescape(b)) for a, b in rows] == list(od.HOME_VS)
+
+
+def test_one_real_campaign_is_read_two_ways(client):
+    body = client.get(site.PREFIX).get_data(as_text=True)
+    sec = body[body.index('id="campaign"'):body.index('id="what"')]
+    steps = re.findall(r'<div class="od-chain-step([^"]*)"[^>]*><b>([^<]+)</b><span>([^<]+)</span>', sec)
+    assert [(f, w) for _, f, w in steps] == list(od.HOME_CHAIN)
+    # What most agencies would report, then what we are measured on.
+    assert ["is-us" in cls for cls, _, _ in steps] == [False] * od.HOME_CHAIN_SPLIT + [True] * (len(od.HOME_CHAIN) - od.HOME_CHAIN_SPLIT)
+    assert "What most agencies would report" in sec and "What we&rsquo;re measured on" in sec
+    # The funnel is the Allure Avani case study's own.
+    c = od.CASES_BY_SLUG["allure-avani"]
+    figs = dict((w, f) for f, w in c["figures"]) | dict((w, f) for f, w, _ in c["top"])
+    assert figs["Impressions"] == "1.28M" and figs["Clicks"] == "16K+" and figs["Total Leads"] == "600+"
+    assert figs["Qualified Leads"] == "214" and figs["Site Visits Completed"] == "55"
+    assert figs["Cost Per Site Visit"] == od.HOME_CHAIN_COST[0] and od.HOME_CHAIN_COST[0] in sec
+    assert site.url("case-study/allure-avani") in sec
+    # Allure Avani's words sit with its campaign, and are not repeated lower down.
+    allure = [q for q in od.HOME_QUOTES if q[1] == "Allure Avani"][0]
+    assert html.escape(allure[0], quote=False)[:60] in sec or allure[0][:60] in html.unescape(sec)
+    assert html.unescape(body).count(allure[0][:60]) == 1
+
+
+def test_each_industry_shows_the_outcome_it_is_measured_on(client):
+    t = _text(client, site.PREFIX)
+    assert set(od.INDUSTRY_OUTCOME) == {slug for slug, *_ in od.INDUSTRY_CARDS}
+    for slug, outcome in od.INDUSTRY_OUTCOME.items():
+        assert '<span class="od-ind-out">Measured on <b>%s</b></span>' % outcome in t
+
+
+def test_the_home_hero_stacks_on_small_screens():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    i = css.index(".od-home-hero .od-hero-grid { grid-template-columns: minmax(0, 13fr)")
+    assert "@media (max-width: 1000px) {\n  .od-home-hero .od-hero-grid { grid-template-columns: 1fr; }" in css[i:i + 400]
 
 
 @pytest.mark.parametrize("path,photos", [
@@ -383,3 +458,10 @@ def test_the_carousel_pauses_and_respects_reduced_motion():
     assert ".od-marquee:hover .od-marquee-track" in css and "animation-play-state: paused" in css
     rm = css[css.index("@media (prefers-reduced-motion: reduce) {\n  .od-marquee"):]
     assert "animation: none" in rm[:300]
+
+
+def test_the_home_page_story_stands_still_for_reduced_motion():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    rm = css[css.rindex("@media (prefers-reduced-motion: reduce) {"):]
+    for sel in (".od-board-rows li", ".od-chain-step", ".od-vs-them s", ".od-live i"):
+        assert sel in rm, sel
