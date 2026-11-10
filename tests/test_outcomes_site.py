@@ -474,3 +474,13 @@ def test_the_home_page_story_stands_still_for_reduced_motion():
     rm = css[css.rindex("@media (prefers-reduced-motion: reduce) {"):]
     for sel in (".od-board-rows li", ".od-chain-step", ".od-vs-them s", ".od-live i"):
         assert sel in rm, sel
+
+
+def test_every_card_sits_straight():
+    """No card is tilted, at rest or on hover: the only turn left is the menu's arrow."""
+    import re
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    turns = [line.strip() for line in css.splitlines() if re.search(r"rotate|skew", line)]
+    assert turns == [".od-menu:hover .od-menu-btn span, .od-menu.open .od-menu-btn span { transform: rotate(180deg); }"], turns
+    # The shared .model card tilts on hover elsewhere; here it only lifts.
+    assert ".play .model:hover { transform: translateY(-8px); }" in css

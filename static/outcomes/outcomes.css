@@ -43,7 +43,7 @@
 .od-card figcaption { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 10px 12px; border-radius: 12px;
   background: rgba(246,244,240,.94); font-size: var(--fs-xs); color: var(--ink2); line-height: 1.3; }
 .od-card figcaption b { display: block; color: #121213; font-size: 14px; }
-.od-card:hover { transform: rotate(-1.5deg) translateY(-4px); }
+.od-card:hover { transform: translateY(-4px); }
 .od-card:hover img { transform: scale(1.05); }
 
 .od-stats-2 { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
@@ -54,9 +54,8 @@
 .od-quote { margin: 0; padding: clamp(28px, 3vw, 44px); border-radius: var(--r-lg); box-shadow: var(--shadow-block); color: #121213;
   display: flex; flex-direction: column; gap: var(--s5); transition: transform 600ms var(--spring); }
 .od-quote.c-orange { background: var(--acc); } .od-quote.c-amber { background: var(--amber); } .od-quote.c-sky { background: var(--sky); }
-.od-quotes .od-quote:nth-child(1) { transform: rotate(-1.2deg); }
-.od-quotes .od-quote:nth-child(2) { transform: rotate(1deg) translateY(28px); }
-.od-quotes .od-quote:nth-child(3) { transform: rotate(-.6deg) translateY(8px); }
+.od-quotes .od-quote:nth-child(2) { transform: translateY(28px); }
+.od-quotes .od-quote:nth-child(3) { transform: translateY(8px); }
 .od-quotes .od-quote:hover { transform: none; }
 .od-quote-mark { width: 40px; height: 30px; fill: #121213; opacity: .85; }
 .od-quote blockquote { margin: 0; font-family: var(--face-display); font-weight: 450; font-size: clamp(19px, 1.5vw, 23px); line-height: 1.35;
@@ -71,7 +70,7 @@
 .od-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: var(--s5); }
 .od-case { display: flex; flex-direction: column; border-radius: var(--r-lg); overflow: hidden; background: var(--card);
   box-shadow: var(--shadow-block); color: var(--ink); transition: transform 500ms var(--spring); }
-.od-case:hover { transform: translateY(-6px) rotate(-.6deg); }
+.od-case:hover { transform: translateY(-6px); }
 .od-case-img { display: block; aspect-ratio: 10 / 9; overflow: hidden; background: var(--paper2); }
 .od-case-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 900ms var(--ease); }
 .od-case:hover .od-case-img img { transform: scale(1.05); }
@@ -133,7 +132,7 @@
 .od-person-img img { width: 92%; height: auto; display: block; transition: transform 700ms var(--spring); transform-origin: 50% 100%; }
 .od-person-img .pill { position: absolute; top: 14px; left: 14px; background: #121213; color: var(--ink-paper); text-transform: uppercase;
   letter-spacing: var(--ls-label); font-weight: var(--fw-semi); font-size: 11px; padding: 6px 10px; }
-.od-person:hover .od-person-img { transform: rotate(-1.5deg); }
+.od-person:hover .od-person-img { transform: translateY(-4px); }
 .od-person:hover .od-person-img img { transform: scale(1.04); }
 .od-person h3 { font-family: var(--face-display); font-weight: var(--fw-semi); font-size: clamp(24px, 2vw, 30px); letter-spacing: -0.02em;
   line-height: 1.05; margin-top: var(--s4); }
@@ -272,7 +271,7 @@
 }
 
 /* ── A case study's hero: the headline beside the client's cover ── */
-.od-cs-cover { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-block); transform: rotate(2deg); aspect-ratio: 10 / 9; }
+.od-cs-cover { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-block); aspect-ratio: 10 / 9; }
 .od-cs-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .od-cs-hero .d1 { font-size: clamp(44px, 6vw, 92px); }
 
@@ -294,7 +293,7 @@
 @media (max-width: 1000px) { .od-hero-grid { grid-template-columns: 1fr; gap: var(--s7); } }
 .od-home-hero .d1, .od-svc-hero .d1 { font-size: clamp(46px, 6.6vw, 104px); }
 .od-hero-pic { position: relative; padding: var(--s5) var(--s5) var(--s7); }
-.od-hero-photo { border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 4 / 4.4; box-shadow: var(--shadow-block); transform: rotate(1.5deg); }
+.od-hero-photo { border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 4 / 4.4; box-shadow: var(--shadow-block); }
 .od-hero-tall .od-hero-photo { aspect-ratio: 4 / 4.6; }
 .od-hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .od-float { position: absolute; display: grid; gap: 2px; padding: 16px 20px; border-radius: var(--r); box-shadow: 0 18px 40px rgba(0,0,0,.18);
@@ -302,11 +301,11 @@
 .od-float b { font-size: clamp(34px, 3.2vw, 48px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
 .od-float span { font-size: var(--fs-sm); line-height: 1.3; }
 .od-float.c-orange { background: var(--acc); } .od-float.c-sky { background: var(--sky); } .od-float.c-amber { background: var(--amber); }
-.od-float-a { left: -8px; top: 12%; transform: rotate(-4deg); }
-.od-float-b { right: -6px; top: 48%; transform: rotate(3deg); }
+.od-float-a { left: -8px; top: 12%; }
+.od-float-b { right: -6px; top: 48%; }
 .od-float-c { left: 8%; bottom: 0; display: flex; align-items: center; gap: var(--s3); max-width: none; padding: 12px 18px; }
 .od-float-c span { font-size: var(--fs-sm); }
-.od-float-proof { left: -8px; bottom: 6%; transform: rotate(-3deg); max-width: 270px; }
+.od-float-proof { left: -8px; bottom: 6%; max-width: 270px; }
 .od-float-proof i { font-style: normal; display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s2); font-size: var(--fs-label);
   font-weight: var(--fw-semi); letter-spacing: var(--ls-label); text-transform: uppercase; }
 .od-float-proof i svg { width: 13px; height: 13px; }
@@ -341,7 +340,7 @@
 .od-pillar .more { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-label); font-weight: var(--fw-semi);
   letter-spacing: var(--ls-label); text-transform: uppercase; }
 .od-pillar .more svg { width: 14px; height: 14px; transition: transform var(--dur-fast) var(--ease-io); }
-a.od-pillar:hover { transform: translateY(-6px) rotate(-.8deg); }
+a.od-pillar:hover { transform: translateY(-6px); }
 a.od-pillar:hover .more svg { transform: translateX(4px); }
 
 /* ── The five steps, each beside its photo ── */
@@ -442,10 +441,10 @@ a.od-pillar:hover .more svg { transform: translateX(4px); }
 /* ── eCommerce results: the client's logo and photo on each block ── */
 .od-result .blk-top { justify-content: space-between; flex-wrap: wrap; gap: var(--s3); }
 .od-result-id { display: inline-flex; align-items: center; gap: var(--s3); }
-.od-result-pic { width: 64px; height: 64px; object-fit: cover; border-radius: 14px; transform: rotate(-4deg); box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.od-result-pic { width: 64px; height: 64px; object-fit: cover; border-radius: 14px; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
 .od-result-logo { display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 10px; background: #fff; }
 .od-result-logo img { height: 26px; width: auto; max-width: 120px; object-fit: contain; display: block; }
-.od-result:hover .od-result-pic { transform: rotate(0) scale(1.06); transition: transform 400ms var(--spring); }
+.od-result:hover .od-result-pic { transform: scale(1.06); transition: transform 400ms var(--spring); }
 .od-proof-logo { display: inline-flex; padding: 8px 12px; border-radius: 10px; background: #fff; margin-bottom: var(--s4); }
 .od-proof-logo.is-dark { background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
 .od-proof-logo img { height: 36px; width: auto; max-width: 140px; object-fit: contain; display: block; }
@@ -472,8 +471,7 @@ a.od-pillar:hover .more svg { transform: translateX(4px); }
 .od-mosaic-fig { background: #121213; color: var(--ink-paper); flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 12px; }
 .od-mosaic-fig b { font-size: clamp(22px, 2vw, 30px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
 .od-mosaic-fig span { font-size: 11px; text-transform: uppercase; letter-spacing: var(--ls-label); color: var(--ink-ink2); margin-top: 4px; }
-.od-mosaic-tile:nth-child(odd):hover { transform: rotate(-3deg) scale(1.03); }
-.od-mosaic-tile:nth-child(even):hover { transform: rotate(3deg) scale(1.03); }
+.od-mosaic-tile:hover { transform: scale(1.03); }
 @media (max-width: 520px) { .od-float.od-float-c { max-width: none; left: 4%; right: 4%; } .od-faces img { width: 30px; height: 30px; } }
 
 /* ════ v3: the home page makes one argument — outcomes, not activity ════ */
@@ -494,8 +492,7 @@ a.od-pillar:hover .more svg { transform: translateX(4px); }
 
 .od-board-wrap { position: relative; padding: var(--s6) var(--s4) var(--s6) var(--s6); }
 .od-board { position: relative; border-radius: var(--r-lg); background: #121213; color: var(--ink-paper); padding: clamp(18px, 1.8vw, 26px);
-  box-shadow: 0 30px 60px rgba(0,0,0,.22); transform: rotate(1deg); transition: transform 600ms var(--spring); }
-.od-board-wrap:hover .od-board { transform: none; }
+  box-shadow: 0 30px 60px rgba(0,0,0,.22); }
 .od-board-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); padding: 2px 4px var(--s4);
   font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label); text-transform: uppercase; color: #9A968F; }
 .od-live { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-paper); white-space: nowrap; }
@@ -603,7 +600,6 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
 .od-chain-cost > span { display: block; margin-top: var(--s4); font-size: clamp(17px, 1.4vw, 20px); line-height: 1.45; color: var(--ink2); max-width: 36ch; }
 .od-chain-cost .more { display: inline-flex; align-items: center; gap: var(--s2); margin-top: var(--s5); color: var(--ink); font-weight: var(--fw-semi); }
 .od-chain-cost .more svg { width: 16px; height: 16px; }
-.od-chain-end .od-quote { transform: rotate(-1deg); }
 @media (max-width: 900px) {
   .od-chain { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .od-chain-brk, .od-chain-step { grid-row: auto; }
@@ -637,3 +633,6 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
 
 /* The difference follows the hero directly, so it needs less room above it. */
 .od-home-hero + #difference { padding-top: var(--sec-sm); }
+
+/* Every card sits straight: no tilt at rest or on hover (the shared .model card tilts on hover). */
+.play .model:hover { transform: translateY(-8px); }
