@@ -366,8 +366,8 @@ def test_one_real_campaign_is_read_two_ways(client):
     figs = dict((w, f) for f, w in c["figures"]) | dict((w, f) for f, w, _ in c["top"])
     assert figs["Impressions"] == "1.28M" and figs["Clicks"] == "16K+" and figs["Total Leads"] == "600+"
     assert figs["Qualified Leads"] == "214" and figs["Site Visits Completed"] == "55"
-    assert figs["Cost Per Site Visit"] == od.HOME_CHAIN_COST[0] and od.HOME_CHAIN_COST[0] in sec
-    assert site.url("case-study/allure-avani") in sec
+    # The cost per site visit, and the link under it, were taken off the home page (2026-11-10).
+    assert "15,455" not in sec and "per site visit" not in sec and "od-chain-cost" not in body
     # Allure Avani's words sit with its campaign, and are not repeated lower down.
     allure = [q for q in od.HOME_QUOTES if q[1] == "Allure Avani"][0]
     assert html.escape(allure[0], quote=False)[:60] in sec or allure[0][:60] in html.unescape(sec)
@@ -484,3 +484,9 @@ def test_every_card_sits_straight():
     assert turns == [".od-menu:hover .od-menu-btn span, .od-menu.open .od-menu-btn span { transform: rotate(180deg); }"], turns
     # The shared .model card tilts on hover elsewhere; here it only lifts.
     assert ".play .model:hover { transform: translateY(-8px); }" in css
+
+
+def test_quote_cards_in_a_row_sit_level_and_match_in_height():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    assert ".od-quotes { display: grid;" in css and "align-items: stretch; }" in css.split(".od-quotes {", 1)[1].split("\n", 1)[0]
+    assert ".od-quotes .od-quote:nth-child" not in css, "no quote card is pushed lower than the one beside it"

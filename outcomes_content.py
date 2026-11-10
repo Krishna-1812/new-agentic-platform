@@ -72,7 +72,6 @@ HOME_VS = (
 HOME_CHAIN = (("1.28M", "Impressions"), ("16K+", "Clicks"), ("600+", "Leads"), ("214", "Qualified leads"),
               ("55", "Site visits"))
 HOME_CHAIN_SPLIT = 3
-HOME_CHAIN_COST = ("₹15,455", "per site visit")
 # The one outcome each industry is measured on, as its page puts it.
 INDUSTRY_OUTCOME = {"ecommerce-marketing": "Profitable revenue", "education-marketing": "Admissions",
                     "real-estate-marketing": "Site visits"}

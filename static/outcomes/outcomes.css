@@ -50,13 +50,10 @@
 .od-stats-3 { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
 
 /* ── A client's words, on a colour block ── */
-.od-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--s5); align-items: start; }
+.od-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--s5); align-items: stretch; }
 .od-quote { margin: 0; padding: clamp(28px, 3vw, 44px); border-radius: var(--r-lg); box-shadow: var(--shadow-block); color: #121213;
   display: flex; flex-direction: column; gap: var(--s5); transition: transform 600ms var(--spring); }
 .od-quote.c-orange { background: var(--acc); } .od-quote.c-amber { background: var(--amber); } .od-quote.c-sky { background: var(--sky); }
-.od-quotes .od-quote:nth-child(2) { transform: translateY(28px); }
-.od-quotes .od-quote:nth-child(3) { transform: translateY(8px); }
-.od-quotes .od-quote:hover { transform: none; }
 .od-quote-mark { width: 40px; height: 30px; fill: #121213; opacity: .85; }
 .od-quote blockquote { margin: 0; font-family: var(--face-display); font-weight: 450; font-size: clamp(19px, 1.5vw, 23px); line-height: 1.35;
   letter-spacing: -0.01em; font-variation-settings: 'SOFT' 50, 'WONK' 0, 'opsz' 36; }
@@ -64,7 +61,6 @@
 .od-quote figcaption b { display: block; font-size: 16px; }
 .od-av { width: 40px; height: 40px; border-radius: 50%; background: #121213; color: var(--ink-paper); display: grid; place-items: center;
   font-weight: 700; font-size: 14px; flex: 0 0 auto; }
-@media (max-width: 960px) { .od-quotes .od-quote:nth-child(n) { transform: none; } }
 
 /* ── Case studies: cards, and the index rows ── */
 .od-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: var(--s5); }
@@ -595,11 +591,7 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
 @keyframes od-recede { to { opacity: .55; } }
 .od-chain.in .od-chain-step.is-us { animation: od-rise 700ms var(--spring) 1.6s both; }
 @keyframes od-rise { from { transform: none; } to { transform: translateY(-8px); } }
-.od-chain-end { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s7); align-items: start; margin-top: var(--s8); }
-.od-chain-cost b { display: block; font-size: clamp(56px, 6.4vw, 104px); font-weight: 700; letter-spacing: -0.05em; line-height: .95; color: var(--acc); }
-.od-chain-cost > span { display: block; margin-top: var(--s4); font-size: clamp(17px, 1.4vw, 20px); line-height: 1.45; color: var(--ink2); max-width: 36ch; }
-.od-chain-cost .more { display: inline-flex; align-items: center; gap: var(--s2); margin-top: var(--s5); color: var(--ink); font-weight: var(--fw-semi); }
-.od-chain-cost .more svg { width: 16px; height: 16px; }
+.od-chain-end { max-width: 760px; margin: var(--s8) auto 0; }
 @media (max-width: 900px) {
   .od-chain { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .od-chain-brk, .od-chain-step { grid-row: auto; }
@@ -607,7 +599,6 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
   .od-chain-brk-them { order: 0; } .od-chain-step { order: 1; } .od-chain-brk-us { order: 2; margin-top: var(--s4); } .od-chain-step.is-us { order: 3; }
   .od-chain-step::after { display: none; }
   .od-chain-step { min-height: 120px; }
-  .od-chain-end { grid-template-columns: 1fr; }
 }
 
 /* ── Industries: the outcome each is measured on ── */

@@ -77,11 +77,7 @@
       <div class="od-chain-step{{ ' is-us c-' ~ ['orange', 'amber'][loop.index - od.HOME_CHAIN_SPLIT - 1] if loop.index > od.HOME_CHAIN_SPLIT }}" style="--d:{{ loop.index0 }}"><b>{{ fig }}</b><span>{{ what }}</span></div>
       {% endfor %}
     </div>
-    <div class="od-chain-end">
-      <div class="od-chain-cost rv fade"><b>{{ od.HOME_CHAIN_COST[0] }}</b><span>{{ od.HOME_CHAIN_COST[1] }} &mdash; the number a developer actually plans around, and the one we optimise every day.</span>
-        <a class="more" href="{{ url('case-study/allure-avani') }}">Read the Allure Avani case study {{ ui.arrow() }}</a></div>
-      <div class="rv fade">{{ odp.quote(allure_q[0], allure_q[1], allure_q[2], 'sky') }}</div>
-    </div>
+    <div class="od-chain-end rv fade">{{ odp.quote(allure_q[0], allure_q[1], allure_q[2], 'sky') }}</div>
   </div>
 </section>
 
