@@ -342,3 +342,44 @@ def test_the_leak_estimator_stacks_its_totals_so_the_largest_fits(client):
     t = client.get(site.PREFIX + "/ecommerce-marketing").get_data(as_text=True)
     assert 'class="od-calc-sum"' in t and 'class="od-calc-tot"' not in t
     assert site.inr(round(5000000 * 0.22 * 12 * 2.4)) == "₹3,16,80,000", "the most the slider reaches"
+
+
+# ── Logos scroll in a carousel, like the live site's, instead of sitting in a wall ──
+@pytest.mark.parametrize("path,items", [
+    ("/education-marketing", od.EDU_LOGOS),
+    ("/ecommerce-marketing", od.ECOM_PLATFORMS),
+    ("/about-us", od.CLIENT_LOGOS),
+])
+def test_logos_scroll_in_a_carousel(client, path, items):
+    body = client.get(site.PREFIX + path).get_data(as_text=True)
+    assert 'class="od-marquee' in body and "od-marquee-track" in body
+    assert "od-logos-big" not in body and 'class="od-logos"' not in body and "tick-track" not in body
+    track = body[body.index("od-marquee-track"):]
+    track = track[:track.index("</div>")]
+    tiles = re.findall(r'<span class="od-logo-tile[^"]*"( aria-hidden="true")?><img src="/static/outcomes/img/([^"]+)" alt="([^"]*)"', track)
+    # Two equal halves, each wide enough to fill a big screen, so the loop never shows a gap.
+    assert len(tiles) % 2 == 0 and len(tiles) // 2 >= 12
+    # Screen readers hear each logo once; the repeats are hidden from them.
+    named = [(f, alt) for hidden, f, alt in tiles if not hidden]
+    assert named == [(f, name) for name, f in items]
+    assert all(alt == "" for hidden, f, alt in tiles if hidden)
+
+
+def test_white_logos_sit_on_a_dark_tile(client):
+    body = client.get(site.PREFIX + "/education-marketing").get_data(as_text=True)
+    for f in ("logo-basil-woods.svg", "logo-city-college.webp"):
+        assert f in od.LOGOS_ON_DARK
+        assert re.search(r'<span class="od-logo-tile is-dark"[^>]*><img src="/static/outcomes/img/' + re.escape(f), body), f
+    assert re.search(r'<span class="od-logo-tile"><img src="/static/outcomes/img/logo-acharya.webp"', body)
+    re_body = client.get(site.PREFIX + "/real-estate-marketing").get_data(as_text=True)
+    assert '<span class="od-proof-logo is-dark"><img src="/static/outcomes/img/logo-allure-avani.webp"' in re_body
+    assert '<span class="od-proof-logo"><img src="/static/outcomes/img/logo-govind.webp"' in re_body
+    for f in od.LOGOS_ON_DARK:
+        assert os.path.exists(os.path.join(ROOT, "static/outcomes/img", f)), f
+
+
+def test_the_carousel_pauses_and_respects_reduced_motion():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    assert ".od-marquee:hover .od-marquee-track" in css and "animation-play-state: paused" in css
+    rm = css[css.index("@media (prefers-reduced-motion: reduce) {\n  .od-marquee"):]
+    assert "animation: none" in rm[:300]

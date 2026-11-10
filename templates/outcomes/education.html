@@ -86,7 +86,7 @@
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
   {{ odp.head("05", "Why trust us with your admissions", "Trusted by schools and colleges", "shaping the next generation.") }}
-  <div class="od-logos od-logos-big" style="margin-top:var(--s8)">{% for name, file in od.EDU_LOGOS %}<img src="/static/outcomes/img/{{ file }}" alt="{{ name }}" title="{{ name }}" loading="lazy">{% endfor %}</div>
+  <div style="margin-top:var(--s8)">{{ odp.logos(od.EDU_LOGOS, "Schools and colleges we work with") }}</div>
   <ul class="od-inst-list rv fade">{% for t in od.EDU_TRUSTED %}<li>{{ t }}</li>{% endfor %}</ul>
 </section>
 

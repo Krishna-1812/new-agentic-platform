@@ -71,7 +71,8 @@
     <div class="od-proof" style="margin-top:var(--s8)">
       {% for name, what, rows in od.RE_PROOF %}
       <article class="od-proof-card rv fade">
-        <span class="od-proof-logo"><img src="/static/outcomes/img/{{ {'Allure Avani': 'logo-allure-avani.webp', 'Govind Realty DXB': 'logo-govind.webp'}[name] }}" alt="{{ name }} logo" loading="lazy"></span>
+        {% set logo = {'Allure Avani': 'logo-allure-avani.webp', 'Govind Realty DXB': 'logo-govind.webp'}[name] %}
+        <span class="od-proof-logo{{ ' is-dark' if logo in od.LOGOS_ON_DARK }}"><img src="/static/outcomes/img/{{ logo }}" alt="{{ name }} logo" loading="lazy"></span>
         <span class="lbl">{{ what }}</span>
         <h3>{{ name }}</h3>
         <div class="stats">{% for m, ch in rows %}<div class="stat"><b>{{ ch }}</b><span>{{ m }}</span></div>{% endfor %}</div>

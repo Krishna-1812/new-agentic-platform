@@ -92,11 +92,9 @@
   </div>
 </section>
 
-<div class="wrap"><div class="tick tick-sm" aria-label="Our clients">
-  <div class="tick-track">
-    {% for copy in range(2) %}{% for name, ind, img in od.CLIENTS %}<span class="tick-i"{% if copy %} aria-hidden="true"{% endif %}>{{ name }}</span>{% endfor %}{% endfor %}
-  </div>
-</div></div>
+<div class="wrap od-logos-wrap"><span class="lbl">Brands we&rsquo;ve grown</span>
+  {{ odp.logos(od.CLIENT_LOGOS, "Brands we have worked with", small=True) }}
+</div>
 
 {{ odp.cta("Trusted by ambitious brands, from fast-growing D2C to enterprise pipelines.", "Ready to scale? Let's talk numbers.") }}
 
