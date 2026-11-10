@@ -16,8 +16,8 @@
         <div class="chips">{% for k in ('running', 'new') %}<button type="button" class="chip{% if k == 'running' %} on{% endif %}" data-stage="{{ k }}" aria-pressed="{{ 'true' if k == 'running' else 'false' }}">{{ L.stages[k].label }}</button>{% endfor %}</div>
       </div>
       <div class="btns rv fade">
-        <a class="btn btn-1" href="#plan" data-cta="hero">Request a callback</a>
-        {{ odp.cal("Book a free strategy call", "btn-2") }}
+        <a class="btn btn-1" href="#plan" data-cta="hero">{{ od.CTA_PLAN }}</a>
+        {{ odp.cal(cls="btn-2") }}
       </div>
       <p class="od-small rv fade">No pitch &middot; 45 min &middot; Free</p>
     </div>
@@ -38,19 +38,24 @@
       <ul class="od-calc-rows">
         {% for name, pct in L.split %}<li><span>{{ name }}</span><i style="--w:{{ (pct * 100)|round|int }}%"></i><b data-leak="part{{ loop.index0 }}">{{ inr_short((waste * pct)|round|int) }}</b></li>{% endfor %}
       </ul>
-      <div class="od-calc-tot">
-        <div><span>Est. wasted / month</span><b data-leak="month">{{ inr(waste) }}</b></div>
-        <div><span>Recoverable / year</span><b data-leak="year">{{ inr((waste * 12 * st.years)|round|int) }}</b></div>
-      </div>
+      <dl class="od-calc-sum">
+        <div><dt>Est. wasted / month</dt><dd data-leak="month">{{ inr(waste) }}</dd></div>
+        <div class="od-calc-big"><dt>Recoverable / year</dt><dd data-leak="year">{{ inr((waste * 12 * st.years)|round|int) }}</dd></div>
+      </dl>
       <a class="btn btn-1 od-calc-cta" href="#plan">Get the exact numbers for your store</a>
       <p class="od-calc-note">Model based on 30+ audits</p>
     </div>
   </div>
 </header>
 
+{#- The platforms we work on, as the live page shows them under its hero. -#}
+<div class="wrap od-logos-wrap"><span class="lbl">Platforms we work on</span>
+  <div class="od-logos">{% for name, file in od.ECOM_PLATFORMS %}<img src="/static/outcomes/img/{{ file }}" alt="{{ name }}" title="{{ name }}" loading="lazy">{% endfor %}</div>
+</div>
+
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("02", "Experts in what matters", "3 things that decide if", "ecommerce marketing works.") }}
+  {{ odp.head("01", "Experts in what matters", "3 things that decide if", "ecommerce marketing works.") }}
   <div class="cells cells-3 cells-num" style="margin-top:var(--s8)">
     {% for name, line in od.ECOM_MATTERS %}
     <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span>{{ ui.icon(['chart', 'cart', 'spark'][loop.index0]) }}</div><h3>{{ name }}</h3><p>{{ line }}</p></div>
@@ -60,7 +65,7 @@
 
 <section class="wrap sec-sm" id="method">
   <span class="rule rv"></span>
-  {{ odp.head("03", "How we work", "One simple system -", "whether you're starting from zero or scaling up.") }}
+  {{ odp.head("02", "How we work", "One simple system -", "whether you're starting from zero or scaling up.") }}
   <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
     <div class="track-pin">
       <div class="track-tabs" aria-label="The five steps">
@@ -77,7 +82,7 @@
 
 <section class="wrap sec-sm" id="services">
   <span class="rule rv"></span>
-  {{ odp.head("04", "Services", "One team.", "Every channel that drives revenue.") }}
+  {{ odp.head("03", "Services", "One team.", "Every channel that drives revenue.") }}
   <div class="cells cells-4" style="margin-top:var(--s8)">
     {% for name, line, items in od.ECOM_SERVICES %}
     <div class="cell">
@@ -93,7 +98,7 @@
 
 <section class="wrap sec-sm" id="diagnosis">
   <span class="rule rv"></span>
-  {{ odp.head("05", "What we typically find", "The mistakes we keep finding -", "and fixing - across ecommerce brands.", "These are patterns from real audits, not hypotheticals. Fixing even one of these is often where the growth was hiding.") }}
+  {{ odp.head("04", "What we typically find", "The mistakes we keep finding -", "and fixing - across ecommerce brands.", "These are patterns from real audits, not hypotheticals. Fixing even one of these is often where the growth was hiding.") }}
   <div class="od-finds" style="margin-top:var(--s8)">
     {% for area, find, why in od.ECOM_FINDS %}
     <article class="od-find rv fade">
@@ -107,11 +112,13 @@
 
 <section class="wrap sec-sm" id="results">
   <span class="rule rv"></span>
-  {{ odp.head("06", "Real results", "Real numbers, before and after -", "not likes or impressions.", "These are brands we've already worked with. If you're just starting out, this is the kind of result you're building toward.") }}
+  {{ odp.head("05", "Real results", "Real numbers, before and after -", "not likes or impressions.", "These are brands we've already worked with. If you're just starting out, this is the kind of result you're building toward.") }}
   <div class="od-results-grid" style="margin-top:var(--s8)">
+    {% set pics = {'Madge Beauty': ('card-madge-beauty', 'logo-madge.webp'), 'Krishnamurti Foundation India': ('card-kfi', 'logo-kfi.webp'),
+                   'Artistic Yoga': ('card-artistic-yoga', 'logo-artistic-yoga.webp'), 'Material Hunt': ('card-material-hunt', 'logo-material-hunt.webp')} %}
     {% for brand, where, what, rows in od.ECOM_RESULTS %}
-    <article class="blk c-{{ ['orange', 'sky', 'amber', 'card'][loop.index0] }}">
-      <div class="blk-top"><span class="lbl">{{ where }}</span></div>
+    <article class="blk od-result c-{{ ['orange', 'sky', 'amber', 'card'][loop.index0] }}">
+      <div class="blk-top"><span class="od-result-id"><img class="od-result-pic" src="/static/outcomes/img/{{ pics[brand][0] }}.webp" alt="" loading="lazy" width="400" height="500"><span class="od-result-logo"><img src="/static/outcomes/img/{{ pics[brand][1] }}" alt="{{ brand }} logo" loading="lazy"></span></span><span class="lbl">{{ where }}</span></div>
       <h3>{{ brand }}</h3>
       <p>{{ what }}</p>
       <dl class="od-ba">{% for m, before, after in rows %}<div><dt>{{ m }}</dt><dd><s>{{ before }}</s><span aria-hidden="true">&rarr;</span><b>{{ after }}</b></dd></div>{% endfor %}</dl>
@@ -130,7 +137,7 @@
 </section>
 
 <section class="wrap sec">
-  {{ odp.head("07", "In their words", "Founders who ship,", "on what changed.") }}
+  {{ odp.head("06", "In their words", "Founders who ship,", "on what changed.") }}
   <div class="od-quotes" style="margin-top:var(--s8)">
     {% for q, who, sub, ini in od.ECOM_QUOTES %}{{ odp.quote(q, who, sub, ['amber', 'sky', 'orange'][loop.index0], ini) }}{% endfor %}
   </div>
@@ -140,7 +147,7 @@
   <span class="rule rv"></span>
   <div class="split split-top">
     <div>
-      <span class="lbl">08 &middot; Fit check</span>
+      <span class="lbl">07 &middot; Fit check</span>
       <h2 class="d3 rv"><span class="ln"><span>This works for you whether</span></span> <span class="ln"><span><span class="it">you're new or established.</span></span></span></h2>
       <p class="lead rv fade">If most of these sound like you, we're a good fit - no matter which stage you're at.</p>
     </div>

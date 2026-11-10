@@ -94,8 +94,8 @@ def test_the_home_page_keeps_its_words(client):
         assert fig in t and what in t
     for name, ind, img in od.CLIENTS:
         assert name in t and ind in t and "/static/outcomes/img/%s.webp" % img in t
-    for tab, title, line in od.HOME_STEPS:
-        assert title in t and line in t
+    for tab, title, line, photo in od.HOME_STEPS:
+        assert title in t and line in t and "/static/outcomes/img/%s.webp" % photo in t
     for quote, who, sub in od.HOME_QUOTES:
         assert quote in t and who in t and sub in t
 
@@ -285,3 +285,60 @@ def test_the_same_figures_and_call_length_everywhere(client):
     edu = _text(client, site.PREFIX + "/education-marketing")
     assert "30 min free strategy call" in edu and "45 min" not in edu
     assert "paid media growth" in _text(client, site.PREFIX + "/ppc-management")
+
+
+# == the story, the photos, one set of buttons ==========================================================
+
+def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(client):
+    t = _text(client, site.PREFIX)
+    order = ["We drive", od.HOME_PROBLEM, "every channel that drives revenue", "Understand the business", "Built for the businesses",
+             "Measured impact", "Real numbers", "Core Care Clinic", "In their"]
+    at = [t.index(x) for x in order]
+    assert at == sorted(at), dict(zip(order, at))
+    hero = t[:t.index(od.HOME_PROBLEM)]
+    assert od.CTA_PLAN in hero and od.CTA_CALL in hero and "$5M+" in hero and "3X" in hero
+    for name, line, link, ic, c in od.PILLARS:
+        assert name in t and line in t
+    for slug, name, headline, line, photo in od.INDUSTRY_CARDS:
+        assert headline in t and site.url(slug) in t
+
+
+@pytest.mark.parametrize("path,photos", [
+    ("/education-marketing", ["photo-campus.webp"] + [f for _, f in od.EDU_LOGOS]),
+    ("/real-estate-marketing", ["photo-tower.webp", "logo-allure-avani.webp", "logo-govind.webp"]),
+    ("/ecommerce-marketing", [f for _, f in od.ECOM_PLATFORMS] + ["logo-madge.webp", "card-material-hunt.webp"]),
+    ("/about-us", ["team-sudheer.webp"]),
+    ("/seo-services", ["step-3.webp"]), ("/ppc-management", ["step-5.webp"]), ("/cro-services", ["step-1.webp"]),
+])
+def test_the_pages_carry_their_photos_and_logos(client, path, photos):
+    body = client.get(site.PREFIX + path).get_data(as_text=True)
+    for f in photos:
+        assert "/static/outcomes/img/" + f in body, (path, f)
+
+
+@pytest.mark.parametrize("path", PATHS)
+def test_one_pair_of_buttons_and_sentence_case_heads_everywhere(client, path):
+    t = _text(client, path)
+    for old in ("Get Growth Plan", "Book a meeting", "Click here", "How We Work", "Real Numbers", "Great Indian Philosopher",
+                "Book a strategy call<", "Get Started", "Request a callback<"):
+        assert old not in t, (path, old)
+    assert od.CTA_PLAN in t
+    nums = re.findall(r'<div class="shead-l"><span class="idx">(\d\d)<|<span class="lbl">(\d\d) · ', t)
+    nums = [a or b for a, b in nums]
+    if nums:
+        assert nums[0] == "01" and nums == ["%02d" % i for i in range(1, len(nums) + 1)], (path, nums)
+
+
+@pytest.mark.parametrize("slug", [s for s, _ in od.SERVICES])
+def test_each_service_hero_shows_a_result_from_its_case_study(client, slug):
+    s = od.SERVICE_PAGES[slug]
+    case, fig, label = s["proof"]
+    hero = _text(client, site.PREFIX + "/" + slug).split('id="main"', 1)[1].split("</header>", 1)[0]
+    assert fig in hero and label in hero and site.url("case-study/" + case) in hero
+    assert fig in [f for f, *_ in od.CASES_BY_SLUG[case]["top"] + od.CASES_BY_SLUG[case]["figures"]]
+
+
+def test_the_leak_estimator_stacks_its_totals_so_the_largest_fits(client):
+    t = client.get(site.PREFIX + "/ecommerce-marketing").get_data(as_text=True)
+    assert 'class="od-calc-sum"' in t and 'class="od-calc-tot"' not in t
+    assert site.inr(round(5000000 * 0.22 * 12 * 2.4)) == "₹3,16,80,000", "the most the slider reaches"

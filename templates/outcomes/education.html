@@ -10,24 +10,24 @@
   <div class="od-ind-grid">
     <div>
       <span class="lbl rv fade">For education institutions</span>
-      <h1 class="d1 rv"><span class="ln"><span>More enquiries isn&rsquo;t the goal.</span></span> <span class="ln"><span>The goal is more</span></span> <span class="ln"><span><span class="mk">Admissions.</span></span></span></h1>
+      <h1 class="d1 rv"><span class="ln"><span>More enquiries isn&rsquo;t the goal.</span></span> <span class="ln"><span>The goal is more</span></span> <span class="ln"><span><span class="mk">admissions.</span></span></span></h1>
       <p class="lead rv fade" style="margin-top:var(--s6)">{{ od.EDU_LEAD }}</p>
       <div class="btns rv fade">
-        {{ odp.cal() }}
-        <a class="btn btn-2" href="#callback">Request a callback</a>
+        <a class="btn btn-1" href="#callback" data-cta="hero">{{ od.CTA_PLAN }}</a>
+        {{ odp.cal(cls="btn-2") }}
       </div>
       <p class="od-small rv fade">No pitch. No obligation. &middot; {{ od.EDU_CALL_MIN }} min free strategy call</p>
     </div>
-    <div class="od-journey rv fade" aria-label="Enquiry to enrolment">
-      <span class="lbl">01 / Enquiry to enrolment</span>
-      <ol>{% for s in od.EDU_JOURNEY %}<li class="c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ s }}</li>{% endfor %}</ol>
+    <div class="od-hero-pic od-hero-tall rv fade">
+      <div class="od-hero-photo"><img src="/static/outcomes/img/photo-campus.webp" alt="Students walking across a college campus" width="1200" height="828"></div>
+      <ol class="od-journey-chips" aria-label="Enquiry to enrolment">{% for st in od.EDU_JOURNEY %}<li class="c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ st }}</li>{% endfor %}</ol>
     </div>
   </div>
 </header>
 
 <section class="wrap sec-sm" id="who">
   <span class="rule rv"></span>
-  {{ odp.head("02", "Who it's for", "Built for every kind of", "education journey.") }}
+  {{ odp.head("01", "Who it's for", "Built for every kind of", "education journey.") }}
   <div class="blks blks-3" style="margin-top:var(--s8)">
     {% for name, decides, text, fills in od.EDU_WHO %}
     <article class="blk c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
@@ -43,7 +43,7 @@
 
 <section class="wrap sec-sm" id="problems">
   <span class="rule rv"></span>
-  {{ odp.head("03", "Common problems", "What we see in most", "education businesses.", "Six leaks. Every one of them costs you enrolments.") }}
+  {{ odp.head("02", "Common problems", "What we see in most", "education businesses.", "Six leaks. Every one of them costs you enrolments.") }}
   <div class="cells cells-3 cells-num" style="margin-top:var(--s8)">
     {% for name, line in od.EDU_PROBLEMS %}
     <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span></div><h3>{{ name }}</h3><p>{{ line }}</p></div>
@@ -54,7 +54,7 @@
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("04", "Where we sit", "We own the marketing.", "Your admissions team owns the conversation.", "Together, we turn enquiries into enrolments.") }}
+  {{ odp.head("03", "Where we sit", "We own the marketing.", "Your admissions team owns the conversation.", "Together, we turn enquiries into enrolments.") }}
   <div class="loop" style="margin-top:var(--s7)">
     <div class="blk c-orange"><span class="lbl">Outcomes Digital</span><h3>Finding and preparing the right students</h3></div>
     <div class="loop-arrows" aria-hidden="true">
@@ -67,7 +67,7 @@
 
 <section class="wrap sec-sm" id="system">
   <span class="rule rv"></span>
-  {{ odp.head("05", "The system", "How We Work.", "One connected system — from discovery to enrolment.") }}
+  {{ odp.head("04", "The system", "How we work:", "one connected system — from discovery to enrolment.") }}
   <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
     <div class="track-pin">
       <div class="track-tabs" aria-label="The system">
@@ -85,16 +85,15 @@
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("06", "Why trust us with your admissions", "Trusted by schools and colleges", "shaping the next generation.") }}
-  <div class="cells cells-3" style="margin-top:var(--s8)">
-    {% for t in od.EDU_TRUSTED %}<div class="cell od-inst"><div class="cell-idx">{{ ui.icon(['home', 'cap', 'heart', 'home', 'users', 'spark'][loop.index0]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div><h3>{{ t }}</h3></div>{% endfor %}
-  </div>
+  {{ odp.head("05", "Why trust us with your admissions", "Trusted by schools and colleges", "shaping the next generation.") }}
+  <div class="od-logos od-logos-big" style="margin-top:var(--s8)">{% for name, file in od.EDU_LOGOS %}<img src="/static/outcomes/img/{{ file }}" alt="{{ name }}" title="{{ name }}" loading="lazy">{% endfor %}</div>
+  <ul class="od-inst-list rv fade">{% for t in od.EDU_TRUSTED %}<li>{{ t }}</li>{% endfor %}</ul>
 </section>
 
 <section class="inkband" id="calc">
   <div class="wrap split split-top">
     <div>
-      <span class="lbl">07 &middot; Enrolment leak calculator</span>
+      <span class="lbl">06 &middot; Enrolment leak calculator</span>
       <h2 class="d2 rv"><span class="ln"><span>How many seats are</span></span> <span class="ln"><span><span class="mk">slipping away?</span></span></span></h2>
       <p class="lead rv fade">A quick gut-check — move the sliders to match your institution.</p>
     </div>
@@ -114,7 +113,7 @@
 </section>
 
 <section class="wrap sec">
-  {{ odp.head("08", "Wherever you're starting from", "This works whichever", "one of these is you.") }}
+  {{ odp.head("07", "Wherever you're starting from", "This works whichever", "one of these is you.") }}
   <div class="models" style="margin-top:var(--s8)">
     {% for name, line in od.EDU_START %}
     <article class="model c-{{ ['orange', 'amber', 'sky'][loop.index0] }}"><span class="model-n">{{ '%02d'|format(loop.index) }}</span><h3>{{ name }}</h3><p>{{ line }}</p></article>
@@ -126,7 +125,7 @@
   <span class="rule rv"></span>
   <div class="split split-top">
     <div>
-      <span class="lbl">09 &middot; Fit</span>
+      <span class="lbl">08 &middot; Fit</span>
       <h2 class="d3 rv"><span class="ln"><span>This is built</span></span> <span class="ln"><span><span class="it">for you if —</span></span></span></h2>
     </div>
     <ul class="ticks od-fit rv fade">{% for f in od.EDU_FIT %}<li>{{ f }}</li>{% endfor %}</ul>
@@ -136,9 +135,9 @@
 <section class="limeband apply" id="callback" aria-label="Next step">
   <div class="wrap split split-top">
     <div>
-      <span class="lbl">10 &middot; Next step</span>
+      <span class="lbl">09 &middot; Next step</span>
       <h2 class="d2 rv"><span class="ln"><span>Let&rsquo;s see where your</span></span> <span class="ln"><span><span class="it">enquiries are leaking.</span></span></span></h2>
-      <h3 class="od-sub">Plan Your Next Intake &middot; Free strategy call</h3>
+      <h3 class="od-sub">Plan your next intake &middot; Free strategy call</h3>
       <p class="lead rv fade">Bring your current numbers — spend, enquiries, visits, applications and enrolments. We&rsquo;ll map where families or students drop out and show you what to fix first.</p>
       <ul class="ticks is-ink rv fade" style="margin-top:var(--s5)">{% for i in od.EDU_CALL %}<li>{{ i }}</li>{% endfor %}</ul>
       <div class="btns rv fade" style="margin-top:var(--s6)">{{ odp.cal() }}</div>
