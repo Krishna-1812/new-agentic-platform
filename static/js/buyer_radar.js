@@ -265,11 +265,21 @@
       '" data-known="' + ((s.slack_msgs || []).length ? '1' : '') + '">Resend to Slack</button>';
   }
 
-  // What went wrong along the way (posts Claude could not read, a search cut short), in the run's own words.
+  // What happened along the way, in the run's own words, every note of it. A note that only says how the
+  // run went (buyer_radar.INFO_NOTES: a limit shared out, a shorter window) is grey; one that says something
+  // failed (a search that did not run, posts Claude could not read) is red, and comes first.
   // Team only: a note can name the run's cost cap.
+  var INFO_NOTES = [];
+  try { INFO_NOTES = JSON.parse((DOC && DOC.getElementById('brInfoNotes') || {}).textContent || '[]'); } catch (e) { INFO_NOTES = []; }
+  function isInfoNote(n) {
+    n = String(n || '');
+    return INFO_NOTES.some(function (p) { return n.indexOf(p) === 0; });
+  }
   function renderNotes(notes) {
     if (!notes || !notes.length) return '';
-    return notes.slice(0, 3).map(function (n) { return '<small class="br-note">' + esc(excerpt(n, 220)) + '</small>'; }).join('');
+    var problems = notes.filter(function (n) { return !isInfoNote(n); }), info = notes.filter(isInfoNote);
+    return problems.map(function (n) { return '<small class="br-note br-note--problem">' + esc(excerpt(n, 220)) + '</small>'; }).join('') +
+      info.map(function (n) { return '<small class="br-note br-note--info">' + esc(excerpt(n, 220)) + '</small>'; }).join('');
   }
 
   // A search that kept nothing says how close the best post came, so an empty list explains itself.
@@ -583,7 +593,7 @@
 
   root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
-    renderEstimate: renderEstimate, renderFilters: renderFilters, renderRedditDrawer: renderRedditDrawer, hourLabel: hourLabel, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
+    renderEstimate: renderEstimate, renderFilters: renderFilters, renderRedditDrawer: renderRedditDrawer, hourLabel: hourLabel, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {}, infoNotes: INFO_NOTES };
 
   // ── the page ─────────────────────────────────────────────────────────────
   if (!DOC || !DOC.getElementById('br')) return;

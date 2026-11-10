@@ -30,6 +30,28 @@ PAGE_MAX = 49           # the reference: post searches return up to 49 a page
 DAY_MAX = 900           # all workspaces together, under Unipile's ~1,000 results a day, with room for other agents
 DAY_MAX_CEILING = 2400  # a Sales Navigator account is allowed about 2,500 a day (the same limits page)
 PAUSE_S = (2.0, 5.0)    # between requests, at random, as Unipile advises
+BRIEF = (502, 503, 504)     # Unipile's own gateway failing for a moment, not LinkedIn refusing the account
+RETRY_WAIT_S = (3.0, 6.0)   # after a brief failure, two more tries this many seconds apart
+
+
+def brief(err):
+    """True for an error that is Unipile's gateway failing for a moment (HTTP 502, 503 or 504). LinkedIn
+    refusing the account shows as 429 or 500 and is never one of these, so it is never tried again."""
+    return isinstance(err, dict) and err.get("kind") == "http_status" and err.get("status") in BRIEF
+
+
+def call(fn, *args, sleep=time.sleep, **kwargs):
+    """fn(*args, **kwargs) -> (data, err), tried again up to twice, a few seconds apart, when it fails
+    briefly (see brief). Any other answer, good or bad, is returned at once. For reads only: never for a
+    call that sends something, which a retry could send twice."""
+    data, err = fn(*args, **kwargs)
+    for wait in RETRY_WAIT_S:
+        if not brief(err):
+            break
+        log.info("buyer_radar: Unipile answered HTTP %s; trying again in %.0fs", err.get("status"), wait)
+        sleep(wait)
+        data, err = fn(*args, **kwargs)
+    return data, err
 
 
 def day_max():
@@ -89,8 +111,9 @@ def as_actor_item(item, query):
 def collect(queries, *, posted="3months", per_query=25, room=None, account_id=None, client=None,
             sleep=time.sleep):
     """Every query, page by page, until per_query posts each or `room` results in all. Never raises:
-    {"posts", "usd": 0, "error", "results", "notes"}. A refusal (LinkedIn's limit shows as HTTP 429 or 500)
-    stops the rest, and what was found is kept."""
+    {"posts", "usd": 0, "error", "results", "notes"}. A brief Unipile failure (HTTP 502, 503, 504) is tried
+    again twice first; a refusal (LinkedIn's limit shows as HTTP 429 or 500) stops the rest, and what was
+    found is kept."""
     from tracker import buyer_radar_source as src
     if client is None:
         from tracker import unipile_client as client
@@ -99,7 +122,7 @@ def collect(queries, *, posted="3months", per_query=25, room=None, account_id=No
     if posted == "3months":
         out["notes"].append("Unipile looks back a month at most, so this search read the last month.")
     if account_id is None:
-        account_id, err = client.linkedin_account_id()
+        account_id, err = call(client.linkedin_account_id, sleep=sleep)
         if err is not None:
             out["error"] = "Unipile: %s" % client.describe_error(err)
             return out
@@ -111,7 +134,7 @@ def collect(queries, *, posted="3months", per_query=25, room=None, account_id=No
                 sleep(random.uniform(*PAUSE_S))
             first = False
             limit = min(PAGE_MAX, per_query - got, room - out["results"])
-            data, err = client.search_posts_filtered(account_id, keywords=q, date_posted=DATE_POSTED.get(posted, "past_month"),
+            data, err = call(client.search_posts_filtered, account_id, sleep=sleep, keywords=q, date_posted=DATE_POSTED.get(posted, "past_month"),
                                                      sort_by="date", cursor=cursor, limit=limit)
             if err is not None:
                 out["error"] = "Unipile: %s" % client.describe_error(err)

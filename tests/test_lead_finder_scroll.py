@@ -46,4 +46,4 @@ def test_the_scrolling_lists_can_be_reached_from_the_keyboard_and_the_style_shee
     page = _read("templates/buyer_radar.html")
     assert re.search(r'id="brLeads"[^>]*tabindex="0"[^>]*role="region"', page)
     assert re.search(r'id="brRuns"[^>]*tabindex="0"[^>]*role="region"', page)
-    assert "buyer_radar.css?v=11" in page
+    assert "buyer_radar.css?v=12" in page

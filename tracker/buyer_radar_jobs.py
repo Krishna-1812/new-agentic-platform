@@ -68,18 +68,19 @@ def _cursor(payload):
     return None
 
 
-def locations(names, *, account_id=None, client=None):
+def locations(names, *, account_id=None, client=None, sleep=time.sleep):
     """Each place named in Settings as LinkedIn's location id, the first match for its words. A place
     LinkedIn does not know is noted, and left out rather than searched as the whole world."""
+    from tracker import buyer_radar_unipile as uni
     if client is None:
         from tracker import unipile_client as client
     ids, notes = [], []
     if names and account_id is None:
-        account_id, err = client.linkedin_account_id()
+        account_id, err = uni.call(client.linkedin_account_id, sleep=sleep)
         if err is not None:
             return [], ["The job locations could not be looked up (Unipile: %s)." % client.describe_error(err)]
     for name in names or []:
-        data, err = client.search_parameters(account_id, "LOCATION", name, limit=3)
+        data, err = uni.call(client.search_parameters, account_id, "LOCATION", name, limit=3, sleep=sleep)
         got = [i for i in _items(data) if isinstance(i, dict) and str(i.get("id") or "").strip()] if err is None else []
         if got:
             ids.append(str(got[0]["id"]))
@@ -114,14 +115,15 @@ def normalize(item, query):
 def collect(queries, *, days=14, per_query=20, room=None, location_ids=None, account_id=None, client=None,
             sleep=time.sleep):
     """Every job title searched, page by page, until per_query ads each or `room` results in all. Never
-    raises: {"jobs", "error", "results", "notes"}. A refusal stops the rest and keeps what was found."""
+    raises: {"jobs", "error", "results", "notes"}. A brief Unipile failure is tried again twice first
+    (buyer_radar_unipile.call); a refusal stops the rest and keeps what was found."""
     from tracker import buyer_radar_unipile as uni
     if client is None:
         from tracker import unipile_client as client
     room = uni.day_max() if room is None else room
     out = {"jobs": [], "error": None, "results": 0, "notes": []}
     if account_id is None:
-        account_id, err = client.linkedin_account_id()
+        account_id, err = uni.call(client.linkedin_account_id, sleep=sleep)
         if err is not None:
             out["error"] = "Unipile: %s" % client.describe_error(err)
             return out
@@ -133,7 +135,7 @@ def collect(queries, *, days=14, per_query=20, room=None, location_ids=None, acc
                 sleep(random.uniform(*uni.PAUSE_S))
             first = False
             limit = min(PAGE_MAX, per_query - got, room - out["results"])
-            data, err = client.search_jobs(account_id, q, date_posted_days=days, location_ids=location_ids,
+            data, err = uni.call(client.search_jobs, account_id, q, sleep=sleep, date_posted_days=days, location_ids=location_ids,
                                            cursor=cursor, limit=limit)
             if err is not None:
                 out["error"] = "Unipile: %s" % client.describe_error(err)
