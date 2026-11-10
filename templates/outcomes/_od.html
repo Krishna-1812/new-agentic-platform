@@ -3,8 +3,8 @@
 {% import "site/_parts.html" as ui with context %}
 
 {#- The strategy call: straight to the team's calendar, in a new tab. -#}
-{% macro cal(label="Book a free strategy call", cls="btn-1", cta="call") -%}
-<a class="btn {{ cls }}" href="{{ od.CALENDLY }}" target="_blank" rel="noopener" data-cta="{{ cta }}">{{ label }}</a>
+{% macro cal(label=None, cls="btn-1", cta="call") -%}
+<a class="btn {{ cls }}" href="{{ od.CALENDLY }}" target="_blank" rel="noopener" data-cta="{{ cta }}">{{ label or od.CTA_CALL }}</a>
 {%- endmacro %}
 
 {#- A section's head, numbered in the margin like Northaxis's (ui.head), with this site's words. -#}
@@ -50,7 +50,7 @@
 {%- endmacro %}
 
 {#- The closing block: the sky band, with the growth plan and the strategy call. -#}
-{% macro cta(title, text, label="Get Growth Plan", href=None, call=True) -%}
+{% macro cta(title, text, label=None, href=None, call=True) -%}
 <section class="limeband" aria-label="Next step">
   <div class="wrap">
     <div class="shead">
@@ -58,7 +58,7 @@
       <div class="shead-r">
         <h2 class="d2 rv"><span class="ln"><span>{{ title|safe }}</span></span></h2>
         <p class="lead rv fade">{{ text }}</p>
-        <div class="btns rv fade"><a class="btn btn-1 btn-hero" href="{{ href or url('contact') }}" data-cta="band"{% if href and href.startswith('http') %} target="_blank" rel="noopener"{% endif %}>{{ label }}</a>{% if call %}{{ cal(cls="btn-2") }}{% endif %}</div>
+        <div class="btns rv fade"><a class="btn btn-1 btn-hero" href="{{ href or url('contact') }}" data-cta="band"{% if href and href.startswith('http') %} target="_blank" rel="noopener"{% endif %}>{{ label or od.CTA_PLAN }}</a>{% if call %}{{ cal(cls="btn-2") }}{% endif %}</div>
       </div>
     </div>
   </div>

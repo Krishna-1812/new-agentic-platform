@@ -15,6 +15,14 @@ SOCIAL = (("LinkedIn", "https://www.linkedin.com/company/outcomes-digital/"),
           ("Facebook", "https://www.facebook.com/outcomes.digital/"),
           ("Instagram", "https://www.instagram.com/outcomes.digital/"))
 
+# One pair of actions on every page: the growth plan (the contact form) and the strategy call (the calendar).
+CTA_PLAN = "Get a free growth plan"
+CTA_CALL = "Book a free strategy call"
+
+# The figures the pages share (the team confirmed 25+ and 74%+ on 10 November 2026).
+PROOF_STATS = (("$5M+", "Revenue generated for clients"), ("25+", "Businesses scaled"), ("74%+", "Client retention"),
+               ("3X", "More qualified leads"), ("40%", "Lower customer acquisition cost"))
+
 # The address of each page, under /outcomesdigital.
 SERVICES = (("seo-services", "SEO"), ("ppc-management", "PPC & Paid Media"), ("cro-services", "CRO"))
 INDUSTRIES = (("ecommerce-marketing", "eCommerce"), ("education-marketing", "Edu Tech"),
@@ -37,21 +45,58 @@ CLIENTS = (
 HOME_LEAD = ("One connected team for Strategy, Creative, Paid Media, Growth Agents and CRO connected to drive "
              "revenue.")
 HOME_STATS = (("3X", "more qualified leads"), ("40%", "lower customer acquisition cost"))
-# How we drive outcomes: (tab, title, line).
+# How we drive outcomes: (tab, title, line, photo). The live site's five steps and photos, each line said plainly.
 HOME_STEPS = (
-    ("Understand", "Understand the Business", "Workshop with customer journeys, notes, and product materials."),
-    ("Strategy", "Build the Growth Strategy", "Growth roadmap, channel planning, and prioritisation."),
-    ("Growth Engine", "Build the Growth Engine", "Tasteful view of connected tools, automation workflows, and AI agents."),
-    ("Execution", "Execute with Precision", "Team shaping campaigns, creative, content, and performance work."),
-    ("Optimise & Scale", "Optimise and Scale",
-     "Performance dashboard, revenue trends, and a team making decisions from insight."),
+    ("Understand", "Understand the business", "We start with your customer journeys, your product and your numbers, "
+     "so we know how you make money before we change anything.", "step-1"),
+    ("Strategy", "Build the growth strategy", "A growth roadmap, channel planning and priorities, so your budget goes "
+     "where it pays.", "step-2"),
+    ("Growth Engine", "Build the growth engine", "Tracking, connected tools, automation workflows and AI agents, set "
+     "up so every result can be measured.", "step-3"),
+    ("Execution", "Execute with precision", "Campaigns, creative, content and performance work, run by one team "
+     "instead of five vendors.", "step-4"),
+    ("Optimise & Scale", "Optimise and scale", "Dashboards and revenue trends drive every decision. What works gets "
+     "more budget; what doesn't is cut.", "step-5"),
 )
+# The problem we were built to fix, in the founders' words (About).
+HOME_PROBLEM = ("We watched agency after agency present polished decks full of “brand awareness” and "
+                "“engagement,” while budgets climbed and revenue stayed flat.")
+# One connected team: (name, line, link under /outcomesdigital or None, icon, colour).
+PILLARS = (
+    ("Strategy", "Growth roadmap, channel planning, and prioritisation.", None, "target", "orange"),
+    ("Creative", "Strategy, copy and ad creative - built for your brand, not recycled templates.", None, "pen", "amber"),
+    ("Paid Media", "Google Ads and Meta Ads managed around cost-per-acquisition and ROAS.", "ppc-management", "megaphone", "sky"),
+    ("SEO / GEO / AEO", "Getting found on Google - and in AI tools like ChatGPT.", "seo-services", "search", "card"),
+    ("CRO", "We find and fix the friction costing you conversions.", "cro-services", "chart", "red"),
+    ("Growth Agents", "Connected tools, automation workflows, and AI agents.", None, "bolt", "ink"),
+)
+# The three industries, as the home page introduces them: (slug, name, headline, line, photo).
+INDUSTRY_CARDS = (
+    ("ecommerce-marketing", "eCommerce", "Impressions fade. Outcomes stay.",
+     "Data, website, ads and creative - fixed and scaled together, so your marketing actually pays for itself.",
+     "card-madge-beauty"),
+    ("education-marketing", "Edu Tech", "More enquiries isn’t the goal. The goal is more admissions.",
+     "We help schools and colleges fill seats with students who actually enrol.", "photo-campus"),
+    ("real-estate-marketing", "Real Estate", "More leads isn’t the goal. The goal is more site visits.",
+     "Marketing that produces buyers who show up — not just leads who don’t.", "photo-tower"),
+)
+# Logos: (name, file under static/outcomes/img).
+CLIENT_LOGOS = (("Allure Avani", "logo-allure-avani.webp"), ("Madge Beauty", "logo-madge.webp"),
+                ("Krishnamurti Foundation India", "logo-kfi.webp"), ("Artistic Yoga", "logo-artistic-yoga.webp"),
+                ("Material Hunt", "logo-material-hunt.webp"), ("Core Care Clinic", "logo-core-care.webp"))
+ECOM_PLATFORMS = (("Shopify", "tool-shopify.webp"), ("WooCommerce", "tool-woocommerce.webp"), ("Wix", "tool-wix.webp"),
+                  ("Magento", "tool-magento.webp"), ("Amazon", "tool-amazon.webp"), ("Flipkart", "tool-flipkart.webp"),
+                  ("Google Ads", "tool-google-ads.webp"), ("Meta", "tool-meta.webp"))
+EDU_LOGOS = (("Basil Woods International School", "logo-basil-woods.svg"), ("City College Jayanagar", "logo-city-college.webp"),
+             ("Acharya Institute of Health Sciences", "logo-acharya.webp"), ("The Shri Ram Universal School", "logo-shri-ram.svg"),
+             ("Krishnamurti Foundation India", "logo-kfi.webp"), ("LEAD School", "logo-lead-school.svg"))
+
 # What our clients say: (quote, client, who they are).
 HOME_QUOTES = (
     ("We’d relied on a single channel for so long that we didn’t really own our own customer relationships. "
      "Outcomes Digital helped us see that dependency clearly and built a plan to grow independently of it. It "
      "wasn’t a quick fix – it was a genuine shift in how we think about where our business should be getting "
-     "its growth from.", "Krishnamurti Foundation India", "Great Indian Philosopher"),
+     "its growth from.", "Krishnamurti Foundation India", "Education & Non-Profit"),
     ("We had a good product and a following, but we couldn’t figure out why sales weren’t moving. Outcomes "
      "Digital didn’t just run more ads – they looked at the whole picture, found what was actually broken, and "
      "fixed it properly. It’s the first time our marketing has felt like it’s built on a real strategy instead "
@@ -154,11 +199,11 @@ CASES = (
                    "With limited brand awareness in the competitive luxury real estate market, daily qualified lead "
                    "generation lacked consistency. The client needed a scalable digital strategy focused on "
                    "improving both lead quality and conversion."),
-     "approach": (("Full-Funnel Paid Ads Strategy", "Developed integrated Meta and Google Ads campaigns focused on "
+     "approach": (("Full-funnel paid ads strategy", "Developed integrated Meta and Google Ads campaigns focused on "
                    "reaching premium home buyers with intent-based and lookalike targeting."),
-                  ("Creative & Budget Optimization", "Continuously optimized campaigns to prioritize lead quality "
+                  ("Creative & budget optimization", "Continuously optimized campaigns to prioritize lead quality "
                    "over volume, reallocating budgets to top-performing creatives."),
-                  ("Bid Management & Site Visits", "Monitored performance daily to optimize bids, reduce Cost Per "
+                  ("Bid management & site visits", "Monitored performance daily to optimize bids, reduce Cost Per "
                    "Site Visit, and drive prospects likely to convert on the ground.")),
      "results": ("The campaign generated 600+ total leads across Meta and Google, delivering 214 qualified leads "
                  "ready for the sales team and 55 completed site visits. Reaching 1.28 million people and driving "
@@ -177,11 +222,11 @@ CASES = (
                    "in June 2025, making it virtually invisible in organic search.",
                    "The brand was spending $0 on paid ads and relying entirely on word-of-mouth, while well-funded "
                    "competitors dominated Google search results."),
-     "approach": (("Keyword-Targeted Blogging", "Every post mapped to a real search query — informational, "
+     "approach": (("Keyword-targeted blogging", "Every post mapped to a real search query — informational, "
                    "local-intent, and awareness keywords."),
-                  ("On-Page SEO Optimisation", "Title tags, H1–H3 structure, meta descriptions, and internal "
+                  ("On-page SEO optimisation", "Title tags, H1–H3 structure, meta descriptions, and internal "
                    "linking from blog to studio pages."),
-                  ("Local Content Strategy", "Neighbourhood-specific posts for Motor City, Al-Qusais, and other "
+                  ("Local content strategy", "Neighbourhood-specific posts for Motor City, Al-Qusais, and other "
                    "Dubai locations to drive footfall.")),
      "results": ("Over 12 months, the blog SEO strategy drove 457,877 organic visits with zero paid ad spend. "
                  "Organic keywords grew +131% from 48 to 111+, generating over $166,000 in organic traffic value "
@@ -200,11 +245,11 @@ CASES = (
                    "limited customer data ownership for retargeting and future marketing campaigns.",
                    "Without clear attribution or an owned conversion ecosystem, scaling ad spend predictably while "
                    "maintaining profitability was a major bottleneck."),
-     "approach": (("Shift to Owned Traffic", "Redirected paid traffic to KFI’s primary website to protect margins "
+     "approach": (("Shift to owned traffic", "Redirected paid traffic to KFI’s primary website to protect margins "
                    "and build a first-party customer database."),
-                  ("Tracking Infrastructure", "Implemented robust GTM, GA4, Google Ads, and Meta tracking with "
+                  ("Tracking infrastructure", "Implemented robust GTM, GA4, Google Ads, and Meta tracking with "
                    "dedicated conversion confirmation pages for precise attribution."),
-                  ("Multi-Channel Scaling", "Scaled Google PMax, Merchant Center feeds, and Meta ads, while "
+                  ("Multi-channel scaling", "Scaled Google PMax, Merchant Center feeds, and Meta ads, while "
                    "optimizing Amazon listings to maximize efficiency.")),
      "results": ("By shifting to owned traffic and fixing end-to-end conversion tracking, KFI increased website "
                  "orders 1.5× and doubled website revenue. Advertised products surged from 3–4 weekly sales to "
@@ -226,11 +271,11 @@ CASES = (
                    "With zero conversion signals for Meta and Google to optimize against, unedited raw creatives, "
                    "and no structured campaign architecture, the brand was unable to establish a consistent daily "
                    "sales flow."),
-     "approach": (("Custom Landing Page & Tracking", "Built a fast-loading custom landing page with direct checkout "
+     "approach": (("Custom landing page & tracking", "Built a fast-loading custom landing page with direct checkout "
                    "and deployed a full tracking stack (Meta CAPI, GA4, GTM, UTM passthrough)."),
-                  ("Creative & Talent Strategy", "Edited raw UGC into high-converting video ads featuring celebrity "
+                  ("Creative & talent strategy", "Edited raw UGC into high-converting video ads featuring celebrity "
                    "MUA Max May and Rachel de Oliveira, with hooks, captions, and CTAs."),
-                  ("Structured Full-Funnel Ads", "Deployed a 70/30 Meta and Google strategy combining consolidated "
+                  ("Structured full-funnel ads", "Deployed a 70/30 Meta and Google strategy combining consolidated "
                    "Meta ad sets with Google PMax and Search for full-funnel coverage.")),
      "results": ("Within 3 weeks of launch, the new strategy achieved consistent daily sales, growing orders from "
                  "0–1/day up to 5–6 on weekdays and 7–10 on weekends. The campaign delivered 32 orders "
@@ -250,11 +295,11 @@ CASES = (
                    "Blog publishing was inconsistent, with no structured topic research, seasonal timing, or local "
                    "search strategy connecting content to service bookings across their combined Australian "
                    "footprint."),
-     "approach": (("Search-Driven Blog Program", "2 SEO-optimised blogs per brand per week, with topics scored "
+     "approach": (("Search-driven blog program", "2 SEO-optimised blogs per brand per week, with topics scored "
                    "against real search demand from Search Console and SEMrush."),
-                  ("Seasonal & Event Timing", "Content published 4-6 weeks ahead of seasonal peaks — rainfall, "
+                  ("Seasonal & event timing", "Content published 4-6 weeks ahead of seasonal peaks — rainfall, "
                    "rodent season, World Cup — for peak search intent."),
-                  ("Local GBP Amplification", "104 Google Business Profiles managed with 2 posts per cycle, "
+                  ("Local GBP amplification", "104 Google Business Profiles managed with 2 posts per cycle, "
                    "reinforcing blog content at suburb level.")),
      "results": ("Over six months, the program delivered 66+ SEO-optimised blogs across all three brands, producing "
                  "multiple Position 1 rankings attributable to blog content. Mr Antenna reached 88,000 active users "
@@ -270,25 +315,26 @@ CASES_BY_SLUG = {c["slug"]: c for c in CASES}
 # An FAQ answer is a string, or (intro, [points], closing); a point may be "Label: text".
 SERVICE_PAGES = {
     "seo-services": {
+        "photo": "step-3", "proof": ("artistic-yoga", "+131%", "Keyword growth for Artistic Yoga"),
         "label": "SEO", "page_title": "SEO Services That Drive Revenue, Not Just Rankings",
         "title": "SEO built around revenue, not just rankings",
         "lead": "Rankings without revenue are a vanity metric. We build SEO strategy around the keywords, pages, and "
                 "technical fixes that actually move your business forward.",
-        "cta": "Get a Free SEO Audit", "problems_title": "Why Your Current SEO Isn’t Working",
-        "problems": (("Vanity Metrics Don’t Pay the Bills", "Impressions are up. Rankings are up. Revenue isn’t. "
+        "cta": "Get a free SEO audit", "problems_title": "Why your current SEO isn’t working",
+        "problems": (("Vanity metrics don’t pay the bills", "Impressions are up. Rankings are up. Revenue isn’t. "
                       "Most SEO reporting stops at traffic – we start there."),
-                     ("Technical Debt Is Costing You Rankings", "Broken links, slow load times, and crawl errors "
+                     ("Technical debt is costing you rankings", "Broken links, slow load times, and crawl errors "
                       "quietly cap your growth long before content becomes the bottleneck.")),
-        "why": (("We Audit Before We Strategize", "Full technical and content audit before any recommendation gets made."),
-                ("Content Tied to Buyer Intent", "Content mapped to where your buyer actually is in their decision, "
+        "why": (("We audit before we strategize", "Full technical and content audit before any recommendation gets made."),
+                ("Content tied to buyer intent", "Content mapped to where your buyer actually is in their decision, "
                  "not just search volume."),
-                ("Reporting on Revenue, Not Just Rankings", "Every report ties organic performance back to leads and "
+                ("Reporting on revenue, not just rankings", "Every report ties organic performance back to leads and "
                  "revenue.")),
-        "framework_title": "Our 4-Step SEO Growth Framework",
+        "framework_title": "Our four-step SEO growth framework",
         "framework_lead": "From initial technical audit to continuous optimization, here is how we turn search "
                           "visibility into measurable revenue for your business.",
-        "framework": ("Technical & Content Audit", "Keyword & Competitor Mapping", "On-Page & Content Execution",
-                      "Ongoing Optimization & Reporting"),
+        "framework": ("Technical & content audit", "Keyword & competitor mapping", "On-page & content execution",
+                      "Ongoing optimization & reporting"),
         "included_title": "Everything included in your SEO campaign",
         "included_lead": "Breakdown of the technical, content, and reporting deliverables driving your organic growth:",
         "included": ("Full technical SEO audit", "Keyword universe & competitor gap analysis",
@@ -328,27 +374,28 @@ SERVICE_PAGES = {
         ),
     },
     "ppc-management": {
+        "photo": "step-5", "proof": ("allure-avani", "214", "Qualified leads for Allure Avani"),
         "label": "PPC & Paid Media", "page_title": "PPC & Paid Media Management - Google Ads & Meta Ads",
         "title": "Paid campaigns built to convert, not just click",
         "lead": "More clicks mean nothing without more revenue. We manage Google Ads and Meta Ads around "
                 "cost-per-acquisition and ROAS – not vanity click or reach numbers.",
-        "cta": "Get a Free PPC Audit", "problems_title": "Why Your Current PPC Isn’t Working",
-        "problems": (("Wasted Spend Hides in Plain Sight", "Broken conversion tracking, bloated keyword lists, and poor "
+        "cta": "Get a free PPC audit", "problems_title": "Why your current PPC isn’t working",
+        "problems": (("Wasted spend hides in plain sight", "Broken conversion tracking, bloated keyword lists, and poor "
                       "account structure quietly burn budget every day – on Google or Meta."),
-                     ("More Clicks Isn’t the Goal", "A campaign optimized for clicks or reach alone can look busy "
+                     ("More clicks isn’t the goal", "A campaign optimized for clicks or reach alone can look busy "
                       "and still lose money. We optimize for what actually pays.")),
         "why": (("Accountable to CPA and ROAS", "Every campaign, on every platform, measured against "
                  "cost-per-acquisition and return, not just CTR or reach."),
-                ("Conversion Tracking Done Right", "We audit and fix tracking (Google Ads + Meta Pixel/CAPI) before "
+                ("Conversion tracking done right", "We audit and fix tracking (Google Ads + Meta Pixel/CAPI) before "
                  "touching a single bid or budget."),
-                ("Budget Allocated Across Platforms", "Not Locked to One, We shift spend between Google and Meta based "
+                ("Budget allocated across platforms", "Not Locked to One, We shift spend between Google and Meta based "
                  "on where it’s actually converting, not habit.")),
-        "framework_title": "Our 4-Step PPC Growth Framework",
+        "framework_title": "Our four-step PPC growth framework",
         "framework_lead": "From eliminating wasted ad spend to aggressive scaling, here is how we maximize your "
                           "cost-per-acquisition and bottom-line revenue.",
-        "framework": ("Account & Conversion Tracking Audit (Google Ads + Meta)",
-                      "Campaign Structure & Budget Rebuild Across Platforms",
-                      "Launch & Bid/Budget Strategy Optimization", "Ongoing Testing & Cross-Platform Reporting"),
+        "framework": ("Account & conversion tracking audit (Google Ads + Meta)",
+                      "Campaign structure & budget rebuild across platforms",
+                      "Launch & bid/budget strategy optimization", "Ongoing testing & cross-platform reporting"),
         "included_title": "Everything included in your PPC campaign",
         "included_lead": "Breakdown of the tracking, campaign, and reporting deliverables driving your paid media growth:",
         "included": ("Full Google Ads & Meta Ads account audit",
@@ -389,25 +436,26 @@ SERVICE_PAGES = {
         ),
     },
     "cro-services": {
+        "photo": "step-1", "proof": ("madge-beauty", "70%", "of Madge Beauty’s orders via the new landing page"),
         "label": "CRO", "page_title": "Conversion Rate Optimization (CRO) Services",
         "title": "Turn more visitors into customers - without spending more on traffic",
         "lead": "More traffic is expensive. A better-converting page is free after it’s built. We find and fix the "
                 "friction costing you conversions.",
-        "cta": "Get a Free CRO Audit", "problems_title": "Why Your Current CRO Model Isn’t Working",
-        "problems": (("You’re Paying to Lose Customers Twice", "Every visitor who doesn’t convert is spend you "
+        "cta": "Get a free CRO audit", "problems_title": "Why your current CRO model isn’t working",
+        "problems": (("You’re paying to lose customers twice", "Every visitor who doesn’t convert is spend you "
                       "already paid for, walking away."),
-                     ("Guesswork Isn’t a CRO Strategy", "Redesigning a page based on opinion instead of behavior "
+                     ("Guesswork isn’t a CRO strategy", "Redesigning a page based on opinion instead of behavior "
                       "data is a coin flip, not a strategy.")),
-        "why": (("Behavior Data Before Design Changes", "Heatmaps, session recordings, and funnel data drive every "
+        "why": (("Behavior data before design changes", "Heatmaps, session recordings, and funnel data drive every "
                  "recommendation."),
-                ("Tested, Not Assumed", "Every major change is A/B tested against real traffic, not shipped on instinct."),
-                ("Built to Compound With Your Ads & SEO", "CRO work makes every dollar already spent on traffic go "
+                ("Tested, not assumed", "Every major change is A/B tested against real traffic, not shipped on instinct."),
+                ("Built to compound with your ads & SEO", "CRO work makes every dollar already spent on traffic go "
                  "further.")),
-        "framework_title": "Our 4-Step CRO Growth Framework",
+        "framework_title": "Our four-step CRO growth framework",
         "framework_lead": "From identifying page friction to continuous A/B testing, here is how we convert more of "
                           "your site visitors into paying customers.",
-        "framework": ("Behavior & Funnel Audit", "Hypothesis & Test Roadmap", "A/B Testing & Iteration",
-                      "Rollout & Ongoing Optimization"),
+        "framework": ("Behavior & funnel audit", "Hypothesis & test roadmap", "A/B testing & iteration",
+                      "Rollout & ongoing optimization"),
         "included_title": "Everything included in your CRO campaign",
         "included_lead": "Breakdown of the research, testing, and UX deliverables driving your conversion growth:",
         "included": ("Full conversion funnel audit", "Heatmap & session recording analysis",

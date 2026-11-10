@@ -1,28 +1,35 @@
 {% extends "outcomes/base.html" %}
 {% import "site/_parts.html" as ui with context %}
 {% import "outcomes/_od.html" as odp with context %}
-{#- The three service pages (SEO, PPC & paid media, CRO): one layout, each page's words from
-    outcomes_content.SERVICE_PAGES. -#}
+{#- The three service pages (SEO, PPC & paid media, CRO), one story: what we promise (with a result from a
+    case study), why what you have isn't working, why brands switch, the four steps, what's included, the
+    proof, the questions, the next step. Each page's words: outcomes_content.SERVICE_PAGES. -#}
 {% block main %}
 {% set words = s.title.split(' ') %}
 {% set cut = (words|length // 2) %}
+{% set pc = od.CASES_BY_SLUG[s.proof[0]] %}
 
-<header class="wrap hero">
-  <span class="lbl rv fade">Services &middot; {{ s.label }}</span>
-  <h1 class="d1 rv od-svc-h1"><span class="ln"><span>{{ words[:cut]|join(' ') }}</span></span> <span class="ln"><span><span class="mk">{{ words[cut:]|join(' ') }}</span></span></span></h1>
-  <div class="hero-foot">
-    <span class="idx rv fade">01 / {{ s.label }}</span>
-    <div class="rv fade"><p class="lead">{{ s.lead }}</p></div>
-    <div class="btns rv fade">
-      <a class="btn btn-1" href="{{ url('contact') }}" data-cta="hero">{{ s.cta }}</a>
-      {{ odp.cal("Book a strategy call", "btn-2") }}
+<header class="wrap hero od-svc-hero">
+  <div class="od-hero-grid">
+    <div>
+      <span class="lbl rv fade">Services &middot; {{ s.label }}</span>
+      <h1 class="d1 rv od-svc-h1"><span class="ln"><span>{{ words[:cut]|join(' ') }}</span></span> <span class="ln"><span><span class="mk">{{ words[cut:]|join(' ') }}</span></span></span></h1>
+      <p class="lead rv fade">{{ s.lead }}</p>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="{{ url('contact') }}" data-cta="hero">{{ s.cta }}</a>
+        {{ odp.cal(cls="btn-2") }}
+      </div>
+    </div>
+    <div class="od-hero-pic rv fade">
+      <div class="od-hero-photo"><img src="/static/outcomes/img/{{ s.photo }}.webp" alt="" width="900" height="600"></div>
+      <a class="od-float od-float-proof c-orange" href="{{ url('case-study/' ~ pc.slug) }}"><b>{{ s.proof[1] }}</b><span>{{ s.proof[2] }}</span><i>Read the case study {{ ui.arrow() }}</i></a>
     </div>
   </div>
 </header>
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("02", "The problem", s.problems_title) }}
+  {{ odp.head("01", "The problem", s.problems_title) }}
   <div class="blks" style="margin-top:var(--s8)">
     {% for name, line in s.problems %}
     <article class="blk c-{{ ['ink', 'red'][loop.index0] }}">
@@ -36,42 +43,35 @@
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("03", "Why us", "Why brands", "switch to us.") }}
+  {{ odp.head("02", "Why brands switch to us", "What we do", "differently.") }}
   <div class="cells cells-3" style="margin-top:var(--s8)">
     {% for name, line in s.why %}
-    <a class="cell play-cell" href="{{ url('contact') }}">
-      <div class="cell-idx">{{ ui.icon(['search', 'shield', 'chart'][loop.index0]) }}<span class="lbl">Why us</span></div>
+    <div class="cell">
+      <div class="cell-idx">{{ ui.icon(['search', 'shield', 'chart'][loop.index0]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
       <h3>{{ name }}</h3>
       <p>{{ line }}</p>
-      <span class="more">Get Started {{ ui.arrow() }}</span>
-    </a>
+    </div>
     {% endfor %}
   </div>
 </section>
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>
-  {{ odp.head("04", "The framework", s.framework_title, None, s.framework_lead) }}
-  <div class="track" id="track" style="--n:4;margin-top:var(--s8)">
-    <div class="track-pin">
-      <div class="track-tabs" aria-label="The four steps">
-        {% for step in s.framework %}<button type="button"{% if loop.first %} class="on"{% endif %} data-i="{{ loop.index0 }}"><b>{{ '%02d'|format(loop.index) }}</b>Step {{ loop.index }}</button>{% endfor %}
-      </div>
-      <div class="track-view"><div class="track-rail">
-        {% for step in s.framework %}
-        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><h4>{{ step }}</h4></article>
-        {% endfor %}
-      </div></div>
-    </div>
-  </div>
+  {{ odp.head("03", "How it works", s.framework_title, None, s.framework_lead) }}
+  <ol class="od-flow4" style="margin-top:var(--s8)">
+    {% for step in s.framework %}
+    <li class="c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }} rv fade"><span class="od-flow4-n">{{ '%02d'|format(loop.index) }}</span><b>{{ step }}</b></li>
+    {% endfor %}
+  </ol>
 </section>
 
 <section class="inkband">
   <div class="wrap split split-top">
     <div>
-      <span class="lbl">05 &middot; What&rsquo;s included</span>
+      <span class="lbl">04 &middot; What&rsquo;s included</span>
       <h2 class="d3 rv" style="margin-top:var(--s4)"><span class="ln"><span>{{ s.included_title }}</span></span></h2>
       <p class="lead rv fade" style="margin-top:var(--s5)">{{ s.included_lead }}</p>
+      <div class="btns rv fade" style="margin-top:var(--s6)"><a class="btn btn-1" href="{{ url('contact') }}">{{ s.cta }}</a></div>
     </div>
     <ol class="od-incl">
       {% for item in s.included %}<li class="rv fade"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ item }}</li>{% endfor %}
@@ -80,7 +80,7 @@
 </section>
 
 <section class="wrap sec">
-  {{ odp.head("06", "Case studies", "Built for growth-stage", "and enterprise teams alike.") }}
+  {{ odp.head("05", "Case studies", "Built for growth-stage", "and enterprise teams alike.") }}
   <div class="od-case-grid od-case-grid-5" style="margin-top:var(--s8)">
     {% for c in od.CASES %}{{ odp.case_card(c, loop.index) }}{% endfor %}
   </div>
@@ -90,13 +90,13 @@
   <span class="rule rv"></span>
   <div class="faq-grid">
     <div>
-      {{ odp.head("07", "Questions", "Everything you", "need to know.") }}
-      <div class="btns" style="margin-top:var(--s6)"><a class="btn btn-2" href="{{ url('contact') }}">Get In Touch</a></div>
+      {{ odp.head("06", "Questions", "Everything you", "need to know.") }}
+      <div class="btns" style="margin-top:var(--s6)"><a class="btn btn-2" href="{{ url('contact') }}">Get in touch</a></div>
     </div>
     {{ odp.faq(s.faqs) }}
   </div>
 </section>
 
-{{ odp.cta("Want to get started?", "Click here to book a meeting.", s.cta) }}
+{{ odp.cta(s.cta ~ ".", "Tell us where you are today. We'll show you where the growth is hiding and what to fix first.", s.cta) }}
 
 {% endblock %}
