@@ -396,14 +396,32 @@ a.od-pillar:hover .more svg { transform: translateX(4px); }
 @media (max-width: 960px) { .od-flow4 li::after { display: none; } }
 
 /* ── Logos: platforms, clients, institutions ── */
-.od-logos-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4) var(--s7); padding-block: var(--s6);
+.od-logos-wrap { display: flex; align-items: center; gap: var(--s4) var(--s7); padding-block: var(--s6);
   border-block: 1px solid var(--rule); }
-.od-logos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s5) clamp(24px, 3.6vw, 52px); }
-.od-logos img { height: 36px; width: auto; max-width: 150px; object-fit: contain; filter: grayscale(1); opacity: .85;
-  transition: filter var(--dur-mid) ease, opacity var(--dur-mid) ease, transform 400ms var(--spring); }
-.od-logos img:hover { filter: none; opacity: 1; transform: translateY(-2px); }
-.od-logos-big { justify-content: center; padding: clamp(28px, 4vw, 52px); border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-block); }
-.od-logos-big img { height: clamp(40px, 4vw, 60px); max-width: 200px; filter: none; opacity: 1; }
+.od-logos-wrap > .lbl { flex: 0 0 auto; }
+.od-logos-wrap > .od-marquee { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 720px) { .od-logos-wrap { flex-direction: column; align-items: stretch; } }
+
+/* The logo carousel: tiles drift left on a loop and stop under the pointer. */
+.od-marquee { overflow: hidden; padding-block: 10px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+.od-marquee-track { display: flex; width: max-content; animation: od-marquee var(--dur, 40s) linear infinite; }
+.od-marquee:hover .od-marquee-track, .od-marquee:focus-within .od-marquee-track { animation-play-state: paused; }
+@keyframes od-marquee { to { transform: translateX(-50%); } }
+.od-logo-tile { flex: 0 0 auto; display: grid; place-items: center; width: clamp(170px, 15vw, 220px); height: clamp(96px, 8vw, 116px);
+  margin-right: clamp(12px, 1.4vw, 20px); padding: 18px 26px; border-radius: 18px; background: var(--card);
+  box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.06); transition: transform 400ms var(--spring); }
+.od-logo-tile:hover { transform: translateY(-3px); }
+.od-logo-tile.is-dark { background: #121213; }
+.od-logo-tile img { width: 100%; height: clamp(40px, 3.4vw, 50px); object-fit: contain; }
+.od-marquee-sm .od-logo-tile img { height: 34px; }
+.od-marquee-sm .od-logo-tile { width: clamp(132px, 11vw, 168px); height: 72px; padding: 14px 20px; }
+@media (prefers-reduced-motion: reduce) {
+  .od-marquee { overflow-x: auto; }
+  .od-marquee-track { animation: none; }
+  .od-logo-tile[aria-hidden] { display: none; }
+}
 .od-inst-list { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2) var(--s3); margin-top: var(--s5); }
 .od-inst-list li { padding: 8px 14px; border-radius: 99px; background: var(--paper2); font-size: var(--fs-sm); color: var(--ink2); }
 
@@ -428,6 +446,7 @@ a.od-pillar:hover .more svg { transform: translateX(4px); }
 .od-result-logo img { height: 26px; width: auto; max-width: 120px; object-fit: contain; display: block; }
 .od-result:hover .od-result-pic { transform: rotate(0) scale(1.06); transition: transform 400ms var(--spring); }
 .od-proof-logo { display: inline-flex; padding: 8px 12px; border-radius: 10px; background: #fff; margin-bottom: var(--s4); }
+.od-proof-logo.is-dark { background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
 .od-proof-logo img { height: 36px; width: auto; max-width: 140px; object-fit: contain; display: block; }
 
 /* ── The estimator's totals: one per line, so the largest figure fits ── */

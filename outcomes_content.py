@@ -91,6 +91,9 @@ EDU_LOGOS = (("Basil Woods International School", "logo-basil-woods.svg"), ("Cit
              ("Acharya Institute of Health Sciences", "logo-acharya.webp"), ("The Shri Ram Universal School", "logo-shri-ram.svg"),
              ("Krishnamurti Foundation India", "logo-kfi.webp"), ("LEAD School", "logo-lead-school.svg"))
 
+# White logos, shown on a dark tile so they can be seen.
+LOGOS_ON_DARK = frozenset({"logo-basil-woods.svg", "logo-city-college.webp", "logo-allure-avani.webp"})
+
 # What our clients say: (quote, client, who they are).
 HOME_QUOTES = (
     ("We’d relied on a single channel for so long that we didn’t really own our own customer relationships. "

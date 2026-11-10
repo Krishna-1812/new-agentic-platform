@@ -27,6 +27,19 @@
 </div>
 {%- endmacro %}
 
+{#- Logos in a carousel that scrolls on its own and stops under the pointer, like the live site's.
+    items are (name, file). Each half of the track repeats the logos until it is wide enough to fill a
+    large screen, so the loop never shows a gap; the second half is hidden from screen readers.
+    White logos sit on a dark tile (od.LOGOS_ON_DARK). -#}
+{% macro logos(items, label, small=False) -%}
+{% set reps = ((12 + items|length - 1) // items|length) %}
+<div class="od-marquee{{ ' od-marquee-sm' if small }}" role="region" aria-label="{{ label }}">
+  <div class="od-marquee-track" style="--dur:{{ items|length * reps * 3 }}s">
+    {% for half in range(2) %}{% for r in range(reps) %}{% for name, file in items %}<span class="od-logo-tile{{ ' is-dark' if file in od.LOGOS_ON_DARK }}"{% if half or r %} aria-hidden="true"{% endif %}><img src="/static/outcomes/img/{{ file }}" alt="{{ '' if half or r else name }}" title="{{ name }}" loading="lazy"></span>{% endfor %}{% endfor %}{% endfor %}
+  </div>
+</div>
+{%- endmacro %}
+
 {#- A client's words, on a colour block. -#}
 {% macro quote(text, who, sub, c="orange", initials=None) -%}
 <figure class="od-quote c-{{ c }}">

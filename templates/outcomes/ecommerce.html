@@ -50,7 +50,7 @@
 
 {#- The platforms we work on, as the live page shows them under its hero. -#}
 <div class="wrap od-logos-wrap"><span class="lbl">Platforms we work on</span>
-  <div class="od-logos">{% for name, file in od.ECOM_PLATFORMS %}<img src="/static/outcomes/img/{{ file }}" alt="{{ name }}" title="{{ name }}" loading="lazy">{% endfor %}</div>
+  {{ odp.logos(od.ECOM_PLATFORMS, "Platforms we work on", small=True) }}
 </div>
 
 <section class="wrap sec-sm">
