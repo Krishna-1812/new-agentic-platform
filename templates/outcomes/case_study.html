@@ -1,0 +1,71 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+
+<header class="wrap hero od-cs-hero">
+  <div class="od-ind-grid">
+    <div>
+      <div class="od-tags rv fade">{% for t in case.tags %}<span class="pill">{{ t }}</span>{% endfor %}</div>
+      <span class="lbl rv fade" style="display:block;margin-top:var(--s5)">{{ case.kind }}</span>
+      <h1 class="d1 rv"><span class="ln"><span><span class="mk">{{ case.title or case.name }}</span></span></span></h1>
+      <p class="lead rv fade" style="margin-top:var(--s5)">{{ case.sub }}</p>
+      <span class="od-small rv fade" style="display:block">Prepared by {{ od.BRAND }}</span>
+    </div>
+    <div class="od-cs-cover rv fade"><img src="/static/outcomes/img/case-{{ case.slug }}.webp" alt="{{ case.name }}" width="900" height="810"></div>
+  </div>
+</header>
+
+<section class="wrap">
+  <div class="blks blks-3">
+    {% for fig, label, line in case.top %}
+    <article class="blk c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
+      <div class="blk-price">{{ fig }}<small>{{ label }}</small></div>
+      <p>{{ line }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec">
+  <span class="rule rv"></span>
+  <div class="split split-top">
+    <div>
+      <span class="lbl">01 &middot; The Challenge</span>
+      <h2 class="d3 rv"><span class="ln"><span>The</span></span> <span class="ln"><span><span class="it">challenge.</span></span></span></h2>
+    </div>
+    <div class="od-story">{% for p in case.challenge %}<p class="rv fade">{{ p }}</p>{% endfor %}</div>
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {{ odp.head("02", "The Approach", "The", "approach.") }}
+  <div class="cells cells-3 cells-num" style="margin-top:var(--s8)">
+    {% for name, line in case.approach %}
+    <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span>{{ ui.icon(['target', 'spark', 'chart'][loop.index0]) }}</div><h3>{{ name }}</h3><p>{{ line }}</p></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="inkband">
+  <div class="wrap">
+    <span class="lbl">03 &middot; The Results</span>
+    <p class="lead rv fade od-results">{{ case.results }}</p>
+    <div class="stats" style="margin-top:var(--s8)">
+      {% for fig, label in case.figures %}<div class="stat rv fade"><b>{{ fig }}</b><span>{{ label }}</span></div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {{ odp.head("04", "Other work", "Other", "work.") }}
+  <div class="od-case-grid" style="margin-top:var(--s8)">
+    {% for c in others %}{{ odp.case_card(c, loop.index) }}{% endfor %}
+  </div>
+  <div class="btns sec-foot"><a class="btn btn-2" href="{{ url('case-studies') }}">View all</a></div>
+</section>
+
+{{ odp.cta("Want to get started?", "Click here to book a meeting.", "Book a meeting", od.CALENDLY, call=False) }}
+
+{% endblock %}

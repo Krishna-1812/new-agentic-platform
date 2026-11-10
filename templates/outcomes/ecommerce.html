@@ -1,0 +1,165 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+{% set L = od.ECOM_LEAK %}{% set st = L.stages.running %}
+{% set waste = (st.spend * st.rate)|round|int %}
+
+<header class="wrap hero od-ind-hero">
+  <div class="od-ind-grid">
+    <div>
+      <span class="lbl rv fade">For ecommerce businesses</span>
+      <h1 class="d1 rv"><span class="ln"><span>Impressions fade.</span></span> <span class="ln"><span><span class="mk">Outcomes stay.</span></span></span></h1>
+      <p class="lead rv fade" style="margin-top:var(--s6)">{{ od.ECOM_LEAD }}</p>
+      <div class="od-stage rv fade" role="group" aria-label="Where are you today">
+        <span class="lbl">Where are you today</span>
+        <div class="chips">{% for k in ('running', 'new') %}<button type="button" class="chip{% if k == 'running' %} on{% endif %}" data-stage="{{ k }}" aria-pressed="{{ 'true' if k == 'running' else 'false' }}">{{ L.stages[k].label }}</button>{% endfor %}</div>
+      </div>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="#plan" data-cta="hero">Request a callback</a>
+        {{ odp.cal("Book a free strategy call", "btn-2") }}
+      </div>
+      <p class="od-small rv fade">No pitch &middot; 45 min &middot; Free</p>
+    </div>
+
+    {#- The revenue leak estimator: the live page's model (outcomes_content.ECOM_LEAK), set out in full here
+        so it reads without script; outcomes.js moves it with the slider and the stage. -#}
+    <div class="od-calc rv fade" id="leakCalc" data-cfg='{{ L|tojson }}'>
+      <div class="od-calc-hd"><span><i class="od-live"></i>Revenue leak estimator</span><span class="pill" data-leak="tag">{{ st.tag }}</span></div>
+      <label class="od-calc-l" for="leakSpend">Your monthly ad spend</label>
+      <div class="od-calc-spend">
+        <button type="button" class="od-step" data-step="-1" aria-label="Less">&minus;</button>
+        <output data-leak="spend">{{ inr_short(st.spend) }}/mo</output>
+        <button type="button" class="od-step" data-step="1" aria-label="More">+</button>
+      </div>
+      <input type="range" id="leakSpend" min="{{ L.min }}" max="{{ L.max }}" step="{{ L.step }}" value="{{ st.spend }}" aria-label="Monthly ad spend in rupees">
+      <div class="od-calc-ends"><span>{{ inr_short(L.min) }}</span><span>{{ inr_short(L.max) }}</span></div>
+      <span class="od-calc-l">Where the leak usually hides</span>
+      <ul class="od-calc-rows">
+        {% for name, pct in L.split %}<li><span>{{ name }}</span><i style="--w:{{ (pct * 100)|round|int }}%"></i><b data-leak="part{{ loop.index0 }}">{{ inr_short((waste * pct)|round|int) }}</b></li>{% endfor %}
+      </ul>
+      <div class="od-calc-tot">
+        <div><span>Est. wasted / month</span><b data-leak="month">{{ inr(waste) }}</b></div>
+        <div><span>Recoverable / year</span><b data-leak="year">{{ inr((waste * 12 * st.years)|round|int) }}</b></div>
+      </div>
+      <a class="btn btn-1 od-calc-cta" href="#plan">Get the exact numbers for your store</a>
+      <p class="od-calc-note">Model based on 30+ audits</p>
+    </div>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {{ odp.head("02", "Experts in what matters", "3 things that decide if", "ecommerce marketing works.") }}
+  <div class="cells cells-3 cells-num" style="margin-top:var(--s8)">
+    {% for name, line in od.ECOM_MATTERS %}
+    <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span>{{ ui.icon(['chart', 'cart', 'spark'][loop.index0]) }}</div><h3>{{ name }}</h3><p>{{ line }}</p></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="method">
+  <span class="rule rv"></span>
+  {{ odp.head("03", "How we work", "One simple system -", "whether you're starting from zero or scaling up.") }}
+  <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
+    <div class="track-pin">
+      <div class="track-tabs" aria-label="The five steps">
+        {% for name, line in od.ECOM_STEPS %}<button type="button"{% if loop.first %} class="on"{% endif %} data-i="{{ loop.index0 }}"><b>{{ '%02d'|format(loop.index) }}</b>{{ ['Understand', 'Website', 'Ads', 'Run', 'Get found'][loop.index0] }}</button>{% endfor %}
+      </div>
+      <div class="track-view"><div class="track-rail">
+        {% for name, line in od.ECOM_STEPS %}
+        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><h4>{{ name }}</h4><p>{{ line }}</p></article>
+        {% endfor %}
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="services">
+  <span class="rule rv"></span>
+  {{ odp.head("04", "Services", "One team.", "Every channel that drives revenue.") }}
+  <div class="cells cells-4" style="margin-top:var(--s8)">
+    {% for name, line, items in od.ECOM_SERVICES %}
+    <div class="cell">
+      <div class="cell-idx">{{ ui.icon(['megaphone', 'search', 'pen', 'cart'][loop.index0]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
+      <h3>{{ name }}</h3><p>{{ line }}</p>
+      <ul class="ticks">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{{ ui.kin([['Tracking', 'Landing pages', 'Creative', 'Budget'], ['Audit', 'Fix', 'Scale', 'Profit']]) }}
+
+<section class="wrap sec-sm" id="diagnosis">
+  <span class="rule rv"></span>
+  {{ odp.head("05", "What we typically find", "The mistakes we keep finding -", "and fixing - across ecommerce brands.", "These are patterns from real audits, not hypotheticals. Fixing even one of these is often where the growth was hiding.") }}
+  <div class="od-finds" style="margin-top:var(--s8)">
+    {% for area, find, why in od.ECOM_FINDS %}
+    <article class="od-find rv fade">
+      <div class="od-find-hd"><span class="idx">{{ '%02d'|format(loop.index) }}</span><h3>{{ area }}</h3></div>
+      <div><span class="lbl">What we find</span><p>{{ find }}</p></div>
+      <div class="od-find-why"><span class="lbl">Why it matters</span><p>{{ why }}</p></div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="results">
+  <span class="rule rv"></span>
+  {{ odp.head("06", "Real results", "Real numbers, before and after -", "not likes or impressions.", "These are brands we've already worked with. If you're just starting out, this is the kind of result you're building toward.") }}
+  <div class="od-results-grid" style="margin-top:var(--s8)">
+    {% for brand, where, what, rows in od.ECOM_RESULTS %}
+    <article class="blk c-{{ ['orange', 'sky', 'amber', 'card'][loop.index0] }}">
+      <div class="blk-top"><span class="lbl">{{ where }}</span></div>
+      <h3>{{ brand }}</h3>
+      <p>{{ what }}</p>
+      <dl class="od-ba">{% for m, before, after in rows %}<div><dt>{{ m }}</dt><dd><s>{{ before }}</s><span aria-hidden="true">&rarr;</span><b>{{ after }}</b></dd></div>{% endfor %}</dl>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="inkband">
+  <div class="wrap">
+    <div class="stats od-stats-3">
+      {% for fig, what in od.ECOM_STATS %}<div class="stat rv fade"><b>{{ fig }}</b><span>{{ what }}</span></div>{% endfor %}
+    </div>
+    <p class="pull rv fade" style="margin-top:var(--s8);max-width:24ch">Clicks fade. <span class="mk">Outcomes stay.</span></p>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {{ odp.head("07", "In their words", "Founders who ship,", "on what changed.") }}
+  <div class="od-quotes" style="margin-top:var(--s8)">
+    {% for q, who, sub, ini in od.ECOM_QUOTES %}{{ odp.quote(q, who, sub, ['amber', 'sky', 'orange'][loop.index0], ini) }}{% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  <div class="split split-top">
+    <div>
+      <span class="lbl">08 &middot; Fit check</span>
+      <h2 class="d3 rv"><span class="ln"><span>This works for you whether</span></span> <span class="ln"><span><span class="it">you're new or established.</span></span></span></h2>
+      <p class="lead rv fade">If most of these sound like you, we're a good fit - no matter which stage you're at.</p>
+    </div>
+    <ul class="ticks od-fit rv fade">{% for f in od.ECOM_FIT %}<li>{{ f }}</li>{% endfor %}</ul>
+  </div>
+</section>
+
+<section class="limeband apply" id="plan" aria-label="Free growth plan">
+  <div class="wrap split split-top">
+    <div>
+      <span class="lbl">Free growth plan</span>
+      <h2 class="d2 rv"><span class="ln"><span>Let's figure out your</span></span> <span class="ln"><span><span class="it">next best move.</span></span></span></h2>
+      <p class="lead rv fade">Whether you're setting things up for the first time or already spending on ads, we'll show you exactly where the opportunity is - no obligation, no confusing jargon.</p>
+      <span class="lbl" style="display:block;margin-top:var(--s6)">What's included</span>
+      <ul class="ticks is-ink rv fade" style="margin-top:var(--s4)">{% for i in od.ECOM_PLAN %}<li>{{ i }}</li>{% endfor %}</ul>
+      <p class="od-small" style="margin-top:var(--s6)">Clicks fade. Outcomes stay. We audit, fix, and scale ecommerce funnels - profitably.</p>
+    </div>
+    {{ odp.form('ecom', 'Request my free growth plan') }}
+  </div>
+</section>
+
+{% endblock %}

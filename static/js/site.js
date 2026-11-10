@@ -116,7 +116,7 @@
     }
   }
 
-  /* ── The booking form (/book, and the application form on each partner page) ──
+  /* ── The booking form (/book, the application form on each partner page, the Outcomes Digital forms) ──
      Posts to the same intake as before (the Sheet, Slack and email). */
   var form = doc.getElementById("bookForm");
   if (!form) return;
@@ -153,7 +153,9 @@
         country: val("country"), message: val("message"), source: "book page", vid: vid,
         // The partner pages' own questions (/partners/agencies, /partners/consultants).
         based: val("based"), linkedin: val("linkedin"), years: val("years"), clients: val("clients"),
-        network: val("network")
+        network: val("network"),
+        // The Outcomes Digital pages' own questions (/outcomesdigital).
+        phone: val("phone"), city: val("city"), stage: val("stage"), budget: val("budget")
       };
     // A partner page's form says where it was sent from.
     if (form.getAttribute("data-source")) body.source = form.getAttribute("data-source");
@@ -171,6 +173,9 @@
           if (window.pressBurst) window.pressBurst(box.left + box.width / 2, box.top + box.height / 2, 64);
           try { doc.dispatchEvent(new CustomEvent("p2:lead_submit", { detail: { interest: val("pillar") } })); } catch (_) {}
           try { if (window.track) window.track("lead_submit", { interest: val("pillar") }); } catch (_) {}
+          // A form that names its next page (data-next, the Outcomes Digital thank-you page) opens it.
+          var next = form.getAttribute("data-next");
+          if (next && next.charAt(0) === "/") setTimeout(function () { window.location.href = next; }, 700);
         } else {
           err.textContent = (res.d && res.d.error) || "Something went wrong. Please try again.";
         }
