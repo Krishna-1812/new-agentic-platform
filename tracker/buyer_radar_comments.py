@@ -59,8 +59,9 @@ def collect(leads, *, per_post=PER_POST, account_id=None, client=None, sleep=tim
     leads = [x for x in leads if (x.get("post") or {}).get("social_id") and (x["post"].get("comments") or 0) != 0]
     if not leads:
         return out
+    from tracker import buyer_radar_unipile as uni
     if account_id is None:
-        account_id, err = client.linkedin_account_id()
+        account_id, err = uni.call(client.linkedin_account_id, sleep=sleep)
         if err is not None:
             out["error"] = "Unipile: %s" % client.describe_error(err)
             return out
@@ -68,7 +69,8 @@ def collect(leads, *, per_post=PER_POST, account_id=None, client=None, sleep=tim
     for i, lead in enumerate(leads):
         if i:
             sleep(random.uniform(1.0, 3.0))
-        data, err = client.list_comments(lead["post"]["social_id"], account_id, limit=min(100, per_post))
+        data, err = uni.call(client.list_comments, lead["post"]["social_id"], account_id, limit=min(100, per_post),
+                             sleep=sleep)
         if err is not None:
             if (err or {}).get("status") == 429:
                 out["error"] = "Unipile: %s" % client.describe_error(err)

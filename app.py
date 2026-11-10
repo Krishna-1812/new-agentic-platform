@@ -14824,7 +14824,7 @@ def buyer_radar_page():
     offers = [{"key": k, "label": o["label"], "site": o["site"], "queries": o["queries"], "jobs": o["jobs"]}
               for k, o in br.OFFERS.items()]
     return render_template("buyer_radar.html", user=_get_user(), offers=offers, client=viewer_is_client(),
-                           lead_sources=br.LEAD_SOURCES)
+                           lead_sources=br.LEAD_SOURCES, info_notes=list(br.INFO_NOTES))
 
 
 @app.route(BR + "/api/status")

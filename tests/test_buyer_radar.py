@@ -1261,3 +1261,128 @@ def test_a_runs_notes_show_to_the_team():
     out = run_js("return BR.renderRuns([{id: 1, status: 'ready', summary: {posts: 9, read: 3, kept: 1, "
                  "notes: ['Claude could not read 6 of the 9 posts (<b>x</b>).']}}]);")
     assert "Claude could not read 6 of the 9 posts" in out and "<b>x</b>" not in out
+
+
+# == a brief Unipile failure, and how a run's notes read (2026-11-10: one HTTP 502 on the first search
+#    stopped every LinkedIn search of the run, and its note sat in red among two that were only information) ==
+
+def _err(status):
+    return {"kind": "http_status", "status": status, "detail": ""}
+
+
+class _FlakyUnipile:
+    """A Unipile client whose first `fails` post searches answer `status`, then one post each."""
+
+    def __init__(self, fails, status=502):
+        self.fails, self.status, self.calls = fails, status, 0
+
+    def linkedin_account_id(self):
+        return "acc", None
+
+    def search_posts_filtered(self, account_id, **kw):
+        self.calls += 1
+        if self.calls <= self.fails:
+            return None, _err(self.status)
+        return {"items": [{"id": "urn:li:activity:7%015d" % self.calls, "text": "We need help", "share_url": "",
+                           "author": {"name": "A", "public_identifier": "a%d" % self.calls}}]}, None
+
+    describe_error = staticmethod(lambda err: "Unipile returned an error (HTTP %s)." % err["status"])
+
+
+@pytest.mark.parametrize("status", [502, 503, 504])
+def test_a_brief_unipile_failure_is_tried_again_before_the_search_gives_up(status):
+    from tracker import buyer_radar_unipile as uni
+    waits = []
+    client = _FlakyUnipile(fails=2, status=status)
+    out = uni.collect(["need an agency"], per_query=1, room=10, client=client, sleep=waits.append)
+    assert out["error"] is None and out["results"] == 1 and client.calls == 3
+    assert waits == list(uni.RETRY_WAIT_S), "two more tries, a few seconds apart"
+
+
+def test_a_failure_that_lasts_still_stops_the_search_after_two_more_tries():
+    from tracker import buyer_radar_unipile as uni
+    client = _FlakyUnipile(fails=99)
+    out = uni.collect(["one", "two"], per_query=1, room=10, client=client, sleep=lambda s: None)
+    assert client.calls == 3 and out["results"] == 0 and "HTTP 502" in out["error"]
+
+
+@pytest.mark.parametrize("status", [429, 500, 401])
+def test_linkedin_refusing_is_never_tried_again(status):
+    """LinkedIn's limit shows as 429 or 500: trying again would press on an account it is refusing."""
+    from tracker import buyer_radar_unipile as uni
+    client = _FlakyUnipile(fails=99, status=status)
+    out = uni.collect(["one"], per_query=1, room=10, client=client, sleep=lambda s: None)
+    assert client.calls == 1 and out["error"]
+
+
+def test_job_and_comment_searches_are_tried_again_too():
+    from tracker import buyer_radar_jobs as jobs, buyer_radar_comments as comments
+
+    class Client(_FlakyUnipile):
+        def search_jobs(self, account_id, q, **kw):
+            self.calls += 1
+            return (None, _err(503)) if self.calls == 1 else ({"items": []}, None)
+
+        def list_comments(self, social_id, account_id, **kw):
+            self.calls += 1
+            return (None, _err(504)) if self.calls == 1 else ({"items": []}, None)
+
+    c = Client(0)
+    assert jobs.collect(["Head of Marketing"], client=c, sleep=lambda s: None)["error"] is None and c.calls == 2
+    c = Client(0)
+    lead = {"post": {"social_id": "urn:li:activity:1", "comments": 3}}
+    out = comments.collect([lead], client=c, sleep=lambda s: None)
+    assert out["notes"] == [] and out["posts"] == 1 and c.calls == 2
+
+
+def test_sending_is_never_retried():
+    """A retry could send a message twice: the helper is used for searches only."""
+    src = open(os.path.join(ROOT, "tracker", "buyer_radar_send.py")).read()
+    assert "uni.call(" not in src and "buyer_radar_unipile.call(" not in src
+
+
+def test_a_note_that_only_says_how_the_run_went_is_information():
+    info = ["Today's LinkedIn results left (900) were shared out: 14 posts a search in place of 25.",
+            "Unipile looks back a month at most, so this search read the last month.",
+            "Stopped at today's Unipile limit of 900 search results.",
+            "LinkedIn was not searched: " + (br.UNIPILE_SPENT % 900) + " Customer profiles, Reddit, RFPs and Warmly still ran.",
+            "RFPs were searched in the last 3 days; the next search is due after that."]
+    problems = ["The post search did not run (Unipile: Unipile returned an error (HTTP 502)).",
+                "Claude could not read 6 of the 9 posts.", "The Reddit search “agency” failed (timeout).",
+                "Something new the run says."]
+    assert [br.note_level(n) for n in info] == ["info"] * len(info)
+    assert [br.note_level(n) for n in problems] == ["problem"] * len(problems)
+
+
+def test_every_information_note_is_one_the_agent_writes():
+    """INFO_NOTES are the starts of real notes: a reworded note would otherwise turn red without a test failing."""
+    import glob
+    code = "".join(open(f).read() for f in glob.glob(os.path.join(ROOT, "tracker", "buyer_radar*.py")))
+    for start in br.INFO_NOTES:
+        head = start.split(": ")[0] if start.startswith("LinkedIn was not searched") else start
+        assert head in code, start
+    assert br.UNIPILE_SPENT.startswith("today's limit")
+
+
+def test_the_page_shows_every_note_problems_first_in_red_and_information_in_grey():
+    notes = ["Today's LinkedIn results left (900) were shared out: 14 posts a search in place of 25.",
+             "Unipile looks back a month at most, so this search read the last month.",
+             "The post search did not run (HTTP 502).", "The Reddit search “x” failed (y).",
+             "Warmly's inbox could not be read (z)."]
+    out = run_js("BR.infoNotes.push.apply(BR.infoNotes, %s); return BR.renderRuns([{id: 1, status: 'ready', "
+                 "summary: {posts: 0, read: 0, kept: 0, notes: %s}}]);" % (json.dumps(list(br.INFO_NOTES)), json.dumps(notes)))
+    seen = ["LinkedIn results left (900) were shared out", "Unipile looks back a month", "The post search did not run",
+            "failed (y)", "inbox could not be read"]
+    for frag in seen:
+        assert frag in out, frag
+    assert out.count("br-note--problem") == 3 and out.count("br-note--info") == 2
+    assert out.index("The post search did not run") < out.index("LinkedIn results left")
+    assert out.index("Warmly") < out.index("Unipile looks back"), "every problem comes before the information"
+
+
+def test_the_page_is_given_the_information_notes_and_styles_them():
+    css = open(os.path.join(ROOT, "static", "css", "buyer_radar.css")).read()
+    assert ".br-r-t .br-note--problem { color: var(--clay-tx); }" in css
+    assert ".br-r-t .br-note--info { color: var(--tx3); }" in css
+    tpl = open(os.path.join(ROOT, "templates", "buyer_radar.html")).read()
+    assert 'id="brInfoNotes"' in tpl and "buyer_radar.css?v=12" in tpl and "buyer_radar.js') }}?v=15" in tpl

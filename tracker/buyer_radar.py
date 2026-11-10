@@ -343,6 +343,24 @@ UNIPILE_SPENT = ("today's limit of %d LinkedIn search results through Unipile is
                  "It starts again at 05:30 India time (midnight UTC); Apify can search LinkedIn now, at about $2 per "
                  "1,000 posts.")
 FAIR_MIN = 5          # posts a search reads at least, when the day's results are shared out
+# A run's notes that only say how it was run (a limit shared out, a window shortened, a search not due yet).
+# The page shows these in grey; every other note says something failed and is shown in red, so a new note
+# reads as a problem until it is added here. Each is the start of the note as the run writes it.
+INFO_NOTES = (
+    "Today's LinkedIn results left",
+    "Unipile looks back a month at most",
+    "Stopped at today's Unipile limit",
+    "LinkedIn was not searched: today's limit",
+    "RFPs were searched in the last",
+    "Decision makers were looked up for the best",
+    "Saleshandy knew nobody senior at",
+    "Saleshandy is still rate limiting, so the profiles after",
+)
+
+
+def note_level(note):
+    """"info" for a note that only says how the run went (INFO_NOTES), "problem" for any other."""
+    return "info" if str(note or "").startswith(INFO_NOTES) else "problem"
 
 
 def fair_share(room, searches, per_query):
