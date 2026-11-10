@@ -291,11 +291,11 @@ def test_the_same_figures_and_call_length_everywhere(client):
 
 def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(client):
     t = _text(client, site.PREFIX)
-    order = ["We drive", od.HOME_PROBLEM, "Not just another", "Most agencies stop at the leads", "Six disciplines",
+    order = ["We drive", "Not just another", "Most agencies stop at the leads", "Six disciplines",
              "Understand the business", "Built for the businesses", "Real numbers", "Core Care Clinic", "In their"]
     at = [t.index(x) for x in order]
     assert at == sorted(at), dict(zip(order, at))
-    hero = t[:t.index(od.HOME_PROBLEM)]
+    hero = t[:t.index("Not just another")]
     assert od.CTA_PLAN in hero and od.CTA_CALL in hero and "$5M+" in hero and "3X" in hero
     for name, line, link, ic, c in od.PILLARS:
         assert name in t and line in t
@@ -303,11 +303,20 @@ def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(cl
         assert headline in t and site.url(slug) in t
 
 
+def test_the_home_page_has_no_founders_story_section(client):
+    html = client.get(site.PREFIX).get_data(as_text=True)
+    assert "polished decks" not in html and "partner we wished we had" not in html
+    assert 'id="said"' not in html
+    # The difference now follows the hero directly, with a smaller gap above it.
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    assert ".od-home-hero + #difference { padding-top: var(--sec-sm); }" in css
+
+
 # == the home page's one argument: outcomes, not activity ===============================================
 
 def _hero(client):
     t = _text(client, site.PREFIX)
-    return t[:t.index(od.HOME_PROBLEM)]
+    return t[:t.index("Not just another")]
 
 
 def test_the_hero_says_we_are_not_another_agency_and_shows_it(client):

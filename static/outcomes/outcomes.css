@@ -634,3 +634,6 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
   .od-vs-arrow svg { transform: none; opacity: 1; }
   .od-live i { animation: none; }
 }
+
+/* The difference follows the hero directly, so it needs less room above it. */
+.od-home-hero + #difference { padding-top: var(--sec-sm); }

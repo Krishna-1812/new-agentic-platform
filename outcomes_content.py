@@ -89,9 +89,6 @@ HOME_STEPS = (
     ("Optimise & Scale", "Optimise and scale", "Dashboards and revenue trends drive every decision. What works gets "
      "more budget; what doesn't is cut.", "step-5"),
 )
-# The problem we were built to fix, in the founders' words (About).
-HOME_PROBLEM = ("We watched agency after agency present polished decks full of “brand awareness” and "
-                "“engagement,” while budgets climbed and revenue stayed flat.")
 # One connected team: (name, line, link under /outcomesdigital or None, icon, colour).
 PILLARS = (
     ("Strategy", "Growth roadmap, channel planning, and prioritisation.", None, "target", "orange"),
