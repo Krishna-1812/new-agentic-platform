@@ -350,7 +350,7 @@ SERVICE_PAGES = {
                       "Campaign Structure & Budget Rebuild Across Platforms",
                       "Launch & Bid/Budget Strategy Optimization", "Ongoing Testing & Cross-Platform Reporting"),
         "included_title": "Everything included in your PPC campaign",
-        "included_lead": "Breakdown of the technical, content, and reporting deliverables driving your organic growth:",
+        "included_lead": "Breakdown of the tracking, campaign, and reporting deliverables driving your paid media growth:",
         "included": ("Full Google Ads & Meta Ads account audit",
                      "Conversion tracking setup/repair (Google Ads + Meta Pixel/Conversions API)",
                      "Campaign & ad group/ad set restructuring across platforms",
@@ -514,8 +514,9 @@ ECOM_RESULTS = (
      (("ROAS · 6 months", "baseline", "17x"), ("CPA (₹)", "higher", "400-500"),
       ("Monthly revenue", "prior", "₹16-17L"))),
 )
-ECOM_STATS = (("$5M+", "Revenue generated for clients"), ("30+", "Ecommerce & growth-stage brands scaled"),
-              ("90%+", "Client retention"))
+# The same figures as About (ABOUT_IMPACT): 25+ brands, 74%+ retention, confirmed by the team on 10 November 2026.
+ECOM_STATS = (("$5M+", "Revenue generated for clients"), ("25+", "Ecommerce & growth-stage brands scaled"),
+              ("74%+", "Client retention"))
 ECOM_QUOTES = (
     ("We came to Outcomes Digital for performance marketing and left with a complete growth strategy - creative, "
      "funnel and reporting all improved together, and revenue grew alongside profitability.", "Dheeraj Jain",
@@ -580,6 +581,8 @@ EDU_SYSTEM = (
 EDU_TRUSTED = ("CBSE K-12 school, Hyderabad", "PG admissions — MBA & MCA, Bangalore",
                "Nursing & allied health sciences college, Bangalore", "CBSE K-12 school, North Bangalore",
                "Educational trust & schools, Chennai", "School transformation network, pan-India")
+# The Edu Tech strategy call is 30 minutes (confirmed by the team on 10 November 2026).
+EDU_CALL_MIN = 30
 # The enrolment leak calculator: a benchmark rate for fast, connected follow-up, and the sliders' ranges.
 EDU_CALC = {"enquiries": 300, "rate": 6, "benchmark": 15, "min": 50, "max": 2000, "step": 10,
             "rate_min": 1, "rate_max": 15, "rate_step": 0.5}

@@ -270,3 +270,18 @@ def test_each_form_asks_what_the_live_one_asks_and_opens_the_thank_you_page(clie
     assert 'data-source="outcomes digital"' in form and 'data-next="%s/thank-you"' % site.PREFIX in form
     names = re.findall(r'name="(\w+)"', form)
     assert [n for n in names if n != "pillar"] == list(fields), names
+
+
+def test_the_same_figures_and_call_length_everywhere(client):
+    """The team's answers (10 November 2026): 25+ brands, 74%+ retention, a 30-minute Edu Tech call; and the
+    PPC page's list is about paid media, not organic growth."""
+    about = {label: fig for kick, fig, label, line, tag in od.ABOUT_IMPACT}
+    ecom = {label: fig for fig, label in od.ECOM_STATS}
+    assert about["Businesses Scaled"] == ecom["Ecommerce & growth-stage brands scaled"] == "25+"
+    assert about["Client Retention"] == ecom["Client retention"] == "74%+"
+    for path in PATHS:
+        t = _text(client, path)
+        assert "90%+" not in t and "30+ Ecommerce" not in t and "organic growth:" not in t or path.endswith("seo-services"), path
+    edu = _text(client, site.PREFIX + "/education-marketing")
+    assert "30 min free strategy call" in edu and "45 min" not in edu
+    assert "paid media growth" in _text(client, site.PREFIX + "/ppc-management")
