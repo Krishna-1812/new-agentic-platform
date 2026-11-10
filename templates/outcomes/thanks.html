@@ -1,0 +1,19 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+
+<header class="wrap hero od-thanks">
+  <span class="lbl rv fade">Thank you</span>
+  <h1 class="d1 rv"><span class="ln"><span>You&rsquo;re one step closer</span></span> <span class="ln"><span>to <span class="mk">smarter growth.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">Request received</span>
+    <div class="rv fade"><p class="lead">{{ od.THANKS_TEXT }}</p></div>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="{{ url('case-studies') }}">See our case studies</a>
+      <a class="btn btn-2" href="{{ url() }}">Back to home</a>
+    </div>
+  </div>
+</header>
+
+{% endblock %}

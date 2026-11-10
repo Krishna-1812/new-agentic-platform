@@ -454,10 +454,31 @@ SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
 SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID", "") or "C0BE016E2E8"
 
 
-def _demo_request_to_slack(d: dict) -> bool:
+# The Outcomes Digital pages' forms (/outcomesdigital) post to #leads, unless OUTCOMES_SLACK_CHANNEL names another.
+OUTCOMES_SLACK_CHANNEL = os.environ.get("OUTCOMES_SLACK_CHANNEL", "") or "#leads"
+
+
+def _demo_request_to_slack(d: dict, channel: str = "") -> bool:
     """Post a 'Request access' submission to the #intelligence-platform-request-access
     channel. Prefers the Slack Web API (SLACK_BOT_TOKEN -> chat.postMessage to
-    SLACK_CHANNEL_ID); falls back to an incoming webhook (SLACK_WEBHOOK_URL)."""
+    SLACK_CHANNEL_ID); falls back to an incoming webhook (SLACK_WEBHOOK_URL). With channel
+    (the Outcomes Digital forms: #leads), that channel first, then the usual one if Slack refuses it."""
+    if channel and SLACK_BOT_TOKEN:
+        text = (":sparkles: *New Outcomes Digital enquiry*\n"
+                f"*Name:* {d.get('name','')}\n"
+                f"*Email:* {d.get('email','')}\n"
+                f"*Company:* {d.get('company') or '—'}\n"
+                f"*Form:* {d.get('interest') or '—'}\n"
+                f"*Details:* {d.get('message') or '—'}")
+        try:
+            r = requests.post("https://slack.com/api/chat.postMessage",
+                              headers={"Authorization": "Bearer " + SLACK_BOT_TOKEN},
+                              json={"channel": channel, "text": text}, timeout=8)
+            if r.ok and r.json().get("ok"):
+                return True
+            log.warning("Slack post to %s failed, using the usual channel: %s", channel, r.text[:200])
+        except Exception as e:
+            log.warning("Slack post to %s error, using the usual channel: %s", channel, e)
     text = (":sparkles: *New 'Request access' submission*\n"
             f"*Name:* {d.get('name','')}\n"
             f"*Work email:* {d.get('email','')}\n"
@@ -616,8 +637,11 @@ _BOOK_FIELDS = (("website", "Website"), ("sells", "Sells"), ("meet", "Wants to m
                 ("spend", "Monthly ad spend"), ("country", "Buyers in"),
                 # The partner pages' application forms (/partners/agencies, /partners/consultants).
                 ("based", "Based in"), ("linkedin", "LinkedIn"), ("years", "Years in paid marketing"),
-                ("clients", "Clients to bring"), ("network", "Network"))
-_FORM_SOURCES = ("old site", "book page", "partner page")
+                ("clients", "Clients to bring"), ("network", "Network"),
+                # The Outcomes Digital pages' forms (/outcomesdigital, outcomes_site.py).
+                ("phone", "Phone"), ("city", "City / location"), ("stage", "Where they are today"),
+                ("budget", "Monthly ad budget"))
+_FORM_SOURCES = ("old site", "book page", "partner page", "outcomes digital")
 
 
 @app.route("/api/demo-request", methods=["POST"])
@@ -648,7 +672,8 @@ def api_demo_request():
     payload = {"name": name, "email": email, "company": company,
                "interest": interest, "message": message, "ts": now, "ip": ip}
     sheet_ok = _demo_request_to_sheet(row)
-    slack_ok = _demo_request_to_slack(payload)
+    slack_ok = (_demo_request_to_slack(payload, OUTCOMES_SLACK_CHANNEL) if source == "outcomes digital"
+                else _demo_request_to_slack(payload))
     email_ok = _demo_request_to_email(payload)
     log.info("Demo request: %s <%s> [%s] (sheet=%s slack=%s email=%s)",
              name, email, interest, sheet_ok, slack_ok, email_ok)
@@ -962,6 +987,11 @@ def _site(template, page, title, description, crumbs=(), faqs=(), noindex=False,
                            year=datetime.now(IST).year,
                            warmly_pixel=warmly_id if _warmly.pixel_on(request.path) else "",
                            warmly_paths=_warmly.pixel_paths() if warmly_id else [], **kw)
+
+
+# outcomes.digital in the Northaxis look, at /outcomesdigital: unlisted (noindex, linked from nowhere here).
+import outcomes_site  # noqa: E402
+app.register_blueprint(outcomes_site.bp)
 
 
 @app.route("/gtm-engineering")

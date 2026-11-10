@@ -1,0 +1,155 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+{% set C = od.EDU_CALC %}
+{% set enrolled = (C.enquiries * C.rate / 100)|round|int %}
+{% set reach = (C.enquiries * C.benchmark / 100)|round|int %}
+
+<header class="wrap hero od-ind-hero">
+  <div class="od-ind-grid">
+    <div>
+      <span class="lbl rv fade">For education institutions</span>
+      <h1 class="d1 rv"><span class="ln"><span>More enquiries isn&rsquo;t the goal.</span></span> <span class="ln"><span>The goal is more</span></span> <span class="ln"><span><span class="mk">Admissions.</span></span></span></h1>
+      <p class="lead rv fade" style="margin-top:var(--s6)">{{ od.EDU_LEAD }}</p>
+      <div class="btns rv fade">
+        {{ odp.cal() }}
+        <a class="btn btn-2" href="#callback">Request a callback</a>
+      </div>
+      <p class="od-small rv fade">No pitch. No obligation. &middot; 45 min free strategy call</p>
+    </div>
+    <div class="od-journey rv fade" aria-label="Enquiry to enrolment">
+      <span class="lbl">01 / Enquiry to enrolment</span>
+      <ol>{% for s in od.EDU_JOURNEY %}<li class="c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ s }}</li>{% endfor %}</ol>
+    </div>
+  </div>
+</header>
+
+<section class="wrap sec-sm" id="who">
+  <span class="rule rv"></span>
+  {{ odp.head("02", "Who it's for", "Built for every kind of", "education journey.") }}
+  <div class="blks blks-3" style="margin-top:var(--s8)">
+    {% for name, decides, text, fills in od.EDU_WHO %}
+    <article class="blk c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
+      <div class="blk-top"><span class="lbl">{{ decides }}</span>{{ ui.icon(['home', 'cap', 'briefcase'][loop.index0]) }}</div>
+      <h3>{{ name }}</h3>
+      <p>{{ text }}</p>
+      <p class="model-suits"><b>What we fill</b>{{ fills }}</p>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="od-inline-cta rv fade"><p>See how this system could work for your next intake.</p>{{ odp.cal() }}</div>
+</section>
+
+<section class="wrap sec-sm" id="problems">
+  <span class="rule rv"></span>
+  {{ odp.head("03", "Common problems", "What we see in most", "education businesses.", "Six leaks. Every one of them costs you enrolments.") }}
+  <div class="cells cells-3 cells-num" style="margin-top:var(--s8)">
+    {% for name, line in od.EDU_PROBLEMS %}
+    <div class="cell"><div class="cell-idx"><span class="cell-n">{{ '%02d'|format(loop.index) }}</span></div><h3>{{ name }}</h3><p>{{ line }}</p></div>
+    {% endfor %}
+  </div>
+  <div class="od-inline-cta rv fade"><p>Recognise two or more of these? That&rsquo;s exactly where we start.</p>{{ odp.cal() }}</div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {{ odp.head("04", "Where we sit", "We own the marketing.", "Your admissions team owns the conversation.", "Together, we turn enquiries into enrolments.") }}
+  <div class="loop" style="margin-top:var(--s7)">
+    <div class="blk c-orange"><span class="lbl">Outcomes Digital</span><h3>Finding and preparing the right students</h3></div>
+    <div class="loop-arrows" aria-hidden="true">
+      <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h50M44 3l8 7-8 7"/></svg>
+      <svg viewBox="0 0 56 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M54 10H4M12 3l-8 7 8 7"/></svg>
+    </div>
+    <div class="blk c-sky"><span class="lbl">Your admissions team</span><h3>One shared view of every enquiry</h3><p>From first click to fee payment.</p></div>
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="system">
+  <span class="rule rv"></span>
+  {{ odp.head("05", "The system", "How We Work.", "One connected system — from discovery to enrolment.") }}
+  <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
+    <div class="track-pin">
+      <div class="track-tabs" aria-label="The system">
+        {% for k, name, line in od.EDU_SYSTEM %}<button type="button"{% if loop.first %} class="on"{% endif %} data-i="{{ loop.index0 }}"><b>{{ '%02d'|format(loop.index) }}</b>{{ k }}</button>{% endfor %}
+      </div>
+      <div class="track-view"><div class="track-rail">
+        {% for k, name, line in od.EDU_SYSTEM %}
+        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><span class="track-k">{{ k }}</span><h4>{{ name }}</h4><p>{{ line }}</p></article>
+        {% endfor %}
+      </div></div>
+    </div>
+  </div>
+  <p class="od-rail-cap rv fade"><span>Marketing</span><b>One connected system</b><span>Admissions</span></p>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {{ odp.head("06", "Why trust us with your admissions", "Trusted by schools and colleges", "shaping the next generation.") }}
+  <div class="cells cells-3" style="margin-top:var(--s8)">
+    {% for t in od.EDU_TRUSTED %}<div class="cell od-inst"><div class="cell-idx">{{ ui.icon(['home', 'cap', 'heart', 'home', 'users', 'spark'][loop.index0]) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div><h3>{{ t }}</h3></div>{% endfor %}
+  </div>
+</section>
+
+<section class="inkband" id="calc">
+  <div class="wrap split split-top">
+    <div>
+      <span class="lbl">07 &middot; Enrolment leak calculator</span>
+      <h2 class="d2 rv"><span class="ln"><span>How many seats are</span></span> <span class="ln"><span><span class="mk">slipping away?</span></span></span></h2>
+      <p class="lead rv fade">A quick gut-check — move the sliders to match your institution.</p>
+    </div>
+    <div class="od-calc od-calc-light" id="seatCalc" data-cfg='{{ C|tojson }}'>
+      <label class="od-calc-l" for="seatEnq">Monthly enquiries <output data-seat="enq">{{ C.enquiries }}</output></label>
+      <input type="range" id="seatEnq" min="{{ C.min }}" max="{{ C.max }}" step="{{ C.step }}" value="{{ C.enquiries }}">
+      <label class="od-calc-l" for="seatRate">Enquiry-to-enrolment rate <output data-seat="rate">{{ C.rate }}%</output></label>
+      <input type="range" id="seatRate" min="{{ C.rate_min }}" max="{{ C.rate_max }}" step="{{ C.rate_step }}" value="{{ C.rate }}">
+      <p class="od-calc-note">Compared against a {{ C.benchmark }}% benchmark for institutions with fast, connected follow-up. Indicative only.</p>
+      <div class="od-calc-tot">
+        <div><span>Seats left unfilled / month</span><b>~<output data-seat="gap">{{ reach - enrolled }}</output></b></div>
+      </div>
+      <p class="od-calc-say">At your current rate, roughly <b data-seat="gap2">{{ reach - enrolled }}</b> enquiries a month never turn into a seat filled — you enrol about <b data-seat="now">{{ enrolled }}</b>, when <b data-seat="reach">{{ reach }}</b> is within reach.</p>
+      {{ odp.cal(cls="btn-1 od-calc-cta") }}
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {{ odp.head("08", "Wherever you're starting from", "This works whichever", "one of these is you.") }}
+  <div class="models" style="margin-top:var(--s8)">
+    {% for name, line in od.EDU_START %}
+    <article class="model c-{{ ['orange', 'amber', 'sky'][loop.index0] }}"><span class="model-n">{{ '%02d'|format(loop.index) }}</span><h3>{{ name }}</h3><p>{{ line }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  <div class="split split-top">
+    <div>
+      <span class="lbl">09 &middot; Fit</span>
+      <h2 class="d3 rv"><span class="ln"><span>This is built</span></span> <span class="ln"><span><span class="it">for you if —</span></span></span></h2>
+    </div>
+    <ul class="ticks od-fit rv fade">{% for f in od.EDU_FIT %}<li>{{ f }}</li>{% endfor %}</ul>
+  </div>
+</section>
+
+<section class="limeband apply" id="callback" aria-label="Next step">
+  <div class="wrap split split-top">
+    <div>
+      <span class="lbl">10 &middot; Next step</span>
+      <h2 class="d2 rv"><span class="ln"><span>Let&rsquo;s see where your</span></span> <span class="ln"><span><span class="it">enquiries are leaking.</span></span></span></h2>
+      <h3 class="od-sub">Plan Your Next Intake &middot; Free strategy call</h3>
+      <p class="lead rv fade">Bring your current numbers — spend, enquiries, visits, applications and enrolments. We&rsquo;ll map where families or students drop out and show you what to fix first.</p>
+      <ul class="ticks is-ink rv fade" style="margin-top:var(--s5)">{% for i in od.EDU_CALL %}<li>{{ i }}</li>{% endfor %}</ul>
+      <div class="btns rv fade" style="margin-top:var(--s6)">{{ odp.cal() }}</div>
+      <p class="od-small" style="margin-top:var(--s6)">Admissions season coming up? See where enquiries are leaking.</p>
+    </div>
+    <div>
+      <span class="lbl">Request a callback &middot; Tell us about your institution</span>
+      <p class="od-small" style="margin:var(--s2) 0 var(--s4)">Share the details &middot; We respond within 24 hours</p>
+      {{ odp.form('edu', 'Share institution details') }}
+    </div>
+  </div>
+</section>
+
+{% endblock %}

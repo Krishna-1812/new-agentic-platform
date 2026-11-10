@@ -1,0 +1,16 @@
+{% extends "outcomes/base.html" %}
+{% block main %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">404</span>
+  <h1 class="d1 rv"><span class="ln"><span>This page</span></span> <span class="ln"><span><span class="mk">isn&rsquo;t here.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">Page not found</span>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="{{ url() }}">Go to the home page</a>
+      <a class="btn btn-2" href="{{ url('contact') }}">Contact us</a>
+    </div>
+  </div>
+</header>
+
+{% endblock %}

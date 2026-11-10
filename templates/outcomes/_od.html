@@ -1,0 +1,113 @@
+{#- The parts the Outcomes Digital pages share, on top of the Northaxis ones (site/_parts.html as ui).
+    Import with {% import "outcomes/_od.html" as odp with context %}. -#}
+{% import "site/_parts.html" as ui with context %}
+
+{#- The strategy call: straight to the team's calendar, in a new tab. -#}
+{% macro cal(label="Book a free strategy call", cls="btn-1", cta="call") -%}
+<a class="btn {{ cls }}" href="{{ od.CALENDLY }}" target="_blank" rel="noopener" data-cta="{{ cta }}">{{ label }}</a>
+{%- endmacro %}
+
+{#- A section's head, numbered in the margin like Northaxis's (ui.head), with this site's words. -#}
+{% macro head(n, label, title, italic=None, lead=None) -%}
+{% call ui.head(n, label, lead) %}<span class="ln"><span>{{ title }}</span></span>{% if italic %} <span class="ln"><span><span class="it">{{ italic }}</span></span></span>{% endif %}{% endcall %}
+{%- endmacro %}
+
+{#- Questions whose answers may carry points: a string, or (intro, [points], closing). A point written
+    "Label: text" sets the label in bold. -#}
+{% macro faq(items) -%}
+<div class="faq">
+  {% for q, a in items %}
+  <details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary>
+    {% if a is string %}<p>{{ a }}</p>{% else %}
+    {% if a[0] %}<p>{{ a[0] }}</p>{% endif %}
+    <ul class="ticks od-faq-pts">{% for pt in a[1] %}{% set k, _, v = pt.partition(': ') %}<li>{% if v %}<b>{{ k }}:</b> {{ v }}{% else %}{{ pt }}{% endif %}</li>{% endfor %}</ul>
+    {% if a[2] %}<p>{{ a[2] }}</p>{% endif %}{% endif %}
+  </details>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{#- A client's words, on a colour block. -#}
+{% macro quote(text, who, sub, c="orange", initials=None) -%}
+<figure class="od-quote c-{{ c }}">
+  <svg class="od-quote-mark" viewBox="0 0 48 36" aria-hidden="true"><path d="M0 36V22C0 9 7 1.5 19 0l2 6C14 8 11 12 11 18h8v18zm27 0V22C27 9 34 1.5 46 0l2 6c-7 2-10 6-10 12h8v18z"/></svg>
+  <blockquote>&ldquo;{{ text }}&rdquo;</blockquote>
+  <figcaption>{% if initials %}<span class="od-av">{{ initials }}</span>{% endif %}<span><b>{{ who }}</b><span>{{ sub }}</span></span></figcaption>
+</figure>
+{%- endmacro %}
+
+{#- A case study as a card with its cover, linking to it. -#}
+{% macro case_card(c, idx) -%}
+<a class="od-case" href="{{ url('case-study/' ~ c.slug) }}">
+  <span class="od-case-img"><img src="/static/outcomes/img/case-{{ c.slug }}.webp" alt="" loading="lazy" width="900" height="810"></span>
+  <span class="od-case-body">
+    <span class="lbl">{{ c.kind }}</span>
+    <b>{{ c.name }}</b>
+    <span class="od-case-top">{{ c.top[0][0] }} <i>{{ c.top[0][1] }}</i></span>
+    <span class="more">Read the case study {{ ui.arrow() }}</span>
+  </span>
+</a>
+{%- endmacro %}
+
+{#- The closing block: the sky band, with the growth plan and the strategy call. -#}
+{% macro cta(title, text, label="Get Growth Plan", href=None, call=True) -%}
+<section class="limeband" aria-label="Next step">
+  <div class="wrap">
+    <div class="shead">
+      <div class="shead-l"><span class="lbl">Next step</span></div>
+      <div class="shead-r">
+        <h2 class="d2 rv"><span class="ln"><span>{{ title|safe }}</span></span></h2>
+        <p class="lead rv fade">{{ text }}</p>
+        <div class="btns rv fade"><a class="btn btn-1 btn-hero" href="{{ href or url('contact') }}" data-cta="band"{% if href and href.startswith('http') %} target="_blank" rel="noopener"{% endif %}>{{ label }}</a>{% if call %}{{ cal(cls="btn-2") }}{% endif %}</div>
+      </div>
+    </div>
+  </div>
+</section>
+{%- endmacro %}
+
+{#- The lead form, on the white card. It posts through site.js to the same intake as Northaxis's /book,
+    tagged "outcomes digital" with the page it was sent from, then opens the thank-you page. kind picks
+    the questions each page of the live site asks. -#}
+{% macro form(kind, button="Send", note="Your information is used only to prepare for your call and is never shared.") -%}
+<div class="book-card od-form">
+  <form id="bookForm" data-source="outcomes digital" data-next="{{ url('thank-you') }}" novalidate>
+    <input type="hidden" name="pillar" value="Outcomes Digital &middot; {{ {'contact': 'Contact', 'ecom': 'eCommerce growth plan', 'edu': 'Education', 're': 'Real estate'}[kind] }}">
+    {% if kind == 'ecom' %}
+    <div class="f"><label for="in-stage">Where are you starting from?</label>
+      <select id="in-stage" name="stage"><option value="">Choose one&hellip;</option><option>Just getting started - not running ads yet</option><option>Already running ads / campaigns</option></select></div>
+    {% endif %}
+    <div class="f-row">
+      <div class="f" id="f-name"><label for="in-name">{{ 'Full name' if kind == 'ecom' else 'Name' }}</label><input id="in-name" name="name" autocomplete="name" required maxlength="120"></div>
+      <div class="f" id="f-email"><label for="in-email">{{ 'Email' if kind == 're' else 'Work email' }}</label><input id="in-email" name="email" type="email" autocomplete="email" required maxlength="160"></div>
+    </div>
+    <div class="f-row">
+      <div class="f"><label for="in-phone">Phone{{ ' number' if kind != 're' }}</label><input id="in-phone" name="phone" type="tel" autocomplete="tel" maxlength="40"></div>
+      {% if kind == 'ecom' %}
+      <div class="f"><label for="in-website">Website URL</label><input id="in-website" name="website" inputmode="url" placeholder="yourstore.com" maxlength="200"></div>
+      {% else %}
+      <div class="f"><label for="in-company">{{ {'contact': 'Company', 'edu': 'Institution / company name', 're': 'Company / project name'}[kind] }}</label><input id="in-company" name="company" autocomplete="organization" maxlength="160"></div>
+      {% endif %}
+    </div>
+    {% if kind == 'ecom' %}
+    <div class="f"><label for="in-budget">Monthly ad budget (current or planned)</label>
+      <select id="in-budget" name="budget"><option value="">Choose a range&hellip;</option>{% for b in od.ECOM_BUDGETS %}<option>{{ b }}</option>{% endfor %}</select></div>
+    {% elif kind == 're' %}
+    <div class="f-row">
+      <div class="f"><label for="in-city">City / location</label><input id="in-city" name="city" maxlength="120"></div>
+      <div class="f"><label for="in-stage">Where are you today?</label>
+        <select id="in-stage" name="stage"><option value="">Select one</option>{% for s in od.RE_STAGES %}<option>{{ s }}</option>{% endfor %}</select></div>
+    </div>
+    {% else %}
+    <div class="f"><label for="in-message">{{ 'What are the key challenges that you are facing currently?' if kind == 'edu' else 'How can we help?' }}</label><textarea id="in-message" name="message" rows="3" maxlength="2000"></textarea></div>
+    {% endif %}
+    <p class="f-err" id="formErr" role="alert"></p>
+    <button class="btn btn-1 f-submit" id="formSend" type="submit">{{ button }}</button>
+    <p class="f-note">{{ note }}</p>
+  </form>
+  <div class="f-done" id="formDone" role="status">
+    <span class="mark"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
+    <h3>{{ od.THANKS_TITLE }}</h3>
+    <p>{{ od.THANKS_TEXT }}</p>
+  </div>
+</div>
+{%- endmacro %}

@@ -1,0 +1,102 @@
+{#- ════════════════════════════════════════════════════════════════════════
+    OUTCOMES DIGITAL (/outcomesdigital): the layout every page shares.
+
+    outcomes.digital's words in the Northaxis look: the same design system
+    files (press.css, site.css, site.js, press-play.js) and the same parts,
+    with Outcomes Digital's name, mark, menus and footer. Unlisted: noindex
+    on every page (and an X-Robots-Tag header, outcomes_site.py), and nothing
+    here links to Northaxis or loads its tracking. Content: outcomes_content.py.
+-#}
+{%- import "site/_parts.html" as ui with context -%}
+{%- import "outcomes/_od.html" as odp with context -%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ od.BRAND }}">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="{{ description }}">
+<meta name="theme-color" content="#F1EFED">
+<link rel="icon" type="image/webp" href="/static/outcomes/img/mark.webp">
+<link rel="apple-touch-icon" href="/static/outcomes/img/mark-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/press.css?v=8">
+<link rel="stylesheet" href="/static/css/site.css?v=5">
+<link rel="stylesheet" href="/static/outcomes/outcomes.css?v=1">
+<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
+</head>
+<body data-page="od-{{ page }}" class="od">
+<a class="skip" href="#main">Skip to content</a>
+<div class="prog" id="prog" aria-hidden="true"></div>
+
+<nav class="nv" id="nv" aria-label="Main">
+  <a class="nv-brand od-brand" href="{{ url() }}" aria-label="{{ od.BRAND }} home"><img src="/static/outcomes/img/mark.webp" alt="" width="34" height="34"><span class="bn-word">Outcomes<span class="od-dot">.digital</span></span></a>
+  <div class="nv-links">
+    <div class="od-menu"><button class="nv-link od-menu-btn" type="button" aria-expanded="false"{% if page == 'service' %} aria-current="page"{% endif %}>Services <span aria-hidden="true">&#9662;</span></button>
+      <div class="od-drop">{% for slug, name in od.SERVICES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div></div>
+    <div class="od-menu"><button class="nv-link od-menu-btn" type="button" aria-expanded="false"{% if page in ('ecommerce', 'education', 'real-estate') %} aria-current="page"{% endif %}>Industries <span aria-hidden="true">&#9662;</span></button>
+      <div class="od-drop">{% for slug, name in od.INDUSTRIES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div></div>
+    <a class="nv-link" href="{{ url('case-studies') }}"{% if page in ('cases', 'case') %} aria-current="page"{% endif %}>Case Studies</a>
+    <a class="nv-link" href="{{ url('about-us') }}"{% if page == 'about' %} aria-current="page"{% endif %}>About Us</a>
+  </div>
+  <div class="nv-cta">
+    <a class="btn btn-1" href="{{ url('contact') }}" data-cta="header">Get Growth Plan</a>
+    <button class="nv-burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sheet"><i></i><i></i></button>
+  </div>
+</nav>
+
+{#- The phone menu: the same full-screen ink page as Northaxis, with this site's links. -#}
+<div class="nv-sheet" id="sheet" aria-hidden="true">
+  {% set links = [('', 'Home')] + od.SERVICES|list + od.INDUSTRIES|list + [('case-studies', 'Case Studies'), ('about-us', 'About Us'), ('contact', 'Contact')] %}
+  {% for slug, name in links %}<a href="{{ url(slug) }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ name }}</a>
+  {% endfor %}<div class="nv-sheet-foot">
+    <a class="btn btn-1" href="{{ url('contact') }}">Get Growth Plan</a>
+    <a class="btn btn-2" href="{{ od.CALENDLY }}" target="_blank" rel="noopener">Book a strategy call</a>
+  </div>
+</div>
+
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+
+<svg class="shape-lib" aria-hidden="true" focusable="false" width="0" height="0">{% for k, d in site.SHAPES.items() %}<path id="shp-{{ k }}" d="{{ d }}"/>{% endfor %}</svg>
+
+{#- The colophon: the orange block, OUTCOMES .DIGITAL at display size, as on the live site. -#}
+<footer class="foot">
+  <div class="wrap foot-top"><a class="foot-word" href="{{ url() }}" aria-label="{{ od.BRAND }} home">Outcomes</a>
+    <div class="toys" aria-hidden="true">{% for c, sh in [('ink','circle'),('paper','quarter'),('sky','leaf'),('red','star'),('acc','plus'),('paper','triangle')] %}<span class="toy t-{{ c }}"><svg viewBox="0 0 100 100"><path data-shape="{{ sh }}" d="{{ site.SHAPES[sh] }}"/></svg></span>{% endfor %}</div>
+  </div>
+  <div class="wrap"><span class="od-foot-dot">.digital</span></div>
+  <div class="wrap foot-in">
+    <div>
+      <p class="foot-tag">{{ od.TAGLINE }}</p>
+      <a class="btn btn-1" href="{{ url('contact') }}" data-cta="footer">Get Growth Plan</a>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col"><h5>Services</h5>{% for slug, name in od.SERVICES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div>
+      <div class="foot-col"><h5>Industries</h5>{% for slug, name in od.INDUSTRIES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div>
+      <div class="foot-col"><h5>Company</h5><a href="{{ url('about-us') }}">About Us</a><a href="{{ url('case-studies') }}">Case Studies</a><a href="{{ url('contact') }}">Contact</a></div>
+      <div class="foot-col"><h5>Say hello</h5><a href="mailto:{{ od.EMAIL }}">{{ od.EMAIL }}</a>
+        <h5 style="margin-top:var(--s5)">Get social</h5>{% for name, href in od.SOCIAL %}<a href="{{ href }}" target="_blank" rel="noopener">{{ name }}</a>{% endfor %}</div>
+    </div>
+  </div>
+  <div class="wrap foot-bottom">
+    <span>&copy;{{ year }} {{ od.BRAND }}. All rights reserved.</span>
+    <span>Trusted by ambitious brands</span>
+  </div>
+</footer>
+
+<script src="/static/js/site.js?v=4" defer></script>
+<script src="{{ url_for('static', filename='vendor/anime/anime.nx.min.js') }}?v=4.5.0" defer></script>
+<script src="{{ url_for('static', filename='js/press-play.js') }}?v=6" defer></script>
+<script src="/static/outcomes/outcomes.js?v=1" defer></script>
+</body>
+</html>

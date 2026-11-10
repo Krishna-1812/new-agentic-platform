@@ -1,0 +1,90 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+
+<header class="wrap hero hero-play">
+  {#- The deck, as on Northaxis, dealt with the clients' own cards. -#}
+  <div class="deck od-deck" id="deck" aria-hidden="true">
+    {% for name, ind, img in od.CLIENTS[:4] %}<div class="deck-card od-photo" data-pos="{{ loop.index0 }}"><img src="/static/outcomes/img/{{ img }}.webp" alt="" width="400" height="500"><span class="od-photo-cap"><b>{{ name }}</b>{{ ind }}</span></div>
+    {% endfor %}<svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk" textLength="272" lengthAdjust="spacing">STRATEGY • CREATIVE • PAID MEDIA • CRO •</textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
+  </div>
+  <span class="lbl rv fade">Outcomes Digital</span>
+  <h1 class="d1 rv"><span class="ln"><span>We don&rsquo;t do</span></span> <span class="ln"><span><span class="it">marketing.</span></span></span> <span class="ln"><span>We drive</span></span> <span class="ln"><span><span class="mk">outcomes.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">01 / Overview</span>
+    <div class="rv fade">
+      <p class="lead">{{ od.HOME_LEAD }}</p>
+      <div class="od-hero-stats"><span class="lbl">Our clients have seen:</span>
+        {% for fig, what in od.HOME_STATS %}<div><b>{{ fig }}</b><span>{{ what }}</span></div>{% endfor %}
+      </div>
+    </div>
+    <div class="btns rv fade">
+      <a class="btn btn-1" href="{{ url('contact') }}" data-cta="hero">Get a growth audit</a>
+      <a class="btn btn-2" href="#how">How we drive outcomes</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="tick" aria-label="Our clients">
+  <div class="tick-track">
+    {% for copy in range(2) %}{% for name, ind, img in od.CLIENTS %}<span class="tick-i od-tick"{% if copy %} aria-hidden="true"{% endif %}>{{ name }} <small>{{ ind }}</small></span>{% endfor %}{% endfor %}
+  </div>
+</div></div>
+
+<section class="wrap sec od-clients">
+  <span class="rule rv"></span>
+  {{ odp.head("02", "Our clients", "Trusted by", "ambitious brands.") }}
+  <div class="od-cards" style="margin-top:var(--s8)">
+    {% for name, ind, img in od.CLIENTS %}
+    <figure class="od-card rv fade"><img src="/static/outcomes/img/{{ img }}.webp" alt="{{ name }}" loading="lazy" width="400" height="500"><figcaption><b>{{ name }}</b><span>{{ ind }}</span></figcaption></figure>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm" id="how">
+  <span class="rule rv"></span>
+  {{ odp.head("03", "How we drive outcomes", "Strategy first.", "Systems that connect.", "Execution that performs.") }}
+  <div class="track" id="track" style="--n:5;margin-top:var(--s8)">
+    <div class="track-pin">
+      <div class="track-tabs" aria-label="The five steps">
+        {% for tab, title, line in od.HOME_STEPS %}<button type="button"{% if loop.first %} class="on"{% endif %} data-i="{{ loop.index0 }}"><b>{{ '%02d'|format(loop.index) }}</b>{{ tab }}</button>{% endfor %}
+      </div>
+      <div class="track-view"><div class="track-rail">
+        {% for tab, title, line in od.HOME_STEPS %}
+        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><h4>{{ title }}</h4><p>{{ line }}</p></article>
+        {% endfor %}
+      </div></div>
+    </div>
+  </div>
+</section>
+
+{{ ui.kin([['Strategy', 'Creative', 'Paid Media', 'CRO'], ['Leads', 'Revenue', 'Growth', 'Outcomes']]) }}
+
+<section class="inkband">
+  <div class="wrap">
+    <div class="stats od-stats-2">
+      {% for fig, what in od.HOME_STATS %}<div class="stat rv fade"><b>{{ fig }}</b><span>{{ what }}</span></div>{% endfor %}
+    </div>
+    <p class="pull rv fade" style="margin-top:var(--s8);max-width:24ch">We don&rsquo;t do marketing. <span class="mk">We drive outcomes.</span></p>
+  </div>
+</section>
+
+<section class="wrap sec">
+  {{ odp.head("04", "What our clients say", "What our", "clients say.") }}
+  <div class="od-quotes" style="margin-top:var(--s8)">
+    {% for q, who, sub in od.HOME_QUOTES %}{{ odp.quote(q, who, sub, ['amber', 'sky', 'orange'][loop.index0]) }}{% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec-sm">
+  <span class="rule rv"></span>
+  {{ odp.head("05", "Case studies", "Case", "studies.") }}
+  <div class="od-case-grid" style="margin-top:var(--s8)">
+    {% for c in od.CASES %}{{ odp.case_card(c, loop.index) }}{% endfor %}
+  </div>
+</section>
+
+{{ odp.cta("Get a growth audit.", od.HOME_LEAD) }}
+
+{% endblock %}

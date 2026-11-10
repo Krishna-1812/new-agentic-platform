@@ -1,0 +1,35 @@
+{% extends "outcomes/base.html" %}
+{% import "site/_parts.html" as ui with context %}
+{% import "outcomes/_od.html" as odp with context %}
+{% block main %}
+
+<header class="wrap hero">
+  <span class="lbl rv fade">Case Studies</span>
+  <h1 class="d1 rv"><span class="ln"><span>Case</span></span> <span class="ln"><span><span class="mk">studies.</span></span></span></h1>
+  <div class="hero-foot">
+    <span class="idx rv fade">{{ '%02d'|format(od.CASES|length) }} / Clients</span>
+    <div class="rv fade"><ul class="od-case-index">{% for c in od.CASES %}<li><a href="{{ url('case-study/' ~ c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>
+  </div>
+</header>
+
+<section class="wrap sec-sm">
+  <div class="od-case-list">
+    {% for c in od.CASES %}
+    <a class="od-case-row rv fade" href="{{ url('case-study/' ~ c.slug) }}">
+      <span class="od-case-row-img"><img src="/static/outcomes/img/case-{{ c.slug }}.webp" alt="" loading="lazy" width="900" height="810"></span>
+      <span class="od-case-row-body">
+        <span class="idx">{{ '%02d'|format(loop.index) }}</span>
+        <span class="lbl">{{ c.category }} &middot; {{ c.date }}</span>
+        <b>{{ c.name }}</b>
+        <span class="od-tags">{% for t in c.tags %}<span class="pill">{{ t }}</span>{% endfor %}</span>
+        <span class="od-case-row-figs">{% for fig, label, line in c.top %}<span><b>{{ fig }}</b>{{ label }}</span>{% endfor %}</span>
+        <span class="more">Read the case study {{ ui.arrow() }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{{ odp.cta("Want to get started?", "Click here to book a meeting.", "Book a meeting", od.CALENDLY, call=False) }}
+
+{% endblock %}
