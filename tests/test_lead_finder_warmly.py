@@ -272,7 +272,7 @@ def test_what_a_message_may_say_depends_on_the_signal():
     assert "Never say or hint that you saw them on the website" in _draft_prompt(old)
     for prompt in (social, hire, research):
         assert "Never mention Warmly" in prompt and "tracked or identified" in prompt
-    assert set(judge.WARMLY_MAY_SAY) == {"website", "social", "new_hire", "job_change", "hiring", "research", "other"}
+    assert set(judge.WARMLY_MAY_SAY) == {"website", "social", "new_hire", "job_change", "hiring", "research", "news", "other"}
 
 
 def test_the_judge_is_told_how_to_score_each_signal():

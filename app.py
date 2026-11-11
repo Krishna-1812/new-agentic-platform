@@ -15264,6 +15264,72 @@ def lead_finder_warmly_webhook(token):
     return jsonify(ok=True, kept=kept, skipped=skipped, repeats=repeats)
 
 
+@app.route("/api/lead-finder/warmly-push", methods=["GET", "POST"])
+def lead_finder_warmly_push():
+    """The daily Warmly routine (docs/warmly-engine.md): what Warmly's MCP server found, sent by
+    scripts/warmly_push.py. The workspace's Warmly token comes in the X-Warmly-Push-Token header (the
+    routine's network proxy adds it, so it is never in a prompt or a file). GET answers the month's Warmly
+    credit budget and what is left for today; POST keeps the rows as the webhook keeps its records, and
+    books the credits the routine says it spent."""
+    from tracker import buyer_radar_store as store, buyer_radar_warmly as wm
+    token = (request.headers.get(wm.PUSH_HEADER) or "").strip()
+    if not wm.valid_token(token):
+        return jsonify(ok=False, error="Unknown token."), 404
+    try:
+        owner = store.owner_of_warmly_token(token)
+        if not owner:
+            return jsonify(ok=False, error="Unknown token."), 404
+        used = store.warmly_credits_month(owner)
+    except store.StoreUnavailable:
+        return jsonify(ok=False, error="The database is unavailable."), 503
+    budget = wm.engine_budget()
+    if request.method == "GET":
+        try:
+            inbox = store.warmly_counts(owner)
+        except store.StoreUnavailable:
+            return jsonify(ok=False, error="The database is unavailable."), 503
+        return jsonify(ok=True, budget=budget, used=used, today=wm.allowance(used, budget), inbox=inbox)
+    body = request.get_json(silent=True, force=True)
+    batches = body.get("batches") if isinstance(body, dict) else None
+    if not isinstance(batches, list):
+        return jsonify(ok=False, error='Send {"batches": [{"kind": "visitors", "rows": [...]}], "credits": 0}.'), 400
+    try:
+        credits = float((body or {}).get("credits") or 0)
+    except (TypeError, ValueError):
+        return jsonify(ok=False, error="credits is a number."), 400
+    if not 0 <= credits <= 5000:
+        return jsonify(ok=False, error="credits is between 0 and 5000."), 400
+    now = datetime.now(timezone.utc).isoformat()
+    counts, seen = {}, 0
+    try:
+        for batch in batches:
+            kind = (batch or {}).get("kind") if isinstance(batch, dict) else None
+            rows = (batch or {}).get("rows") if isinstance(batch, dict) else None
+            if kind not in wm.MCP_KINDS or not isinstance(rows, list):
+                return jsonify(ok=False, error="Each batch is {kind: %s, rows: [...]}." % "|".join(wm.MCP_KINDS)), 400
+            c = counts.setdefault(kind, {"kept": 0, "skipped": 0, "repeats": 0})
+            for row in rows:
+                if seen >= wm.MAX_ROWS:
+                    c["skipped"] += 1
+                    continue
+                seen += 1
+                record = wm.from_mcp(kind, row)
+                signal = wm.normalize(record, now) if record and len(json.dumps(record, default=str)) <= wm.MAX_BYTES else None
+                if not signal:
+                    c["skipped"] += 1
+                elif store.warmly_add(owner, signal, record):
+                    c["kept"] += 1
+                else:
+                    c["repeats"] += 1
+        if credits:
+            store.add_spend(None, owner, "warmly-routine", "warmly", "signals", credits=credits)
+    except store.StoreUnavailable:
+        return jsonify(ok=False, error="The database is unavailable."), 503
+    used += credits
+    return jsonify(ok=True, kinds=counts, kept=sum(c["kept"] for c in counts.values()), budget=budget, used=used,
+                   today=wm.allowance(used, budget))
+
+
 @app.route(BR + "/api/warmly", methods=["POST"])
 @position2_required
 def buyer_radar_warmly_address():

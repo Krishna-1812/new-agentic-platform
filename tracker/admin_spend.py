@@ -110,7 +110,10 @@ SOURCES = (
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),
     ("buyer-radar-emails", "Lead Finder (Saleshandy)", "credits", """
         SELECT owner, started_by, NULL::text, credits, created_at
-          FROM br_spend WHERE created_at >= %(since)s AND credits > 0"""),
+          FROM br_spend WHERE created_at >= %(since)s AND credits > 0 AND provider <> 'warmly'"""),
+    ("buyer-radar-warmly", "Lead Finder (Warmly)", "credits", """
+        SELECT owner, started_by, NULL::text, credits, created_at
+          FROM br_spend WHERE created_at >= %(since)s AND credits > 0 AND provider = 'warmly'"""),
     ("contact-finder", "Contact Finder", "credits", """
         SELECT email, NULL::text, NULL::text, credits, created_at
           FROM cpi_credit_ledger WHERE created_at >= %(since)s AND credits > 0"""),

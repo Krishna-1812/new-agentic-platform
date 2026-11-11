@@ -138,6 +138,39 @@ OFFERS = {
             '"recommend an agency" OR "agency recommendations" OR "can anyone recommend an agency"',
         ],
     },
+    # Outcomes Digital (2026-11-11): the claims are what its own site says (outcomes_content.py): the three
+    # industries, what each is measured on, the channels, and the published figures.
+    "outcomes": {
+        "label": "Outcomes Digital",
+        "site": "https://outcomes.digital",
+        "sells": ("Outcomes Digital (outcomes.digital) is a performance marketing team measured on business "
+                  "outcomes, not clicks: strategy, creative, paid media (Google, Meta, TikTok), SEO, conversion "
+                  "rate optimisation and server-side tracking, run as one connected team. It works with eCommerce and "
+                  "D2C brands (measured on profitable revenue), schools, colleges and universities (measured on "
+                  "admissions) and real estate developers (measured on site visits). Its site reports $5M+ revenue "
+                  "generated for clients, 25+ businesses scaled and 74%+ client retention."),
+        "buyers": ("Founders, CEOs, heads of growth and marketing heads of eCommerce and D2C brands (Shopify, "
+                   "WooCommerce, beauty, fashion, wellness, home); admissions, marketing and outreach heads, "
+                   "principals and directors of schools, colleges and universities; and marketing or sales heads at "
+                   "real estate developers. Mostly in India, also Australia and the UAE. They want more orders, "
+                   "admissions or site visits, a lower customer acquisition cost or a better ROAS, are unhappy with "
+                   "an agency that reports clicks and leads, or are looking for a performance marketing, Meta or "
+                   "Google Ads, SEO or CRO agency. A brand, school or developer is the buyer; agencies and "
+                   "freelancers selling the same are not."),
+        "decision_makers": ["Marketing", "C-Suite"],
+        "jobs": ["performance marketing manager", "ecommerce marketing manager", "admissions marketing manager",
+                 "real estate marketing manager", "growth marketing manager"],
+        "queries": [
+            '"performance marketing agency" AND (D2C OR ecommerce OR Shopify) AND (looking OR recommend)',
+            '("ROAS" OR "CAC") AND agency AND (looking OR recommend)',
+            '"Meta ads" AND (ecommerce OR D2C) AND (agency OR freelancer) AND looking',
+            '(admissions OR enrolment) AND "marketing agency" AND (school OR college)',
+            '"real estate" AND ("lead generation agency" OR "digital marketing agency") AND (looking OR need)',
+            '"site visits" AND ("real estate" OR project) AND (agency OR leads)',
+            '("CRO agency" OR "conversion rate optimization") AND (looking OR recommend OR need)',
+            '"marketing agency" AND ("vanity metrics" OR "leads but no sales") AND (switch OR frustrated)',
+        ],
+    },
     # Partner Radar (2026-11-02): the two partner programmes on /partners. Here the buyer is itself an
     # agency or a consultant, so each offer's "buyers" says so, and the judge follows it (buyer_radar_judge,
     # PARTNER_RULE). The claims are only what the partner pages say and the team has confirmed: the

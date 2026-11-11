@@ -397,6 +397,14 @@ def spent_within(owner, op, hours):
     return bool(row)
 
 
+def warmly_credits_month(owner):
+    """Warmly credits the daily Warmly routine reported spending for this owner this calendar month."""
+    row = _exec("""SELECT COALESCE(SUM(credits), 0) FROM br_spend
+                   WHERE owner=%s AND provider='warmly' AND created_at >= date_trunc('month', now())""",
+                (owner,), fetch="one")
+    return float(row[0] or 0) if row else 0.0
+
+
 def month_spend(owner):
     row = _exec("""SELECT COALESCE(SUM(usd), 0), COALESCE(SUM(credits), 0) FROM br_spend
                    WHERE owner=%s AND created_at >= date_trunc('month', now())""", (owner,), fetch="one")
