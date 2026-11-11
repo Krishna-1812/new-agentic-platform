@@ -47,11 +47,11 @@ def test_rows_come_from_a_list_or_from_a_warmly_tools_whole_answer():
     assert push.rows_of({"results": "nope"}) == [] and push.rows_of(None) == []
 
 
-def test_old_visits_and_brands_hiring_are_left_out_before_sending():
+def test_old_visits_are_left_out_before_sending_and_signals_go_as_they_are():
     since = NOW.replace(day=9)
     bs, left = push.batches({"visitors": {"results": [FRESH, OLD]}, "accounts": [], "signals": [AGENCY_HIRING, BRAND_HIRING, JOB_CHANGE]}, since)
-    assert bs == [{"kind": "visitors", "rows": [FRESH]}, {"kind": "signals", "rows": [AGENCY_HIRING, JOB_CHANGE]}]
-    assert left == {"visitors": 1, "accounts": 0, "signals": 1}
+    assert bs == [{"kind": "visitors", "rows": [FRESH]}, {"kind": "signals", "rows": [AGENCY_HIRING, BRAND_HIRING, JOB_CHANGE]}]
+    assert left == {"visitors": 1, "accounts": 0, "signals": 0}, "the site drops brands that are hiring"
     assert push.recent({"key": "no date"}, since), "a row with no date is the site's to judge"
 
 

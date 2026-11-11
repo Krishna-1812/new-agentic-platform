@@ -430,10 +430,25 @@ def _from_signal(row):
             "Sentiment": data.get("sentiment"), "Warmly relevance": data.get("sales_relevance") or data.get("relevance")}
 
 
+HIRING_TYPES = ("hiring-trends", "hiring-velocity")
+AGENCY_WORDS = ("marketing", "advertising", "media", "public relations", "design services")
+
+
+def hiring_brand(row):
+    """A hiring signal from a company that is not an agency. The team wants no "hiring for it" leads for
+    brands (Job ads were switched off on 2026-10-25); an agency short of paid media people is a partner
+    lead, so it stays."""
+    if not isinstance(row, dict) or row.get("signal_type") not in HIRING_TYPES:
+        return False
+    co = _d(row.get("company"))
+    words = " ".join(str(i) for i in (co.get("industries") or []) if i) + " " + str(co.get("description") or "")
+    return not any(w in words.lower() for w in AGENCY_WORDS)
+
+
 def from_mcp(kind, row):
     """One row from Warmly's MCP server as the record a webhook would have sent, with the fields nobody
-    gave left out; None for a kind this does not read."""
-    if not isinstance(row, dict):
+    gave left out; None for a kind this does not read, and for a brand that is hiring (hiring_brand)."""
+    if not isinstance(row, dict) or (kind == "signals" and hiring_brand(row)):
         return None
     make = {"visitors": _from_visitor, "accounts": _from_account, "signals": _from_signal}.get(kind)
     if not make:

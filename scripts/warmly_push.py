@@ -15,9 +15,8 @@ The workspace's Warmly token is never in a file, a prompt or this script: the ro
 adds it to every request to the site as the X-Warmly-Push-Token header (a network secret on the cloud
 environment). WARMLY_PUSH_TOKEN, when set, is sent instead, for a run on a machine without that proxy.
 
-Before sending, rows the site would only count as repeats are left out (a visit last seen before
---since-hours), and so are hiring signals from companies that are not agencies: the team does not want
-"hiring for it" leads for brands, and an agency hiring paid media people is a partner lead.
+Before sending, visits last seen before --since-hours are left out: the site would only count them as
+repeats. (The site itself drops the team, and brands that are hiring.)
 """
 from __future__ import annotations
 
@@ -31,8 +30,6 @@ SITE = os.environ.get("LEAD_FINDER_URL", "https://northaxis.outcomes.digital").r
 PATH = "/api/lead-finder/warmly-push"
 HEADER = "X-Warmly-Push-Token"
 KINDS = ("visitors", "accounts", "signals")
-HIRING = ("hiring-trends", "hiring-velocity")
-AGENCY_WORDS = ("marketing", "advertising", "media", "public relations", "design services")
 TIMEOUT = 60
 
 
@@ -56,22 +53,12 @@ def recent(row, since):
     return seen is None or seen >= since
 
 
-def agency(row):
-    co = row.get("company") if isinstance(row.get("company"), dict) else {}
-    words = " ".join(str(i) for i in (co.get("industries") or []) if i).lower() + " " + str(co.get("description") or "").lower()
-    return any(w in words for w in AGENCY_WORDS)
-
-
-def wanted_signal(row):
-    return row.get("signal_type") not in HIRING or agency(row)
-
-
 def batches(found, since):
     """[{"kind", "rows"}] from the file's rows, and how many were left out, by kind."""
     out, left = [], {}
     for kind in KINDS:
         rows = rows_of(found.get(kind))
-        keep = [r for r in rows if (kind == "signals" and wanted_signal(r)) or (kind != "signals" and recent(r, since))]
+        keep = rows if kind == "signals" else [r for r in rows if recent(r, since)]
         left[kind] = len(rows) - len(keep)
         if keep:
             out.append({"kind": kind, "rows": keep})

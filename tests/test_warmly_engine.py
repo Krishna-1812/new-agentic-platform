@@ -328,3 +328,20 @@ def test_the_judge_sees_outcomes_digital_when_the_workspace_has_it_on():
     offers = {k: br.OFFERS[k] for k in ("markify", "outcomes")}
     sent = judge._offers_text(offers)
     assert "OFFER outcomes: Outcomes Digital" in sent and "admissions" in sent and "OFFER markify:" in sent
+
+
+def test_a_brand_that_is_hiring_is_never_a_lead_but_an_agency_that_is_hiring_is():
+    brand = {"signal_type": "hiring-trends", "signal_subtype": "hiringMarketingRoles", "detected_at": "2026-11-09",
+             "company": {"name": "Kora Beauty", "domain": "korabeauty.in", "industries": ["Cosmetics"]}}
+    agency = dict(brand, company={"name": "Hill & Co", "domain": "hillco.digital", "industries": ["Marketing and Advertising"]})
+    assert wm.hiring_brand(brand) and wm.from_mcp("signals", brand) is None
+    assert not wm.hiring_brand(agency) and wm.normalize(wm.from_mcp("signals", agency), "now")["warmly"]["type"] == "hiring"
+    assert not wm.hiring_brand(JOB_CHANGE), "only hiring signals are judged this way"
+
+
+def test_the_push_drops_brands_that_are_hiring(pushed):
+    brand = {"signal_type": "hiring-velocity", "signal_subtype": "hiringVelocity", "detected_at": "2026-11-09",
+             "company": {"name": "Kora Beauty", "domain": "korabeauty.in", "industries": ["Cosmetics"]}}
+    out = _client().post("/api/lead-finder/warmly-push", json={"batches": [{"kind": "signals", "rows": [brand, POST]}]},
+                         headers={wm.PUSH_HEADER: TOKEN}).get_json()
+    assert out["kinds"]["signals"] == {"kept": 1, "skipped": 1, "repeats": 0}

@@ -69,7 +69,7 @@ same month costs nothing).
 | 2 | LinkedIn posts | `linkedin-post-contact` | `linkedinPost` | 10 | People asking for an agency, a white-label partner or a freelancer |
 | 3 | Promotions | `workmilestone` | `promotion` | 6 | Newly promoted marketing and growth heads |
 | 4 | Company news | `news` | *(none)* | 8 | Funding, launches and expansions at brands, schools and developers |
-| 5 | Agencies hiring | `hiring-trends` | `hiringMarketingRoles` | 6 | Agencies short of paid media people (agency partners). The script drops brands that are hiring, because the team wants no "hiring for it" leads |
+| 5 | Agencies hiring | `hiring-trends` | `hiringMarketingRoles` | 6 | Agencies short of paid media people (agency partners). The site drops brands that are hiring, because the team wants no "hiring for it" leads |
 
 Warmly's signal tool has no industry, country or size filter. Every row is paid for, and Lead Finder's
 judge drops the ones that fit no offer. Keep the takes small.
@@ -86,6 +86,15 @@ Each list holds the rows exactly as Warmly gave them. An empty list is fine. The
 
 ```
 python3 scripts/warmly_push.py push <scratchpad>/warmly-found.json --credits <total creditsConsumed>
+```
+
+Without the repository checked out, send the same thing with curl. The body is
+`{"batches": [{"kind": "visitors", "rows": [...]}, {"kind": "accounts", "rows": [...]}, {"kind": "signals", "rows": [...]}], "credits": N}`.
+The proxy adds the token, so never add it yourself:
+
+```
+curl -sS -X POST -H 'Content-Type: application/json' --data @<scratchpad>/warmly-body.json \
+  https://northaxis.outcomes.digital/api/lead-finder/warmly-push
 ```
 
 `--credits` is the sum of `creditsConsumed` from step 3, or 0. The site books it against the month's
