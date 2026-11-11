@@ -28,6 +28,11 @@ visit or research never.
     signal_type(signal)               website, social, new_hire, job_change, hiring, research or other
     extras(record)                    the fields normalize does not read, as "Field: value" lines
     text(n, signal)                   what Claude reads
+    from_mcp(kind, row)               a row from Warmly's MCP server (visitors, accounts, signals) as a record
+
+The daily Warmly routine (docs/warmly-engine.md) reads Warmly through its MCP server, the one connected to
+Claude, and sends what it finds to /api/lead-finder/warmly-push (scripts/warmly_push.py). from_mcp turns
+each of those rows into the record a webhook would have sent, so normalize reads both the same way.
 """
 from __future__ import annotations
 
@@ -41,6 +46,10 @@ PER_RUN = 60               # signals a run takes from the inbox; the rest wait f
 TOKEN_RX = re.compile(r"^[A-Za-z0-9_-]{24,64}$")
 # Our own companies: a visit from the team is never a lead.
 OWN_DOMAINS = ("markifydigital.com", "northaxis.com", "outcomes.digital", "callvibe.ai")
+# A personal address names a person, not their company: its domain is never taken as the company's.
+FREE_MAIL = frozenset(("gmail.com", "googlemail.com", "yahoo.com", "yahoo.co.in", "yahoo.co.uk", "outlook.com",
+                       "hotmail.com", "live.com", "msn.com", "icloud.com", "me.com", "aol.com", "proton.me",
+                       "protonmail.com", "yandex.com", "rediffmail.com", "zoho.com", "gmx.com", "mail.com"))
 # The fields normalize reads itself; every other field goes to Claude through extras().
 READ = frozenset((
     "Signal", "signal", "Orchestration Name", "Webhook Sent At", "Business Email", "Email", "email",
@@ -49,7 +58,7 @@ READ = frozenset((
     "Industry", "industry", "subIndustry", "Employee Count", "employeesRange", "Country", "Company Country",
     "country", "IP Country", "City", "Company City", "city", "Seen At", "Pages Viewed", "Pages Viewed Details",
     "Session Active Seconds", "Bombora Research Intent", "Referrer", "UTM Campaign", "description",
-    "inboundCollectedFields", "Session URL"))
+    "inboundCollectedFields", "Session URL", "Signal Details"))
 # Fields Claude never needs: ids, pictures, other ways to reach someone, network details.
 SKIP_RX = re.compile(r"avatar|image|photo|logo|picture|phone|mobile|e-?mail|token|hash|cookie|ip address|"
                      r"^ip$|session url|webhook|password|secret", re.I)
@@ -96,7 +105,9 @@ def is_ours(domain):
 def signal_type(signal):
     """What kind of signal a Warmly record is, from its "Signal" name."""
     s = (signal or "").lower()
-    if "social" in s or "engag" in s:
+    if s.startswith("news") or "funding" in s:
+        return "news"
+    if "social" in s or "engag" in s or "linkedin" in s:
         return "social"
     if "job" in s and "chang" in s:
         return "job_change"
@@ -193,7 +204,7 @@ def normalize(r, received_at=""):
     title = _s(_get(r, "Title", "Job Title", "New Title"), 160)
     company = _s(_get(r, "Company Name", "name", "Company"), 160)
     domain = host_of(_get(r, "Website", "domain", "Company Domain"))
-    if not domain and email:
+    if not domain and email and email.split("@", 1)[1] not in FREE_MAIL:
         domain = email.split("@", 1)[1]
     if is_ours(domain) or (email and is_ours(email.split("@", 1)[1])):
         return None
@@ -220,6 +231,8 @@ def normalize(r, received_at=""):
         facts.append("Time on our site: %s seconds" % _s(r["Session Active Seconds"], 10))
     if topics:
         facts.append("Researching (Bombora): " + ", ".join(t["topic"] for t in topics))
+    if r.get("Signal Details"):
+        facts.append("What Warmly found: %s" % _s(r["Signal Details"], 1200))
     for label, field in (("Came from", "Referrer"), ("Campaign", "UTM Campaign"), ("About the company", "description")):
         if r.get(field):
             facts.append("%s: %s" % (label, _s(r[field], 300)))
@@ -251,3 +264,193 @@ def text(n, p):
         n, p.get("posted_at") or "date unknown", (a.get("headline") or a.get("name") or "not named"),
         c.get("name") or "unknown", c.get("domain") or "no website", c.get("industry") or "unknown",
         c.get("size") or "unknown", c.get("country") or "country unknown", (p.get("text") or "")[:2000])
+
+
+# == rows from Warmly's MCP server =======================================================================
+# The shapes are the ones Warmly's MCP server answered with (list_warm_visitors and list_warm_accounts, read
+# 2026-11-11) and, for list_third_party_signals, the rows its help pages document ("The full signal
+# catalog", read 2026-11-11): snake_case, with company, contact and data objects.
+
+MCP_KINDS = ("visitors", "accounts", "signals")
+MAX_ROWS = 500             # rows one push may carry, all kinds together
+ENGINE_CREDITS = 1000      # Warmly credits the daily routine may spend a month (WARMLY_ENGINE_CREDITS)
+PUSH_HEADER = "X-Warmly-Push-Token"
+
+
+def engine_budget():
+    """The month's Warmly credits for the daily routine: WARMLY_ENGINE_CREDITS, else ENGINE_CREDITS."""
+    import os
+    try:
+        n = int((os.environ.get("WARMLY_ENGINE_CREDITS") or "").strip() or ENGINE_CREDITS)
+    except ValueError:
+        n = ENGINE_CREDITS
+    return max(0, min(5000, n))
+
+
+def allowance(used, budget, today=None):
+    """Credits the routine may spend today: what is left of the month's budget, shared evenly over the days
+    left, today included, so a quiet day leaves more for the rest of the month."""
+    import calendar
+    from datetime import datetime, timezone
+    today = today or datetime.now(timezone.utc).date()
+    left = max(0, int(budget - (used or 0)))
+    days_left = calendar.monthrange(today.year, today.month)[1] - today.day + 1
+    return -(-left // days_left) if left else 0
+
+# signal_type/signal_subtype -> the "Signal" a record carries; signal_type() above reads these names.
+SIGNAL_NAMES = {
+    ("workmilestone", "jobChange"): "Job Change",
+    ("workmilestone", "promotion"): "Promotion",
+    ("workmilestone", "workAnniversary"): "Work anniversary",
+    ("hiring-velocity", "hiringVelocity"): "Hiring fast",
+    ("linkedin-post-company", None): "LinkedIn post by the company",
+    ("linkedin-post-contact", None): "LinkedIn post",
+    ("linkedin-comment", None): "LinkedIn comment",
+}
+
+
+def _words(camel):
+    """hiringMarketingRoles -> "marketing roles"; fundingNews -> "funding news"."""
+    w = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", str(camel or "")).replace("_", " ").replace("-", " ").lower().strip()
+    return re.sub(r"^hiring ", "", w)
+
+
+def signal_name(signal_type_, subtype):
+    """What a third-party signal is called on the lead, from Warmly's type and subtype."""
+    t, sub = (signal_type_ or "").strip(), (subtype or "").strip()
+    name = SIGNAL_NAMES.get((t, sub)) or SIGNAL_NAMES.get((t, None))
+    if name:
+        return name
+    if t == "hiring-trends":
+        return "Hiring: " + (_words(sub) or "new roles")
+    if t == "news" or (t in ("financial", "social_media", "website") and "funding" in sub.lower()):
+        return "News: " + (_words(sub) or "company news")
+    if t == "website-traffic":
+        return "Website traffic estimate: " + (_words(sub) or "change")
+    return ("%s: %s" % (_words(t), _words(sub))).strip(": ") or "Warmly signal"
+
+
+def linkedin_url(handle, kind="in"):
+    """A LinkedIn address from what Warmly gives: a full URL, "linkedin.com/company/acme", "in/x" or a bare
+    handle."""
+    h = _s(handle, 300)
+    if not h:
+        return ""
+    if "linkedin.com" in h.lower():
+        return h if h.lower().startswith("http") else "https://" + h.lstrip("/")
+    h = h.strip("/")
+    if h.startswith(("in/", "company/")):
+        return "https://www.linkedin.com/%s/" % h
+    return "https://www.linkedin.com/%s/%s/" % (kind, h)
+
+
+def _d(v):
+    return v if isinstance(v, dict) else {}
+
+
+def _page_visits(visits):
+    """pageVisits as the webhook's "Pages Viewed Details". Its items are not documented: a URL or path, and
+    seconds when one is given, are read under the names they are likely to carry."""
+    out = []
+    for v in visits if isinstance(visits, list) else []:
+        if isinstance(v, str):
+            url, secs = v, None
+        elif isinstance(v, dict):
+            url = _get(v, "url", "URL", "pathname", "path", "page", "pageUrl")
+            secs = _get(v, "activeSeconds", "active_seconds", "timeOnPage", "duration", "seconds")
+        else:
+            continue
+        if url:
+            out.append({"URL": _s(url, 300), "Active Seconds": secs if isinstance(secs, (int, float)) else None})
+    return out[:25]
+
+
+def _company_profile(cp):
+    cp = _d(cp)
+    return {"Company Name": cp.get("name"), "Website": cp.get("domain"),
+            "Industry": cp.get("category_industry") or cp.get("category_subIndustry"),
+            "Employee Count": cp.get("metrics_employeesRange"), "Country": cp.get("geo_country"),
+            "City": cp.get("geo_city"), "description": cp.get("description"),
+            "Company LinkedIn": linkedin_url(cp.get("linkedin_handle"), "company"),
+            "Estimated revenue": cp.get("metrics_estimatedAnnualRevenue")}
+
+
+def _visit_fields(row):
+    pages = _page_visits(row.get("pageVisits"))
+    secs = row.get("sessionTime")
+    return {"Seen At": row.get("lastSeen"), "Pages Viewed Details": pages,
+            "Session Active Seconds": secs if isinstance(secs, (int, float)) and secs > 0 else None,
+            "Sessions": row.get("totalSessions"), "Pages visited": row.get("distinctPagesVisited") or None,
+            "Campaigns": row.get("utmParams") or None}
+
+
+def _from_visitor(row):
+    ct = _d(row.get("contactProfile"))
+    rec = {"Signal": "Website Visit"}
+    rec.update(_company_profile(row.get("companyProfile")))
+    rec.update({"Business Email": row.get("email") or ct.get("email"), "First Name": ct.get("firstName"),
+                "Last Name": ct.get("lastName"), "Full Name": ct.get("fullName"),
+                "Title": ct.get("employment_title"), "LinkedIn URL": linkedin_url(ct.get("linkedin_handle")),
+                "Seniority": ct.get("employment_seniority"), "Department": ct.get("employment_role"),
+                "Bio": ct.get("bio")})
+    if not rec.get("Website"):
+        rec["Website"] = ct.get("employment_domain") or row.get("domain")
+    rec.update(_visit_fields(row))
+    return rec
+
+
+def _from_account(row):
+    rec = {"Signal": "Website Visit Company"}
+    rec.update(_company_profile(row.get("companyProfile")))
+    if not rec.get("Website"):
+        rec["Website"] = row.get("domain")
+    rec.update(_visit_fields(row))
+    rec.update({"Visitors": row.get("visitorCount"), "Identified visitors": row.get("identifiedVisitors")})
+    return rec
+
+
+def _from_signal(row):
+    co, ct, data = _d(row.get("company")), _d(row.get("contact")), _d(row.get("data"))
+    lo, hi = co.get("employee_count_low"), co.get("employee_count_high")
+    size = ("%s-%s" % (lo, hi)) if lo and hi else (str(hi or lo) if (hi or lo) else "")
+    industries = co.get("industries") if isinstance(co.get("industries"), list) else []
+    details = " ".join(_s(x, 900) for x in (data.get("title"), data.get("post_text")) if x)
+    return {"Signal": signal_name(row.get("signal_type"), row.get("signal_subtype")),
+            "Company Name": co.get("name"), "Website": co.get("domain"),
+            "Industry": ", ".join(_s(i, 60) for i in industries[:3]), "Employee Count": size,
+            "Country": ct.get("country"), "City": ct.get("city"), "description": co.get("description"),
+            "Company LinkedIn": linkedin_url(co.get("linkedin_url"), "company"),
+            "First Name": ct.get("first_name"), "Last Name": ct.get("last_name"), "Full Name": ct.get("name"),
+            "Title": ct.get("job_title"), "Business Email": ct.get("email"),
+            "LinkedIn URL": linkedin_url(ct.get("linkedin_url")), "Seniority": ct.get("seniority_level"),
+            "Department": ct.get("department"), "Seen At": row.get("detected_at"),
+            "Signal Details": details, "Signal name": row.get("signal_name"),
+            "Source link": data.get("url") or data.get("post_url") or data.get("source_url"),
+            "Published": data.get("published_at") or data.get("posted_date") or data.get("filing_date"),
+            "Sentiment": data.get("sentiment"), "Warmly relevance": data.get("sales_relevance") or data.get("relevance")}
+
+
+HIRING_TYPES = ("hiring-trends", "hiring-velocity")
+AGENCY_WORDS = ("marketing", "advertising", "media", "public relations", "design services")
+
+
+def hiring_brand(row):
+    """A hiring signal from a company that is not an agency. The team wants no "hiring for it" leads for
+    brands (Job ads were switched off on 2026-10-25); an agency short of paid media people is a partner
+    lead, so it stays."""
+    if not isinstance(row, dict) or row.get("signal_type") not in HIRING_TYPES:
+        return False
+    co = _d(row.get("company"))
+    words = " ".join(str(i) for i in (co.get("industries") or []) if i) + " " + str(co.get("description") or "")
+    return not any(w in words.lower() for w in AGENCY_WORDS)
+
+
+def from_mcp(kind, row):
+    """One row from Warmly's MCP server as the record a webhook would have sent, with the fields nobody
+    gave left out; None for a kind this does not read, and for a brand that is hiring (hiring_brand)."""
+    if not isinstance(row, dict) or (kind == "signals" and hiring_brand(row)):
+        return None
+    make = {"visitors": _from_visitor, "accounts": _from_account, "signals": _from_signal}.get(kind)
+    if not make:
+        return None
+    return {k: v for k, v in make(row).items() if v not in (None, "", [], {})}

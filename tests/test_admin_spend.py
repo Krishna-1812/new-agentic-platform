@@ -174,6 +174,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     brr = br.create_run("acct:8", {}, 2.0, "mia@x.com")
     br.add_spend(brr, "acct:8", "mia@x.com", "apify", "post-search", usd=0.40)
     br.add_spend(brr, "acct:8", "mia@x.com", "saleshandy", "email-reveal", credits=2)
+    br.add_spend(None, "acct:8", "warmly-routine", "warmly", "signals", credits=30)
     # Video Studio and Page Watch, each with a space on the project / watch
     vp = video_store.create_project("mia@x.com", space="acct:8")
     video_store.add_ai_call("plan", email="mia@x.com", project_id=vp, cost_usd=0.60)
@@ -218,6 +219,9 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("buyer-radar")["usd"] == pytest.approx(0.40) and one("buyer-radar")["space"] == "acct:8"
     assert one("buyer-radar")["email"] == "mia@x.com"
     assert one("buyer-radar-emails")["unit"] == "credits" and one("buyer-radar-emails")["usd"] == 2
+    assert one("buyer-radar-warmly")["unit"] == "credits" and one("buyer-radar-warmly")["usd"] == 30, \
+        "Warmly's credits are their own row, not Saleshandy's"
+    assert one("buyer-radar-warmly")["space"] == "acct:8"
     assert one("video-studio")["space"] == "acct:8" and one("video-studio")["email"] == "mia@x.com"
     assert one("page-watch")["space"] == "acct:7"
     assert one("google-ads-ai-review")["usd"] == pytest.approx(0.75)

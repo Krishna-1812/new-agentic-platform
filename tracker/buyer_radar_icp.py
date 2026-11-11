@@ -98,6 +98,25 @@ DEFAULT_ICPS = {
          "levels": ["C-Level", "Founder", "President/Vice President", "Head", "Director"],
          "departments": ["Marketing", "C-Suite"], "size_min": 11, "size_max": 300},
     ],
+    # Outcomes Digital: the three industries its site serves, in India first.
+    "outcomes": [
+        {"name": "Founders and growth heads of D2C brands", "trigger": "none",
+         "titles": ["Founder", "Co-Founder", "CEO", "Head of Growth", "Head of Marketing", "Head of Ecommerce"],
+         "levels": ["Founder", "Owner", "C-Level", "Head", "Director"], "departments": ["C-Suite", "Marketing"],
+         "industries": ["Retail", "Retail Apparel and Fashion", "Personal Care Product Manufacturing",
+                        "Online and Mail Order Retail", "Food and Beverage Manufacturing", "Wellness and Fitness Services"],
+         "size_min": 5, "size_max": 200, "locations": ["India"]},
+        {"name": "Admissions and marketing heads at schools and colleges", "trigger": "none",
+         "titles": ["Head of Admissions", "Director of Admissions", "Admissions Manager", "Head of Marketing",
+                    "Marketing Manager", "Director"],
+         "levels": ["Director", "Head", "Manager", "C-Level"],
+         "industries": ["Higher Education", "Primary and Secondary Education", "Education Administration Programs"],
+         "size_min": 50, "size_max": 5000, "locations": ["India"]},
+        {"name": "Marketing and sales heads at real estate developers", "trigger": "none",
+         "titles": ["Head of Marketing", "Marketing Head", "VP Sales", "Head of Sales", "CMO", "Director Marketing"],
+         "levels": ["C-Level", "President/Vice President", "Director", "Head"], "departments": ["Marketing", "Sales"],
+         "industries": ["Real Estate", "Construction"], "size_min": 20, "size_max": 2000, "locations": ["India"]},
+    ],
     # Partner Radar: agencies that could hand us their paid media, and consultants who could bring us clients.
     "agency_partners": [
         {"name": "Agency founders hiring paid media people", "trigger": "hiring_for",

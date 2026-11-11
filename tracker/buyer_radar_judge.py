@@ -138,8 +138,10 @@ WARMLY_SYSTEM = (
     "You find buyers for a sales team among the companies and people Warmly, a website-visitor and "
     "buying-signal tool, sent it. You are given what each of the team's offers sells and who buys it, then "
     "numbered signals: who the person or company is, and what Warmly saw (pages read on the team's own "
-    "site, time spent, research topics, a new job, a company hiring, a LinkedIn post they commented on or "
-    "liked). 'Other details from Warmly' are the record's own fields as Warmly sent them: read them too. "
+    "site, time spent, research topics, a new job or promotion, a company hiring, a LinkedIn post they wrote, "
+    "commented on or liked, company news such as funding, a launch or an expansion). 'What Warmly found' is "
+    "the signal itself (a headline, a post); 'Other details from Warmly' are the record's own fields as "
+    "Warmly sent them: read them too. "
     "For each signal decide, from it alone:\n"
     "- role: 'buyer' when the person or company fits who buys an offer; 'seller' when they plainly sell the "
     "same thing to the same buyers and fit no offer's buyers; 'job_seeker' when a careers page is all they "
@@ -153,7 +155,10 @@ WARMLY_SYSTEM = (
     "a fitting person seen briefly, 50 to 75; a fitting person who commented on a LinkedIn post about the "
     "offer's area, 55 to 80, or only liked one, 45 to 65; a fitting person new in a role where the offer "
     "fits (just went independent, or now leads paid media at an agency), 55 to 75; a fitting company hiring "
-    "for work the offer does, or researching the offer's topics, 50 to 70; anyone who fits no offer's "
+    "for work the offer does, or researching the offer's topics, 50 to 70; a fitting company in the news "
+    "for something that changes its marketing (funding, a launch, a new market, an expansion), 50 to 70, "
+    "or for anything else, 30 to 50; a fitting person whose own LinkedIn post asks for what an offer does, "
+    "75 to 95, or shows a need it meets, 55 to 80; anyone who fits no offer's "
     "buyers, 0 to 20. A post's own subject decides nothing: what counts is whether the person who engaged "
     "with it fits an offer's buyers.\n"
     "- need: what they likely want, in one short sentence in plain English.\n"
@@ -245,6 +250,9 @@ WARMLY_MAY_SAY = {
                    "anyone. You may congratulate them on the move in a few words, then say why the offer fits."),
     "hiring": ("Their company is hiring, shown above, which its public job ad says. You may mention the "
                "opening and offer help with that work in the meantime."),
+    "news": ("Their company was in the public news, shown above. You may mention that news in a few words "
+             "(the funding, the launch, the expansion) and say why the offer fits now. Never say how you "
+             "came across it."),
 }
 
 
