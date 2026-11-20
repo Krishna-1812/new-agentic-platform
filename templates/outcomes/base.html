@@ -4,8 +4,10 @@
     outcomes.digital's words in the Northaxis look: the same design system
     files (press.css, site.css, site.js, press-play.js) and the same parts,
     with Outcomes Digital's name, mark, menus and footer. Unlisted: noindex
-    on every page (and an X-Robots-Tag header, outcomes_site.py), and nothing
-    here links to Northaxis or loads its tracking. Content: outcomes_content.py.
+    on every page but the partner pages, which carry a canonical address
+    instead (and an X-Robots-Tag header, outcomes_site.py), and nothing
+    here links to Northaxis or loads its tracking. The one script from outside is Warmly's, on the partner
+    pages only, once WARMLY_CLIENT_ID is set (WARMLY_PIXEL_PATHS); the footer then says so. Content: outcomes_content.py.
 -#}
 {%- import "site/_parts.html" as ui with context -%}
 {%- import "outcomes/_od.html" as odp with context -%}
@@ -16,8 +18,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{{ title }}</title>
 <meta name="description" content="{{ description }}">
-<meta name="robots" content="noindex, nofollow, noarchive">
-<meta name="referrer" content="no-referrer">
+{% if canonical %}<link rel="canonical" href="{{ canonical }}">
+<meta property="og:url" content="{{ canonical }}">
+{% else %}<meta name="robots" content="noindex, nofollow, noarchive">
+{% endif %}<meta name="referrer" content="no-referrer">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ od.BRAND }}">
 <meta property="og:title" content="{{ title }}">
@@ -32,6 +36,10 @@
 <link rel="stylesheet" href="/static/css/site.css?v=5">
 <link rel="stylesheet" href="/static/outcomes/outcomes.css?v=8">
 <script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
+{% if warmly_pixel %}{#- Warmly identifies the companies reading the partner pages; never for a browser that asks
+    not to be tracked, as the form on the page says. -#}
+<script>(function(){var n=navigator;if(n.doNotTrack==="1"||window.doNotTrack==="1"||n.globalPrivacyControl===true)return;var s=document.createElement("script");s.id="warmly-script-loader";s.src="https://opps-widget.getwarmly.com/warmly.js?clientId={{ warmly_pixel }}";s.defer=true;document.head.appendChild(s)})();</script>
+{% endif -%}
 </head>
 <body data-page="od-{{ page }}" class="od">
 <a class="skip" href="#main">Skip to content</a>
@@ -46,6 +54,7 @@
       <div class="od-drop">{% for slug, name in od.INDUSTRIES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div></div>
     <a class="nv-link" href="{{ url('case-studies') }}"{% if page in ('cases', 'case') %} aria-current="page"{% endif %}>Case Studies</a>
     <a class="nv-link" href="{{ url('about-us') }}"{% if page == 'about' %} aria-current="page"{% endif %}>About Us</a>
+    <a class="nv-link" href="{{ url('partners') }}"{% if page in ('partners', 'partner-agencies', 'partner-consultants') %} aria-current="page"{% endif %}>Partners</a>
   </div>
   <div class="nv-cta">
     <a class="btn btn-1" href="{{ url('contact') }}" data-cta="header">{{ od.CTA_PLAN }}</a>
@@ -55,7 +64,7 @@
 
 {#- The phone menu: the same full-screen ink page as Northaxis, with this site's links. -#}
 <div class="nv-sheet" id="sheet" aria-hidden="true">
-  {% set links = [('', 'Home')] + od.SERVICES|list + od.INDUSTRIES|list + [('case-studies', 'Case Studies'), ('about-us', 'About Us'), ('contact', 'Contact')] %}
+  {% set links = [('', 'Home')] + od.SERVICES|list + od.INDUSTRIES|list + [('case-studies', 'Case Studies'), ('about-us', 'About Us'), ('partners', 'Partners'), ('contact', 'Contact')] %}
   {% for slug, name in links %}<a href="{{ url(slug) }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ name }}</a>
   {% endfor %}<div class="nv-sheet-foot">
     <a class="btn btn-1" href="{{ url('contact') }}">{{ od.CTA_PLAN }}</a>
@@ -83,7 +92,7 @@
     <div class="foot-cols">
       <div class="foot-col"><h5>Services</h5>{% for slug, name in od.SERVICES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div>
       <div class="foot-col"><h5>Industries</h5>{% for slug, name in od.INDUSTRIES %}<a href="{{ url(slug) }}">{{ name }}</a>{% endfor %}</div>
-      <div class="foot-col"><h5>Company</h5><a href="{{ url('about-us') }}">About Us</a><a href="{{ url('case-studies') }}">Case Studies</a><a href="{{ url('contact') }}">Contact</a></div>
+      <div class="foot-col"><h5>Company</h5><a href="{{ url('about-us') }}">About Us</a><a href="{{ url('case-studies') }}">Case Studies</a><a href="{{ url('partners') }}">Partners</a><a href="{{ url('contact') }}">Contact</a></div>
       <div class="foot-col"><h5>Say hello</h5><a href="mailto:{{ od.EMAIL }}">{{ od.EMAIL }}</a>
         <h5 style="margin-top:var(--s5)">Get social</h5>{% for name, href in od.SOCIAL %}<a href="{{ href }}" target="_blank" rel="noopener">{{ name }}</a>{% endfor %}</div>
     </div>
@@ -92,6 +101,9 @@
     <span>&copy;{{ year }} {{ od.BRAND }}. All rights reserved.</span>
     <span>Trusted by ambitious brands</span>
   </div>
+  {% if warmly_pixel %}{#- This site has no privacy page: a page that runs Warmly's script says so here. -#}
+  <div class="wrap foot-bottom"><span class="od-warmly-note">This page uses Warmly to tell us which company a visit came from. It doesn&rsquo;t load if your browser sends Do Not Track or Global Privacy Control, and you can ask us at <a href="mailto:{{ od.EMAIL }}">{{ od.EMAIL }}</a> to delete anything it told us about you.</span></div>
+  {% endif %}
 </footer>
 
 <script src="/static/js/site.js?v=4" defer></script>

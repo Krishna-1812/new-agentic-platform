@@ -635,7 +635,7 @@ def _demo_request_to_email(d: dict) -> bool:
 # The Book a call page's extra answers: (form field, label in the message).
 _BOOK_FIELDS = (("website", "Website"), ("sells", "Sells"), ("meet", "Wants to meet"),
                 ("spend", "Monthly ad spend"), ("country", "Buyers in"),
-                # The partner pages' application forms (/partners/agencies, /partners/consultants).
+                # The partner pages' application forms (/outcomesdigital/partners/agencies and /consultants).
                 ("based", "Based in"), ("linkedin", "LinkedIn"), ("years", "Years in paid marketing"),
                 ("clients", "Clients to bring"), ("network", "Network"),
                 # The Outcomes Digital pages' forms (/outcomesdigital, outcomes_site.py).
@@ -980,17 +980,21 @@ def _site(template, page, title, description, crumbs=(), faqs=(), noindex=False,
     verify = {"google-site-verification": _verification_code("GOOGLE_SITE_VERIFICATION"),
               "msvalidate.01": _verification_code("BING_SITE_VERIFICATION")}
     # Warmly's website script, on the pages WARMLY_PIXEL_PATHS names (the partner pages unless set):
-    # the privacy policy names those pages whenever the script is configured.
+    # the privacy policy names those pages whenever the script is configured. The partner pages are on the
+    # Outcomes Digital site now, whose footer says so there, so this site names only its own pages.
     warmly_id = _warmly.pixel_id()
+    warmly_paths = [p for p in _warmly.pixel_paths() if not p.startswith(outcomes_site.PREFIX)] if warmly_id else []
     return render_template("site/" + template, page=page, title=title, description=description, faqs=faqs,
                            schema=schema, noindex=noindex, verify=verify, site=site_pages, site_url=SITE_URL,
                            year=datetime.now(IST).year,
                            warmly_pixel=warmly_id if _warmly.pixel_on(request.path) else "",
-                           warmly_paths=_warmly.pixel_paths() if warmly_id else [], **kw)
+                           warmly_paths=warmly_paths, **kw)
 
 
-# outcomes.digital in the Northaxis look, at /outcomesdigital: unlisted (noindex, linked from nowhere here).
+# outcomes.digital in the Northaxis look, at /outcomesdigital: unlisted (noindex, linked from nowhere here),
+# but for its partner pages, which the sitemap and robots.txt below name so they stay listed on Google.
 import outcomes_site  # noqa: E402
+outcomes_site.SITE_URL = SITE_URL
 app.register_blueprint(outcomes_site.bp)
 
 
@@ -1059,34 +1063,14 @@ def signal_page(slug):
                  industries=[site_pages.INDUSTRIES_BY_SLUG[i] for i in signal["fits"]])
 
 
-# Partners: agencies that hand us their clients' paid media under their own brand, and consultants who win
-# and keep the client while we run the accounts. Each page carries its own application form, so it can be
-# the one link in an outreach message.
-@app.route("/partners")
-def partners_page():
-    return _site("partners.html", "partners", "Partner with us: agencies and paid media consultants",
-                 "Two ways to work with us: white-label Google Ads, Meta and LinkedIn Ads for agencies, and a "
-                 "%s recurring commission for consultants." % site_pages.PARTNER_COMMISSION, crumbs=[("Partners", "/partners")])
-
-
-@app.route("/partners/agencies")
-def partner_agencies_page():
-    return _site("partner_agencies.html", "partner-agencies", "White-label PPC and paid media for agencies",
-                 "Google Ads, Meta and LinkedIn Ads for your clients, run by our team under your brand. You keep "
-                 "the client and the margin; no hiring. NDA signed first.",
-                 crumbs=[("Partners", "/partners"), ("For agencies", "/partners/agencies")],
-                 faqs=site_pages.FAQ_AGENCY)
-
-
-@app.route("/partners/consultants")
-def partner_consultants_page():
-    return _site("partner_consultants.html", "partner-consultants",
-                 "Partner programme for paid marketing consultants",
-                 "Win the client and stay their lead; our team runs the ads. %s of the client's fee every "
-                 "month they stay, and leads passed to you." % site_pages.PARTNER_COMMISSION,
-                 crumbs=[("Partners", "/partners"), ("For consultants", "/partners/consultants")],
-                 faqs=site_pages.FAQ_CONSULTANT,
-                 signals=[site_pages.SIGNALS_BY_SLUG[s] for s in site_pages.CONSULTANT_SIGNALS])
+# Partners: the white-label programme for agencies and the partner programme for consultants moved to the
+# Outcomes Digital site in November 2026 (outcomes_site.py). Their old addresses, already in outreach
+# messages, send visitors to the same page there for good.
+@app.route("/partners", strict_slashes=False)
+@app.route("/partners/<kind>", strict_slashes=False)
+def partners_moved(kind=None):
+    return redirect(outcomes_site.url("partners/" + kind if kind in ("agencies", "consultants") else "partners"),
+                    code=301)
 
 
 # The signals were called plays until October 2026: their old addresses move to the new ones for good.
@@ -1166,6 +1150,8 @@ def sitemap_xml():
     legal = datetime.strptime(LEGAL_UPDATED, "%d %B %Y").strftime("%Y-%m-%d")
     urls = [(SITE_URL + path, legal if page in ("privacy", "terms") else site_seo.UPDATED)
             for path, page in site_seo.pages()]
+    # The Outcomes Digital partner pages: the one part of that site search engines may list.
+    urls += [(SITE_URL + path, site_seo.UPDATED) for path in outcomes_site.LISTED]
     return Response(render_template("site/sitemap.xml", urls=urls), mimetype="application/xml")
 
 
@@ -1532,7 +1518,9 @@ def auth_google():
 # named here. So the pages that are open are read from the sitemap: a page added to the site is open to
 # crawlers the moment it is listed, and can never be left out by hand (/signals was, for a day). Then the
 # addresses that move to a listed page (/plays), and the files every page needs.
-ROBOTS_MOVED_PATHS = ["/plays"]
+# /partners moved to the Outcomes Digital partner pages, which robots.txt opens on their own (that site's
+# other pages stay closed).
+ROBOTS_MOVED_PATHS = ["/plays", "/partners", outcomes_site.PREFIX + "/partners"]
 ROBOTS_FILES = ["/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
 
 

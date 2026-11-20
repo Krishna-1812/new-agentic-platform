@@ -83,9 +83,10 @@ def pixel_id():
 
 def pixel_paths():
     """Where the website script runs: WARMLY_PIXEL_PATHS, comma-separated path prefixes. It defaults to
-    the partner pages, because every visitor Warmly identifies spends up to 2 credits."""
+    the partner pages (on the Outcomes Digital site since November 2026), because every visitor Warmly
+    identifies spends up to 2 credits."""
     raw = os.environ.get("WARMLY_PIXEL_PATHS")
-    paths = [p.strip() for p in (raw if raw is not None else "/partners").split(",") if p.strip()]
+    paths = [p.strip() for p in (raw if raw is not None else "/outcomesdigital/partners").split(",") if p.strip()]
     return [p if p.startswith("/") else "/" + p for p in paths]
 
 

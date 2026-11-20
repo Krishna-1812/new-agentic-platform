@@ -171,17 +171,18 @@ OFFERS = {
             '"marketing agency" AND ("vanity metrics" OR "leads but no sales") AND (switch OR frustrated)',
         ],
     },
-    # Partner Radar (2026-11-02): the two partner programmes on /partners. Here the buyer is itself an
+    # Partner Radar (2026-11-02): the two partner programmes, on the Outcomes Digital site since 2026-11-20
+    # (/outcomesdigital/partners; they were Northaxis's, at /partners). Here the buyer is itself an
     # agency or a consultant, so each offer's "buyers" says so, and the judge follows it (buyer_radar_judge,
     # PARTNER_RULE). The claims are only what the partner pages say and the team has confirmed: the
     # channels, the team in India, white-label delivery, and the consultant's recurring 20%.
     "agency_partners": {
         "label": "Partners: agencies",
-        "site": SITE + "/partners/agencies",
-        "sells": ("Northaxis runs paid media white-label for marketing agencies: Google Ads, Meta and LinkedIn Ads "
-                  "for the agency's clients, delivered under the agency's name by Northaxis's team in India, whose "
+        "site": SITE + "/outcomesdigital/partners/agencies",
+        "sells": ("Outcomes Digital runs paid media white-label for marketing agencies: Google Ads, Meta and LinkedIn Ads "
+                  "for the agency's clients, delivered under the agency's name by Outcomes Digital's team in India, whose "
                   "working day covers the US night and the UK morning. The agency keeps the client, the relationship "
-                  "and the margin, and handles client servicing; Northaxis does the daily work (set-up, optimisation, "
+                  "and the margin, and handles client servicing; Outcomes Digital does the daily work (set-up, optimisation, "
                   "reporting), so the agency adds paid media without hiring for it."),
         "buyers": ("Owners, founders, managing directors and heads of paid media or client services at marketing, "
                    "digital, creative, SEO, web and branding agencies (usually 2 to 100 people), mostly in the US, UK, "
@@ -211,11 +212,11 @@ OFFERS = {
     },
     "consultant_partners": {
         "label": "Partners: consultants",
-        "site": SITE + "/partners/consultants",
-        "sells": ("Northaxis's partner programme for senior paid marketing consultants and freelancers: the "
-                  "consultant wins and looks after the client, Northaxis's team in India does the Google Ads, Meta "
+        "site": SITE + "/outcomesdigital/partners/consultants",
+        "sells": ("Outcomes Digital's partner programme for senior paid marketing consultants and freelancers: the "
+                  "consultant wins and looks after the client, Outcomes Digital's team in India does the Google Ads, Meta "
                   "and LinkedIn Ads work, and the consultant earns a recurring 20% commission on every monthly fee "
-                  "the client pays, for as long as the client stays. Northaxis also passes its partners leads to talk "
+                  "the client pays, for as long as the client stays. Outcomes Digital also passes its partners leads to talk "
                   "to. The consultant stays the client's strategist without doing the daily account work."),
         "buyers": ("Senior paid marketing people (about eight or more years; former heads of performance, paid media, "
                    "growth or digital at brands or agencies) now working as independent consultants, freelancers or "

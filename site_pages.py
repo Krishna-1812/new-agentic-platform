@@ -21,7 +21,6 @@ NAV = (
     ("/industries", "Industries"),
     ("/how-it-works", "How it works"),
     ("/pricing", "Pricing"),
-    ("/partners", "Partners"),
 )
 
 # The buying signals we watch for (/signals), each with the flow it starts: what we check, who we write
@@ -933,7 +932,7 @@ SIGNAL_LINKS = tuple(("/signals/" + s["slug"], s["name"]) for s in SIGNALS)
 INDUSTRY_LINKS = tuple(("/industries/" + i["slug"], i["name"]) for i in INDUSTRIES)
 
 
-# ── Partners (/partners) ────────────────────────────────────────────────────────────────────────────
+# ── Partners (/outcomesdigital/partners, outcomes_site.py; on this site at /partners until November 2026) ────────────────────────────────────────────────────────────────────────────
 # Two ways to work with us without being our client: agencies that hand us their clients' paid media
 # under their own brand, and senior paid marketing consultants who win and keep the client while our
 # team does the delivery, for a recurring commission. Our team is in India; that is said as what it
