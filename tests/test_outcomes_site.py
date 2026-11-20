@@ -46,8 +46,10 @@ def test_there_are_nineteen_pages_and_each_opens(client):
         assert "text/html" in r.headers["Content-Type"]
 
 
-@pytest.mark.parametrize("path", PATHS + [site.PREFIX + "/no-such-page", site.PREFIX + "/case-study/nope"])
+@pytest.mark.parametrize("path", [p for p in PATHS if not site.listed(p)]
+                         + [site.PREFIX + "/no-such-page", site.PREFIX + "/case-study/nope", site.PREFIX + "/partners/nope"])
 def test_every_page_and_error_says_never_list_me(client, path):
+    """All but the partner pages, which stay listed (tests/test_partner_pages.py)."""
     r = client.get(path)
     assert r.headers["X-Robots-Tag"] == "noindex, nofollow, noarchive"
     body = r.get_data(as_text=True)
@@ -66,6 +68,8 @@ def test_no_outcomes_page_links_to_or_tracks_for_northaxis(client, path):
     body = client.get(path).get_data(as_text=True)
     assert appmod.BRAND["name"] not in body and "northaxis" not in body.lower().replace("northaxis.outcomes.digital", "")
     for href in re.findall(r'href="([^"]+)"', body):
+        if href == appmod.SITE_URL + path:
+            continue  # a listed page's canonical address is its own
         assert href.startswith((site.PREFIX, "/static/", "#", "https://", "mailto:")), (path, href)
         if href.startswith("https://"):
             assert href.startswith((od.CALENDLY, "https://www.linkedin.com/company/outcomes-digital",
@@ -76,8 +80,13 @@ def test_no_outcomes_page_links_to_or_tracks_for_northaxis(client, path):
 
 
 def test_nothing_on_northaxis_names_the_address(client):
-    for path in ("/", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/robots.txt", "/book", "/privacy"):
+    for path in ("/", "/llms.txt", "/llms-full.txt", "/book", "/privacy"):
         assert "outcomesdigital" not in client.get(path).get_data(as_text=True), path
+    # The sitemap and robots.txt name the partner pages, the one part of this site that may be listed.
+    sitemap = client.get("/sitemap.xml").get_data(as_text=True)
+    assert sorted(re.findall(r"<loc>[^<]*(/outcomesdigital[^<]*)</loc>", sitemap)) == sorted(site.LISTED)
+    robots = client.get("/robots.txt").get_data(as_text=True)
+    assert re.findall(r".*outcomesdigital.*", robots) == ["Allow: /outcomesdigital/partners"]
     for name in os.listdir(os.path.join(ROOT, "templates", "site")):
         with open(os.path.join(ROOT, "templates", "site", name), encoding="utf-8") as f:
             assert "outcomesdigital" not in f.read(), name

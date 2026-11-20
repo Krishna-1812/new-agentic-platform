@@ -15,6 +15,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
+from markupsafe import escape
 
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
 os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
@@ -56,7 +57,23 @@ def test_each_partner_page_opens_with_its_heading_on_the_outcomes_site(client, p
     assert heading in h1, h1
     assert '<body data-page="od-' in html and 'class="od"' in html, "the Outcomes Digital layout"
     assert path[len(outcomes_site.PREFIX):] in [p for p, *_ in outcomes_site.PAGES]
-    assert '<meta name="robots" content="noindex, nofollow, noarchive">' in html
+
+
+@pytest.mark.parametrize("path", sorted(PARTNER_PAGES))
+def test_the_partner_pages_stay_listed_on_search_engines(client, path):
+    """Unlike the rest of the Outcomes Digital site, the partner pages may be listed: they keep the place in
+    search results they had at /partners."""
+    r = client.get(path)
+    html = r.get_data(as_text=True)
+    assert "X-Robots-Tag" not in r.headers and 'name="robots"' not in html
+    assert '<link rel="canonical" href="%s%s">' % (appmod.SITE_URL, path) in html
+    assert '<meta name="description" content="%s">' % escape(outcomes_site.LISTED[path]) in html
+    assert "<loc>%s%s</loc>" % (appmod.SITE_URL, path) in client.get("/sitemap.xml").get_data(as_text=True)
+    robots = client.get("/robots.txt").get_data(as_text=True)
+    assert "Allow: /outcomesdigital/partners\n" in robots and "Allow: /partners\n" in robots
+    # Its own address with a slash is the same page, and a missing page under it is never listed.
+    assert "X-Robots-Tag" not in client.get(path + "/").headers
+    assert client.get(HUB + "/nope").headers["X-Robots-Tag"] == "noindex, nofollow, noarchive"
 
 
 @pytest.mark.parametrize("old,new", [("/partners", HUB), ("/partners/", HUB), ("/partners/agencies", AGENCIES),
@@ -66,10 +83,10 @@ def test_the_old_northaxis_addresses_send_visitors_to_the_outcomes_pages(client,
     assert r.status_code == 301 and r.headers["Location"].endswith(new), (old, r.headers.get("Location"))
 
 
-def test_northaxis_no_longer_lists_or_links_the_partner_pages(client):
+def test_northaxis_no_longer_shows_the_partner_pages_as_its_own(client):
     assert all(not p.startswith("/partners") for p, _ in site_seo.pages())
     assert all(href != "/partners" for href, _ in site_pages.NAV)
-    for path in ("/", "/pricing", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/robots.txt"):
+    for path in ("/", "/pricing", "/llms.txt", "/llms-full.txt"):
         assert "/partners" not in client.get(path).get_data(as_text=True), path
 
 

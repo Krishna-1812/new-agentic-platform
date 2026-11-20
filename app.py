@@ -991,8 +991,10 @@ def _site(template, page, title, description, crumbs=(), faqs=(), noindex=False,
                            warmly_paths=warmly_paths, **kw)
 
 
-# outcomes.digital in the Northaxis look, at /outcomesdigital: unlisted (noindex, linked from nowhere here).
+# outcomes.digital in the Northaxis look, at /outcomesdigital: unlisted (noindex, linked from nowhere here),
+# but for its partner pages, which the sitemap and robots.txt below name so they stay listed on Google.
 import outcomes_site  # noqa: E402
+outcomes_site.SITE_URL = SITE_URL
 app.register_blueprint(outcomes_site.bp)
 
 
@@ -1148,6 +1150,8 @@ def sitemap_xml():
     legal = datetime.strptime(LEGAL_UPDATED, "%d %B %Y").strftime("%Y-%m-%d")
     urls = [(SITE_URL + path, legal if page in ("privacy", "terms") else site_seo.UPDATED)
             for path, page in site_seo.pages()]
+    # The Outcomes Digital partner pages: the one part of that site search engines may list.
+    urls += [(SITE_URL + path, site_seo.UPDATED) for path in outcomes_site.LISTED]
     return Response(render_template("site/sitemap.xml", urls=urls), mimetype="application/xml")
 
 
@@ -1514,7 +1518,9 @@ def auth_google():
 # named here. So the pages that are open are read from the sitemap: a page added to the site is open to
 # crawlers the moment it is listed, and can never be left out by hand (/signals was, for a day). Then the
 # addresses that move to a listed page (/plays), and the files every page needs.
-ROBOTS_MOVED_PATHS = ["/plays"]
+# /partners moved to the Outcomes Digital partner pages, which robots.txt opens on their own (that site's
+# other pages stay closed).
+ROBOTS_MOVED_PATHS = ["/plays", "/partners", outcomes_site.PREFIX + "/partners"]
 ROBOTS_FILES = ["/sitemap.xml", "/llms.txt", "/llms-full.txt", "/static/", "/favicon"]
 
 

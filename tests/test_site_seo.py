@@ -26,6 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 import app as appmod  # noqa: E402
+import outcomes_site  # noqa: E402
 import site_pages  # noqa: E402
 import site_seo  # noqa: E402
 
@@ -82,7 +83,8 @@ def test_the_sitemap_lists_every_page_of_the_site_and_nothing_else(client):
     ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     root = ET.fromstring(r.get_data())
     locs = [u.find("s:loc", ns).text for u in root.findall("s:url", ns)]
-    assert locs == [SITE + path for path in PAGES]
+    # Then the Outcomes Digital partner pages, the one part of that site that may be listed.
+    assert locs == [SITE + path for path in PAGES] + [SITE + path for path in outcomes_site.LISTED]
     assert len(set(locs)) == len(locs)
     for s in site_pages.SIGNALS:
         assert SITE + "/signals/" + s["slug"] in locs
