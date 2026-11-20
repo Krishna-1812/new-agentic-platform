@@ -1,8 +1,9 @@
-{% extends "site/base.html" %}
+{% extends "outcomes/base.html" %}
 {% import "site/_parts.html" as ui with context %}
-{#- White-label paid media for agencies (/partners/agencies). An outreach landing page: the agency keeps
+{% import "outcomes/_od.html" as odp with context %}
+{#- White-label paid media for agencies (/outcomesdigital/partners/agencies). An outreach landing page: the agency keeps
     the client, the brand and the margin; our team in India does the delivery behind it. The application
-    form at the end posts to the same intake as /book. -#}
+    form at the end posts to the same intake as the other Outcomes Digital forms, to #leads. -#}
 {% block main %}
 
 <header class="wrap hero hero-play">
@@ -167,7 +168,7 @@
       </div>
     </div>
     <div class="book-card">
-      <form id="bookForm" data-source="partner page" novalidate>
+      <form id="bookForm" data-source="outcomes digital" novalidate>
         <input type="hidden" name="pillar" value="Agency partner">
         <div class="f-row">
           <div class="f" id="f-name"><label for="in-name">Your name</label><input id="in-name" name="name" autocomplete="name" required placeholder="Jane Doe" maxlength="120"></div>
@@ -187,13 +188,13 @@
         <div class="f"><label for="in-message">What would you hand over first? <span class="opt">optional</span></label><textarea id="in-message" name="message" rows="3" maxlength="2000" placeholder="For example: a Google Ads account for a dental group, about $8,000 a month"></textarea></div>
         <p class="f-err" id="formErr" role="alert"></p>
         <button class="btn btn-1 f-submit" id="formSend" type="submit">Send</button>
-        <p class="f-note">We use your answers to prepare for the call and nothing else. <a href="/privacy">Privacy</a></p>
+        <p class="f-note">We use your answers to prepare for the call and nothing else.</p>
       </form>
       <div class="f-done" id="formDone" role="status">
         <span class="mark"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
         <h3>Thanks. We&rsquo;ll reply within one working day.</h3>
         <p>With the NDA and a few times for the call.</p>
-        <a class="btn btn-2" href="/performance-marketing">Meanwhile, see how we check accounts</a>
+        <a class="btn btn-2" href="{{ url('ppc-management') }}">Meanwhile, see how we run PPC</a>
       </div>
     </div>
   </div>

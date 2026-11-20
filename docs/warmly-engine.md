@@ -122,7 +122,8 @@ Never include a person's email address in the reply.
   request to the site as `X-Warmly-Push-Token`, so it is never in this file, the task's prompt, a log or
   the repository.
 - **Visitors only come from pages that run Warmly's script.** On this platform that means the pages in
-  `WARMLY_PIXEL_PATHS` (default `/partners`), once `WARMLY_CLIENT_ID` is set in Railway. On
+  `WARMLY_PIXEL_PATHS` (default `/outcomesdigital/partners`, the partner pages on the Outcomes Digital
+  site), once `WARMLY_CLIENT_ID` is set in Railway. On
   markifydigital.com and outcomes.digital it means the script in each site's header. Each identified
   visitor costs Warmly up to 2 credits a month, taken by Warmly itself.
 - **The plays are a starting point.** They follow Warmly's published signal catalogue, but this

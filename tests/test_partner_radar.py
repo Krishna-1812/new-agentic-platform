@@ -22,7 +22,8 @@ from tracker import buyer_radar_judge as judge  # noqa: E402
 from tracker import buyer_radar_reddit as rd  # noqa: E402
 from tracker import buyer_radar_source as src  # noqa: E402
 
-PARTNER = {"agency_partners": "/partners/agencies", "consultant_partners": "/partners/consultants"}
+PARTNER = {"agency_partners": "/outcomesdigital/partners/agencies",
+           "consultant_partners": "/outcomesdigital/partners/consultants"}
 
 
 @pytest.mark.parametrize("key,path", sorted(PARTNER.items()))
@@ -46,6 +47,9 @@ def test_the_offers_say_only_what_the_partner_pages_promise():
     assert "%" not in agency["sells"], "no price or commission is promised to agencies"
     assert "white-label" in agency["sells"] and "agency is the buyer, not a seller" in agency["buyers"]
     assert "consultant is the buyer, not a seller" in consultant["buyers"]
+    # The programmes are Outcomes Digital's since they moved to its site: the message names that brand.
+    for o in (agency, consultant):
+        assert "Outcomes Digital" in o["sells"] and "Northaxis" not in o["sells"], o["label"]
 
 
 def test_the_judge_follows_who_buys_a_partner_offer_over_its_seller_rule():
@@ -90,7 +94,7 @@ def test_a_message_for_a_partner_lead_carries_the_partner_page():
     out = judge.draft(lead, br.OFFERS["agency_partners"], {"name": "Kris", "title": "Founder"},
                       budget=None, call=call)
     assert out["subject"] == "Paid media under your name"
-    assert br.SITE + "/partners/agencies" in sent[0] and "white label PPC partner" in sent[0]
+    assert br.SITE + "/outcomesdigital/partners/agencies" in sent[0] and "white label PPC partner" in sent[0]
 
 
 def test_when_linkedin_results_run_short_every_offer_is_still_searched():

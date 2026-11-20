@@ -144,13 +144,15 @@
 
 {#- A signal as a cell that links to its page; the cell floods with a block colour under
     the pointer (press-play.js). -#}
-{% macro signal_cell(s, show_agent=True) -%}
-<a class="cell play-cell" href="/signals/{{ s.slug }}">
+{#- link=False draws the same cell without its link to the signal's page (the Outcomes Digital pages,
+    which never link to Northaxis). -#}
+{% macro signal_cell(s, show_agent=True, link=True) -%}
+<{{ 'a' if link else 'div' }} class="cell play-cell"{% if link %} href="/signals/{{ s.slug }}"{% endif %}>
   <div class="cell-idx">{{ icon(site.SIGNAL_ICONS[s.group]) }}{% if show_agent %}<span class="lbl">{{ s.agent }}</span>{% else %}{{ strength(s.strength, False) }}{% endif %}</div>
   <h3>{{ s.name }}</h3>
   <p>{{ s.sign }}</p>
-  <span class="more">See the flow {{ arrow() }}</span>
-</a>
+  {% if link %}<span class="more">See the flow {{ arrow() }}</span>{% endif %}
+</{{ 'a' if link else 'div' }}>
 {%- endmacro %}
 
 {#- A signal in the library (/signals): where it comes from, how strong it is, what it is, and who we

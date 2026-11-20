@@ -38,8 +38,8 @@ def _text(client, path):
     return html.unescape(r.get_data(as_text=True))
 
 
-def test_there_are_sixteen_pages_and_each_opens(client):
-    assert len(PATHS) == 16 and len(set(PATHS)) == 16
+def test_there_are_nineteen_pages_and_each_opens(client):
+    assert len(PATHS) == 19 and len(set(PATHS)) == 19
     for path in PATHS + [site.PREFIX + "/", site.PREFIX + "/about-us/"]:
         r = client.get(path)
         assert r.status_code == 200, path
@@ -76,7 +76,7 @@ def test_no_outcomes_page_links_to_or_tracks_for_northaxis(client, path):
 
 
 def test_nothing_on_northaxis_names_the_address(client):
-    for path in ("/", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/robots.txt", "/partners", "/book"):
+    for path in ("/", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/robots.txt", "/book", "/privacy"):
         assert "outcomesdigital" not in client.get(path).get_data(as_text=True), path
     for name in os.listdir(os.path.join(ROOT, "templates", "site")):
         with open(os.path.join(ROOT, "templates", "site", name), encoding="utf-8") as f:
@@ -409,8 +409,10 @@ def test_one_pair_of_buttons_and_sentence_case_heads_everywhere(client, path):
     assert od.CTA_PLAN in t
     nums = re.findall(r'<div class="shead-l"><span class="idx">(\d\d)<|<span class="lbl">(\d\d) · ', t)
     nums = [a or b for a, b in nums]
+    # The partner pages number their hero "01 / ...", so their sections count on from 02.
+    first = 2 if re.search(r'<span class="idx[^"]*">01 / ', t) else 1
     if nums:
-        assert nums[0] == "01" and nums == ["%02d" % i for i in range(1, len(nums) + 1)], (path, nums)
+        assert nums == ["%02d" % i for i in range(first, first + len(nums))], (path, nums)
 
 
 @pytest.mark.parametrize("slug", [s for s, _ in od.SERVICES])

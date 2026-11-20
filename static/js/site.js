@@ -151,7 +151,7 @@
         name: name, email: email, company: val("company"), website: val("website"),
         sells: val("sells"), meet: val("meet"), pillar: val("pillar"), spend: val("spend"),
         country: val("country"), message: val("message"), source: "book page", vid: vid,
-        // The partner pages' own questions (/partners/agencies, /partners/consultants).
+        // The partner pages' own questions (/outcomesdigital/partners/agencies and /consultants).
         based: val("based"), linkedin: val("linkedin"), years: val("years"), clients: val("clients"),
         network: val("network"),
         // The Outcomes Digital pages' own questions (/outcomesdigital).

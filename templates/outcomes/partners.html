@@ -1,6 +1,8 @@
-{% extends "site/base.html" %}
+{% extends "outcomes/base.html" %}
 {% import "site/_parts.html" as ui with context %}
-{#- Partners (/partners): the two ways to work with us without being our client. -#}
+{% import "outcomes/_od.html" as odp with context %}
+{#- Partners (/outcomesdigital/partners): the two ways to work with us without being our client. They
+    lived on the Northaxis site at /partners until November 2026, which now sends visitors here. -#}
 {% block main %}
 
 <header class="wrap hero">
@@ -17,7 +19,7 @@
 <section class="wrap sec-sm">
   <div class="pks">
     {% for k in site.PARTNER_KINDS %}
-    <a class="pk c-{{ k.c }}" href="/partners/{{ k.slug }}">
+    <a class="pk c-{{ k.c }}" href="{{ url('partners/' ~ k.slug) }}">
       <span class="lbl">{{ k.k }}</span>
       <h2 class="d2">{{ k.name }}</h2>
       <p class="pk-line">{{ k.line }}</p>
@@ -38,6 +40,6 @@
   </div>
 </section>
 
-{{ ui.cta("Not sure which fits?", "Tell us how you work, and we'll tell you which way in suits you.") }}
+{{ odp.cta("Not sure which fits?", "Tell us how you work, and we'll tell you which way in suits you.", label="Tell us how you work") }}
 
 {% endblock %}

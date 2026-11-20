@@ -1,9 +1,11 @@
-{% extends "site/base.html" %}
+{% extends "outcomes/base.html" %}
 {% import "site/_parts.html" as ui with context %}
-{#- The partner programme for senior paid marketing consultants (/partners/consultants). An outreach
+{% import "outcomes/_od.html" as odp with context %}
+{#- The partner programme for senior paid marketing consultants (/outcomesdigital/partners/consultants). An outreach
     landing page: the consultant wins the client and stays their lead, our team runs the accounts, and
     the consultant earns a recurring commission (site_pages.PARTNER_COMMISSION of every monthly fee).
-    The application form at the end posts to the same intake as /book. -#}
+    The application form at the end posts to the same intake as the other Outcomes Digital forms, to
+    #leads. -#}
 {% block main %}
 
 <header class="wrap hero hero-play">
@@ -67,7 +69,7 @@
   <span class="rule rv"></span>
   {% call ui.head("04", "Where the leads come from", "The buying signals we watch every morning for our own clients, pointed at companies that need paid marketing help. We pass you the ones in your industries and region.") %}<span class="ln"><span>Leads that already</span></span> <span class="ln"><span><span class="it">need you.</span></span></span>{% endcall %}
   <div class="cells cells-3" style="margin-top:var(--s8)">
-    {% for s in signals %}{{ ui.signal_cell(s) }}{% endfor %}
+    {% for s in signals %}{{ ui.signal_cell(s, link=False) }}{% endfor %}
   </div>
   <h3 class="d4 leads-h">A lead, as you&rsquo;d get it</h3>
   <div class="lcs">
@@ -144,7 +146,7 @@
       </div>
     </div>
     <div class="book-card">
-      <form id="bookForm" data-source="partner page" novalidate>
+      <form id="bookForm" data-source="outcomes digital" novalidate>
         <input type="hidden" name="pillar" value="Consultant partner">
         <div class="f-row">
           <div class="f" id="f-name"><label for="in-name">Your name</label><input id="in-name" name="name" autocomplete="name" required placeholder="Jane Doe" maxlength="120"></div>
@@ -164,13 +166,13 @@
         <div class="f"><label for="in-message">Anything else? <span class="opt">optional</span></label><textarea id="in-message" name="message" rows="3" maxlength="2000"></textarea></div>
         <p class="f-err" id="formErr" role="alert"></p>
         <button class="btn btn-1 f-submit" id="formSend" type="submit">Apply</button>
-        <p class="f-note">We use your answers to consider your application and nothing else. <a href="/privacy">Privacy</a></p>
+        <p class="f-note">We use your answers to consider your application and nothing else.</p>
       </form>
       <div class="f-done" id="formDone" role="status">
         <span class="mark"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
         <h3>Thanks. We&rsquo;ll reply within one working day.</h3>
         <p>We&rsquo;ll write to the email you gave with a few times for the call.</p>
-        <a class="btn btn-2" href="/signals">Meanwhile, see the signals we watch</a>
+        <a class="btn btn-2" href="{{ url('case-studies') }}">Meanwhile, read our case studies</a>
       </div>
     </div>
   </div>

@@ -3,15 +3,21 @@
 Unlisted: nothing on the Northaxis site links here, it is in no sitemap or llms.txt, robots.txt already closes
 every path it does not name, and every page and response says noindex. It shares the design system's files
 (press.css, site.css, site.js, press-play.js) but nothing that is Northaxis's own: no Northaxis nav, footer,
-links, visitor tracking or Warmly script. The words are outcomes_content.py's. The forms post to the same
-intake as /book, tagged "outcomes digital", so they reach the sheet and Slack.
+links or visitor tracking. The words are outcomes_content.py's. The forms post to the same intake as
+/book, tagged "outcomes digital", so they reach the sheet and Slack.
+
+The partner pages (/outcomesdigital/partners, and /agencies and /consultants under it) moved here from the
+Northaxis site's /partners in November 2026; the old addresses send visitors here. Their words are
+site_pages.py's (PARTNER_*, AGENCY_*, CONSULTANT_*), and they are the one place here that runs Warmly's
+script, once WARMLY_CLIENT_ID is set (WARMLY_PIXEL_PATHS, tracker/warmly_client.py).
 """
 from datetime import datetime
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 import outcomes_content as od
 import site_pages
+from tracker import warmly_client as _warmly
 
 PREFIX = "/outcomesdigital"
 bp = Blueprint("outcomes", __name__, url_prefix=PREFIX)
@@ -27,7 +33,11 @@ PAGES = [
     [("/" + slug, "service.html", "service", od.SERVICE_PAGES[slug]["page_title"]) for slug, _ in od.SERVICES] + \
     [("/ecommerce-marketing", "ecommerce.html", "ecommerce", "Ecommerce growth that actually pays off"),
      ("/education-marketing", "education.html", "education", "Education Marketing That Fills Seats"),
-     ("/real-estate-marketing", "real_estate.html", "real-estate", "Real Estate Marketing Ecosystem")]
+     ("/real-estate-marketing", "real_estate.html", "real-estate", "Real Estate Marketing Ecosystem"),
+     ("/partners", "partners.html", "partners", "Partner with us"),
+     ("/partners/agencies", "partner_agencies.html", "partner-agencies", "White-label paid media for agencies"),
+     ("/partners/consultants", "partner_consultants.html", "partner-consultants",
+      "Partner programme for paid marketing consultants")]
 
 DESCRIPTION = "We don't do marketing. We drive outcomes. " + od.HOME_LEAD
 
@@ -64,6 +74,8 @@ def inr_short(n):
 
 
 def _render(template, page, title, **kw):
+    # Warmly's script, only on the pages WARMLY_PIXEL_PATHS names (the partner pages unless set).
+    kw.setdefault("warmly_pixel", _warmly.pixel_id() if _warmly.pixel_on(request.path) else "")
     return render_template("outcomes/" + template, od=od, site=site_pages, page=page, url=url, inr=inr, inr_short=inr_short,
                            title=(title + " · " + od.BRAND) if title else od.BRAND + " · " + od.TAGLINE,
                            description=DESCRIPTION, year=datetime.now().year, **kw)
@@ -144,6 +156,26 @@ def education():
 @bp.route("/real-estate-marketing", strict_slashes=False)
 def real_estate():
     return _render("real_estate.html", "real-estate", "Real Estate Marketing Ecosystem")
+
+
+# The partner pages: (template, page key, title) by address under /partners.
+PARTNER_PAGES = {p[len("/partners"):]: (t, k, title) for p, t, k, title in PAGES if p.startswith("/partners")}
+
+
+@bp.route("/partners", strict_slashes=False)
+def partners():
+    return _render(*PARTNER_PAGES[""])
+
+
+@bp.route("/partners/agencies", strict_slashes=False)
+def partner_agencies():
+    return _render(*PARTNER_PAGES["/agencies"], faqs=site_pages.FAQ_AGENCY)
+
+
+@bp.route("/partners/consultants", strict_slashes=False)
+def partner_consultants():
+    return _render(*PARTNER_PAGES["/consultants"], faqs=site_pages.FAQ_CONSULTANT,
+                   signals=[site_pages.SIGNALS_BY_SLUG[s] for s in site_pages.CONSULTANT_SIGNALS])
 
 
 @bp.route("/<path:rest>")

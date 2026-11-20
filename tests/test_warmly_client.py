@@ -128,7 +128,7 @@ def test_nothing_this_client_asks_for_spends_a_credit():
 def test_the_status_says_what_is_missing_before_it_calls_anyone():
     report = wm.status()
     assert report["configured"] is False and report["missing"] == ["WARMLY_API_KEY", "WARMLY_ORG_ID"]
-    assert report["pixel"] == {"client_id_set": False, "paths": ["/partners"]}
+    assert report["pixel"] == {"client_id_set": False, "paths": ["/outcomesdigital/partners"]}
 
 
 def test_the_status_page_is_for_admins_only(client):
@@ -147,24 +147,30 @@ def test_the_script_id_is_an_id_or_nothing(monkeypatch):
     assert wm.pixel_id() == ""
 
 
+PARTNER_PAGES = ("/outcomesdigital/partners", "/outcomesdigital/partners/agencies",
+                 "/outcomesdigital/partners/consultants")
+
+
 def test_the_script_runs_on_the_partner_pages_only_by_default(client, monkeypatch):
-    for path in ("/partners", "/partners/agencies", "/partners/consultants", "/"):
+    for path in PARTNER_PAGES + ("/",):
         assert SCRIPT not in client.get(path).get_data(as_text=True), path
     monkeypatch.setenv("WARMLY_CLIENT_ID", "abc123")
-    for path in ("/partners", "/partners/agencies", "/partners/consultants"):
+    for path in PARTNER_PAGES:
         html = client.get(path).get_data(as_text=True)
         assert SCRIPT + "abc123" in html, path
         assert 'n.doNotTrack==="1"' in html and "n.globalPrivacyControl===true" in html
-    for path in ("/", "/pricing", "/partnership", "/book"):
-        r = client.get(path)
-        assert SCRIPT not in r.get_data(as_text=True), path
-    assert not wm.pixel_on("/partnersX")
+        # The Outcomes Digital site has no privacy page of its own: the form says the script is there.
+        assert "uses Warmly to tell us which company a visit came from" in html, path
+    for path in ("/", "/pricing", "/partnership", "/book", "/outcomesdigital", "/outcomesdigital/contact"):
+        html = client.get(path).get_data(as_text=True)
+        assert SCRIPT not in html and "uses Warmly" not in html, path
+    assert not wm.pixel_on("/outcomesdigital/partnersX") and not wm.pixel_on("/partners")
 
 
 def test_the_pages_the_script_runs_on_can_be_widened(client, monkeypatch):
     monkeypatch.setenv("WARMLY_CLIENT_ID", "abc123")
-    monkeypatch.setenv("WARMLY_PIXEL_PATHS", "/partners, pricing")
-    assert wm.pixel_paths() == ["/partners", "/pricing"]
+    monkeypatch.setenv("WARMLY_PIXEL_PATHS", "/outcomesdigital/partners, pricing")
+    assert wm.pixel_paths() == ["/outcomesdigital/partners", "/pricing"]
     assert SCRIPT in client.get("/pricing").get_data(as_text=True)
     assert SCRIPT not in client.get("/").get_data(as_text=True)
     monkeypatch.setenv("WARMLY_PIXEL_PATHS", "/")
@@ -175,8 +181,13 @@ def test_the_privacy_policy_names_warmly_whenever_the_script_is_on(client, monke
     off = client.get("/privacy").get_data(as_text=True)
     assert "with no third-party tracking scripts" in off and "Warmly" not in off
     monkeypatch.setenv("WARMLY_CLIENT_ID", "abc123")
+    # On by default only on the Outcomes Digital partner pages, which say so themselves: this site's policy
+    # names its own pages, and never the Outcomes Digital address.
+    default = client.get("/privacy").get_data(as_text=True)
+    assert "with no third-party tracking scripts" in default and "outcomesdigital" not in default
+    monkeypatch.setenv("WARMLY_PIXEL_PATHS", "/outcomesdigital/partners, /pricing")
     on = client.get("/privacy").get_data(as_text=True)
     assert "no third-party tracking scripts" not in on
-    assert "a script from Warmly" in on and "<code>/partners</code>" in on
+    assert "a script from Warmly" in on and "<code>/pricing</code>" in on and "outcomesdigital" not in on
     assert "Do Not Track or Global Privacy Control" in on and "including Warmly" in on
     assert SCRIPT not in on
