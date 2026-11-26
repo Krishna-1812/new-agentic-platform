@@ -614,6 +614,144 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
 
 /* ── Two quotes side by side ── */
 .od-quotes-2 { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); }
+/* ════ The slides at the top of the home page: the company, Northaxis, the summit ════ */
+
+/* The track: one slide per screen width, snapping, swipeable with no script. */
+.od-slider { position: relative; }
+.od-slides { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none; }
+.od-slides::-webkit-scrollbar { display: none; }
+.od-slide { min-width: 0; display: flex; flex-direction: column; scroll-snap-align: start; scroll-snap-stop: always; }
+.od-slide > .hero { flex: 1; }
+/* Narrow screens: each slide keeps its own height, and the track eases to the one in view (outcomes.js). */
+@media (max-width: 1000px) { .od-slides { align-items: start; transition: height 520ms var(--ease); } }
+
+/* Slides 2 and 3 reuse the hero's own parts (kicker, headline, figures, the dark report card), so the three
+   read as one; these are the only pieces the card needs beyond the first slide's. */
+.od-board-rows .od-board-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 28px; align-items: center; gap: var(--s4);
+  padding: 14px 16px; border-radius: 14px; background: #1C1C1E; }
+.od-board-ic { background: rgba(255,255,255,.08); color: var(--ink-paper); }
+/* Every slide starts at the same height, so the headline holds still as the slides change. */
+.od-slider .od-hero-grid { align-items: start; }
+/* The card's live label, not the bare pinging dot .od-live is elsewhere on the site. */
+.od-board-top .od-live { flex: 0 0 auto; width: auto; height: auto; border-radius: 0; background: none; box-shadow: none; animation: none; }
+.od-board-top > span:last-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.od-board-sum b { white-space: nowrap; }
+.od-board-mark { flex: 0 0 auto; width: 34px; height: 34px; padding: 5px; border-radius: 50%; background: #FFFFFF; }
+.od-board-out b { white-space: nowrap; }
+/* The sources Northaxis watches, as small tokens where the first card shows client faces. */
+.od-chips { display: flex; }
+.od-chips i { width: 34px; height: 34px; margin-left: -8px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  font-size: 13px; font-weight: 700; color: var(--ink-paper); background: #2A2A2E; box-shadow: 0 0 0 2px #121213; }
+.od-chips i:first-child { margin-left: 0; background: var(--acc); color: #121213; }
+.od-chips i:nth-child(2) { background: var(--sky); color: #121213; }
+.od-chips svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+/* The summit's mark on its own white plate (its logo is made for a light ground), with the role beside it. */
+.od-board-plate { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-bottom: 8px;
+  padding: 12px 16px; border-radius: 14px; background: #FFFFFF;
+  transition: opacity 600ms var(--ease), transform 600ms var(--ease); transition-delay: 150ms; }
+html.js .od-board-wrap:not(.in) .od-board-plate { opacity: 0; transform: translateY(10px); }
+.od-board-plate img { display: block; width: auto; height: clamp(40px, 3.6vw, 54px); min-width: 0; }
+.od-board-plate span { flex: 0 0 auto; padding: 7px 12px; border-radius: 99px; color: #FFFFFF; background: linear-gradient(100deg, #1E6FD9, #6A2BD8 55%, #D61F7D);
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+@media (max-width: 520px) {
+  .od-board-rows .od-board-row { grid-template-columns: minmax(0, 1fr) auto; padding: 12px 14px; }
+  .od-board-plate { padding: 10px 12px; }
+  .od-board-plate img { height: 36px; }
+}
+
+/* ── What makes the slides catch the eye: one set of effects for all three, a pair of colours per slide ──
+   A giant word drifts behind each slide, an aura glows behind the card, a light runs round its edge, two of
+   the site's shapes peek from behind it, the highlighter sweeps in and the figures count up (outcomes.js).
+   Nothing moves the content's place: the effects sit behind it, and stand still for reduced motion. */
+@property --od-spin { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.od-slide { position: relative; overflow: hidden; --g1: var(--acc); --g2: var(--amber); }
+.od-slide-nx { --g1: var(--sky); --g2: var(--acc); }
+.od-slide-bts { --g1: #6A2BD8; --g2: #D61F7D; }
+.od-slide > .hero { position: relative; z-index: 1; }
+
+.od-deco { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.od-word { position: absolute; left: 0; bottom: -0.3em; display: flex; white-space: nowrap; will-change: transform;
+  font-family: var(--face-display); font-style: italic; font-weight: 600; font-size: clamp(130px, 19vw, 300px); line-height: 1;
+  letter-spacing: -0.045em; animation: od-drift 70s linear infinite; }
+.od-word i { font-style: inherit; padding-right: 0.3em; color: transparent; opacity: .16;
+  background: linear-gradient(90deg, var(--g1), var(--g2)); -webkit-background-clip: text; background-clip: text; }
+@keyframes od-drift { to { transform: translateX(-50%); } }
+
+.od-slider .od-board-wrap { isolation: isolate; }
+.od-slider .od-board-wrap::before { content: ''; position: absolute; z-index: -2; inset: -2% -14% -12% -8%; pointer-events: none;
+  background: radial-gradient(42% 40% at 28% 26%, color-mix(in srgb, var(--g1) 62%, transparent), transparent 70%),
+              radial-gradient(46% 44% at 76% 78%, color-mix(in srgb, var(--g2) 55%, transparent), transparent 72%);
+  transform: translate(calc(var(--mx, 0) * 26px), calc(var(--my, 0) * 26px)); transition: transform 700ms var(--ease);
+  animation: od-aura 12s ease-in-out infinite alternate; }
+@keyframes od-aura { from { translate: -3% 2%; scale: 1; } to { translate: 4% -3%; scale: 1.1; } }
+.od-slider .od-board { transform: translate(calc(var(--mx, 0) * -7px), calc(var(--my, 0) * -7px)); transition: transform 600ms var(--ease);
+  box-shadow: 0 30px 60px rgba(0,0,0,.22), 0 30px 90px -30px color-mix(in srgb, var(--g1) 70%, transparent); }
+/* The light that runs round the card's edge. */
+.od-slider .od-board::before { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from var(--od-spin), transparent 0deg, var(--g1) 50deg, var(--g2) 110deg, transparent 170deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: od-spin 6s linear infinite; }
+@keyframes od-spin { to { --od-spin: 360deg; } }
+
+/* Two of the site's shapes, peeking from behind the card's corners. */
+.od-toy { position: absolute; z-index: -1; display: block; width: clamp(56px, 5.4vw, 92px); aspect-ratio: 1; pointer-events: none;
+  animation: od-bob 7s ease-in-out infinite; transition: opacity 600ms var(--ease) 500ms, scale 900ms var(--spring) 500ms; }
+.od-toy svg { display: block; width: 100%; height: 100%; transform: translate(calc(var(--mx, 0) * 16px), calc(var(--my, 0) * 16px));
+  transition: transform 700ms var(--ease); }
+.od-toy path { fill: var(--c); }
+.od-toy-a { top: -6px; right: -16px; --c: var(--g2); }
+.od-toy-b { bottom: -4px; left: -10px; width: clamp(48px, 4.4vw, 74px); --c: var(--g1); animation-delay: -3.5s; }
+html.js .od-board-wrap:not(.in) .od-toy { opacity: 0; scale: .3; }
+@keyframes od-bob { 50% { translate: 0 -12px; } }
+
+/* The highlighter sweeps across the marked word as the headline rises. */
+.od-slider .mk { background: linear-gradient(var(--acc), var(--acc)) no-repeat 0 0 / 100% 100%;
+  transition: background-size 800ms var(--ease) 450ms; }
+html.js .od-slider .rv:not(.in) .mk { background-size: 0% 100%; }
+/* While a slide's entrance is reset (outcomes.js), nothing eases back out. */
+.od-replay, .od-replay *, .od-replay *::before { transition: none !important; }
+@media (max-width: 760px) { .od-word { font-size: 120px; bottom: -0.12em; } .od-word i { opacity: .12; } }
+
+/* ── The bar under the slides: a tab per slide with its progress, the arrows and pause ── */
+.od-slider-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s6); padding-top: clamp(16px, 2vw, 28px); }
+.od-tabs { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+.od-tab { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 0 10px; padding: 6px 0;
+  color: var(--ink3); text-decoration: none; transition: color var(--dur-fast) ease; }
+.od-tab:hover, .od-tab.on { color: var(--ink); }
+.od-tab-n { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.od-tab-l { font-size: 14px; font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.od-tab-bar { grid-column: 1 / -1; display: block; height: 3px; margin-top: 10px; border-radius: 99px; background: var(--paper3); overflow: hidden; }
+.od-tab-bar i { display: block; width: 100%; height: 100%; background: var(--acc); transform: scaleX(0); transform-origin: 0 50%; }
+.od-tab.on .od-tab-bar i { transform: scaleX(1); }
+.od-slider.is-playing .od-tab.on .od-tab-bar i { animation: od-fill var(--secs, 8s) linear both; }
+.od-slider.is-held .od-tab.on .od-tab-bar i { animation-play-state: paused; }
+@keyframes od-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.od-slider-ctl { display: flex; gap: 8px; }
+.od-ctl { width: 44px; height: 44px; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 16px rgba(0,0,0,.07);
+  transition: transform 300ms var(--spring), background var(--dur-fast) ease, color var(--dur-fast) ease; }
+.od-ctl:hover { transform: translateY(-2px); background: var(--ink); color: var(--ink-paper); }
+.od-ctl svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.od-ctl-play .i-play { display: none; fill: currentColor; stroke: none; }
+.od-ctl-play[aria-pressed="true"] .i-play { display: block; }
+.od-ctl-play[aria-pressed="true"] .i-pause { display: none; }
+html:not(.js) .od-slider-ctl { display: none; }
+@media (max-width: 760px) {
+  .od-slider-bar { gap: var(--s4); }
+  .od-tabs { gap: var(--s3); }
+  .od-tab-l { display: none; }
+  .od-ctl { width: 40px; height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .od-slides { scroll-behavior: auto; transition: none; }
+  html.js .od-board-wrap:not(.in) .od-board-plate { opacity: 1; transform: none; }
+  .od-word, .od-toy, .od-slider .od-board::before, .od-slider .od-board-wrap::before { animation: none; }
+  html.js .od-board-wrap:not(.in) .od-toy { opacity: 1; scale: 1; }
+  html.js .od-slider .rv:not(.in) .mk { background-size: 100% 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html.js .od-board-wrap:not(.in) .od-board-rows li, html.js .od-board-wrap:not(.in) .od-board-sum div,
   html.js .od-chain:not(.in) .od-chain-step { opacity: 1; transform: none; }
@@ -622,8 +760,8 @@ html.js .od-chain:not(.in) .od-chain-step { opacity: 0; transform: translateY(14
   .od-live i { animation: none; }
 }
 
-/* The difference follows the hero directly, so it needs less room above it. */
-.od-home-hero + #difference { padding-top: var(--sec-sm); }
+/* The difference follows the slides directly, so it needs less room above it. */
+.od-slider + #difference { padding-top: var(--sec-sm); }
 
 /* Every card sits straight: no tilt at rest or on hover (the shared .model card tilts on hover). */
 .play .model:hover { transform: translateY(-8px); }

@@ -58,6 +58,51 @@ HOME_BOARD = (
     ("Allure Avani", "Luxury villas, Bangalore", "Site visits", "4×", "allure-avani"),
     ("Artistic Yoga", "Yoga studios, Dubai", "Unpaid visits a year", "457K+", "artistic-yoga"),
 )
+
+# ── Home: the slides at the top ─────────────────────────────────────────────────────────────────────────
+# The home page opens on three slides: the company (the hero above), Northaxis, our product, and the
+# Bengaluru Tech Summit we mentored at. (id, the tab's label.) Each shows for SLIDE_SECONDS.
+HOME_SLIDES = (
+    ("outcomes", "Outcomes Digital"),
+    ("northaxis", "Northaxis, our product"),
+    ("bts", "Bengaluru Tech Summit 2026"),
+)
+SLIDE_SECONDS = 8
+
+# Every slide is built the same way as the first: a kicker, two lines of headline, a lead, the two buttons
+# and three figures, beside a dark report card (rows, two coloured tiles, a footnote). Only the words change.
+
+# Northaxis: our GTM engineering product, on the same domain. Its figures are read from site_pages in the
+# template (the signal count, the monthly fee), so they stay the ones the Northaxis site shows.
+NX_KICKER = "Our product · Northaxis"
+NX_LEAD = ("Our GTM engineering platform. Its agents watch {signals} buying signals every morning, find the people "
+           "ready to buy, write to them in your name and book the meeting.")
+# One lead, from the sign to the meeting: sample data, the same story the Northaxis home page tells.
+# (what happened, the detail, the figure, what the figure is)
+NX_BOARD = (
+    ("Sign spotted", "LinkedIn post, HR software", "08:12", "Today"),
+    ("Lead scored", "80 people · email checked", "91", "Fit score"),
+    ("Message written", "Drafted in your name", "09:00", "Ready to send"),
+    ("Reply received", "“Happy to talk on Thursday.”", "10:47", "Same morning"),
+)
+NX_SUM = (("11:00", "Thursday: a meeting booked, in your calendar"), ("2h 35m", "from the post to the reply"))
+
+# The Bengaluru Tech Summit 2026: outcomes.digital's own news (its home page banner) and the summit's
+# published facts (dates, venue, theme, the Mentor-Mentee Connect's numbers). The summit has ended, so the
+# slide says what we did, in the past tense.
+BTS = {
+    "name": "Bengaluru Tech Summit 2026",
+    "edition": "29th",
+    "dates": "17–19 Nov 2026",
+    "venue": "Hall 4, BIEC, Bengaluru",
+    "theme": "AI & Beyond",
+    "mentors": "80+",
+    "startups": "400",
+}
+BTS_KICKER = "Bengaluru Tech Summit 2026 · AI & Beyond"
+BTS_LEAD = ("We were invited to mentor at the {edition} Bengaluru Tech Summit. Our CEO, {who}, sat with founders at "
+            "its Mentor-Mentee Connect: {mentors} mentors, {startups} startups, three days.")
+
 # The difference, row by row: (what most agencies report, what we are measured on).
 HOME_VS = (
     ("Impressions and reach", "Revenue and orders"),

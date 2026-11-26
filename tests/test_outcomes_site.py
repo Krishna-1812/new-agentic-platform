@@ -2,7 +2,8 @@
 
 The pages keep the live site's words (outcomes_content.py) and are unlisted: every page and response says
 noindex, nothing on the Northaxis site (pages, sitemap, llms files, robots.txt) names the address, and the
-Outcomes pages carry no Northaxis link, name or tracking. Their forms reach the same intake as /book,
+Outcomes pages carry no Northaxis link, name or tracking but for the home page's second slide, which
+introduces Northaxis as our product. Their forms reach the same intake as /book,
 tagged "outcomes digital", and post to #leads.
 """
 import html
@@ -66,6 +67,10 @@ def test_a_missing_page_gets_this_sites_404_not_northaxis(client):
 @pytest.mark.parametrize("path", PATHS)
 def test_no_outcomes_page_links_to_or_tracks_for_northaxis(client, path):
     body = client.get(path).get_data(as_text=True)
+    if path == site.PREFIX:
+        # The home page's second slide, and its tab, introduce Northaxis: the one place that names it.
+        body = body[:body.index('id="slide-northaxis"')] + body[body.index('id="slide-bts"'):]
+        body = body.replace(od.HOME_SLIDES[1][1], "").replace("slide-northaxis", "slide-2")
     assert appmod.BRAND["name"] not in body and "northaxis" not in body.lower().replace("northaxis.outcomes.digital", "")
     for href in re.findall(r'href="([^"]+)"', body):
         if href == appmod.SITE_URL + path:
@@ -318,7 +323,7 @@ def test_the_home_page_has_no_founders_story_section(client):
     assert 'id="said"' not in html
     # The difference now follows the hero directly, with a smaller gap above it.
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
-    assert ".od-home-hero + #difference { padding-top: var(--sec-sm); }" in css
+    assert ".od-slider + #difference { padding-top: var(--sec-sm); }" in css
 
 
 # == the home page's one argument: outcomes, not activity ===============================================
@@ -501,3 +506,104 @@ def test_quote_cards_in_a_row_sit_level_and_match_in_height():
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
     assert ".od-quotes { display: grid;" in css and "align-items: stretch; }" in css.split(".od-quotes {", 1)[1].split("\n", 1)[0]
     assert ".od-quotes .od-quote:nth-child" not in css, "no quote card is pushed lower than the one beside it"
+
+
+# == the slides at the top of the home page =============================================================
+
+def _slides(client):
+    body = client.get(site.PREFIX).get_data(as_text=True)
+    return html.unescape(body[body.index('id="highlights"'):body.index('id="difference"')])
+
+
+def test_the_home_page_opens_on_three_slides_with_a_tab_each(client):
+    t = _slides(client)
+    assert 'aria-roledescription="carousel"' in t and 'data-seconds="%d"' % od.SLIDE_SECONDS in t
+    for k, (sid, label) in enumerate(od.HOME_SLIDES):
+        assert 'id="slide-%s"' % sid in t and "%d of %d: %s" % (k + 1, len(od.HOME_SLIDES), label) in t
+        assert 'href="#slide-%s"' % sid in t and 'aria-controls="slide-%s"' % sid in t
+    # The first slide is the home page's own hero: its one h1 and its board.
+    first = t[:t.index('id="slide-northaxis"')]
+    assert first.count("<h1") == 1 and t.count("<h1") == 1 and "We drive" in first and "od-board" in first
+    # Arrows, and a pause button that only shows once the script runs.
+    assert 'data-step="-1"' in t and 'data-step="1"' in t and 'class="od-ctl od-ctl-play" type="button"' in t
+    assert 'aria-pressed="false" hidden>' in t
+
+
+def test_the_northaxis_slide_shows_the_product_and_links_to_its_site(client):
+    t = _slides(client)
+    nx = t[t.index('id="slide-northaxis"'):t.index('id="slide-bts"')]
+    assert od.NX_KICKER in nx and od.NX_LEAD.format(signals=len(site.site_pages.SIGNALS)) in nx
+    for what, detail, fig, note in od.NX_BOARD:
+        assert what in nx and detail in nx and fig in nx and note in nx
+    for fig, what in od.NX_SUM:
+        assert fig in nx and what in nx
+    assert "a sample" in nx  # the lead is sample data, and says so
+    assert site.site_pages.GTM_FEE in nx
+    links = re.findall(r'href="([^"]+)"', nx)
+    assert len(links) == 2 and links[1] == links[0] + "signals" and links[0].endswith("/"), links
+    # The links go to the Northaxis site itself, never back into these pages.
+    assert not any(h.startswith(site.PREFIX) or "outcomesdigital" in h for h in links), links
+
+
+def test_every_slide_is_built_like_the_first(client):
+    """The three slides share one look: the same paper, kicker, headline, lead, buttons and figures, beside the
+    same dark report card. Only the words change."""
+    t = _slides(client)
+    at = [t.index('id="slide-%s"' % sid) for sid, _ in od.HOME_SLIDES] + [t.index("od-slider-bar")]
+    for k in range(len(od.HOME_SLIDES)):
+        s = t[at[k]:at[k + 1]]
+        for part in ('class="wrap hero od-home-hero"', 'class="lbl od-kicker', 'class="d1 rv"', 'class="mk"',
+                     'class="lead rv fade"', 'class="btn btn-1"', "btn-2", 'class="od-proof-row', 'class="od-board-wrap rv"',
+                     'class="od-board-top"', 'class="od-board-rows"', 'class="od-board-sum"', 'class="c-orange"',
+                     'class="c-sky"', 'class="od-board-foot"'):
+            assert part in s, (od.HOME_SLIDES[k][0], part)
+        assert s.count("<dd>") == 3, od.HOME_SLIDES[k][0]
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    for gone in ("od-stage", "od-pass", "od-bts-", "inkband"):
+        assert gone not in css[css.index("/* ════ The slides at the top"):], gone
+
+
+def test_the_summit_slide_keeps_the_facts_and_the_pass(client):
+    t = _slides(client)
+    bts = t[t.index('id="slide-bts"'):]
+    b = od.BTS
+    for fact in (b["name"], b["theme"], b["dates"], b["mentors"], b["startups"]):
+        assert fact in bts, fact
+    assert od.BTS_LEAD.format(edition=b["edition"], who=od.TEAM[0][1], mentors=b["mentors"],
+                              startups=b["startups"]) in bts
+    assert od.BTS_KICKER in bts and od.TEAM[0][1] in bts and od.CALENDLY in bts
+    assert 'href="%s"' % site.url("about-us") in bts
+    # The summit's mark, on its own white plate on the pass, named for a screen reader.
+    assert '<img src="/static/outcomes/img/bts-logo.webp" alt="%s"' % b["name"] in bts
+    assert os.path.getsize(os.path.join(ROOT, "static/outcomes/img/bts-logo.webp")) > 1000
+
+
+def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion():
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    track = css[css.index(".od-slides {"):]
+    track = track[:track.index("}")]
+    assert "scroll-snap-type: x mandatory" in track and "overflow-x: auto" in track
+    block = css[css.index("/* ════ The slides at the top of the home page"):css.rindex("@media (prefers-reduced-motion: reduce) {")]
+    rm = block[block.rindex("@media (prefers-reduced-motion: reduce) {"):]
+    for sel in (".od-board-plate", ".od-word", ".od-toy", ".od-slider .od-board::before", ".od-slider .rv:not(.in) .mk"):
+        assert sel in rm, sel
+    js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
+    # Autoplay never runs for reduced motion, and holds while the pointer or focus is on the slides.
+    assert "stopped = still" in js and '"mouseenter"' in js and '"focusin"' in js and "doc.hidden" in js
+
+
+def test_every_slide_carries_the_same_effects_in_its_own_colours(client):
+    """A giant word drifting behind, two of the site's shapes peeking from behind the card, and a colour pair
+    per slide: decoration only, hidden from screen readers."""
+    t = _slides(client)
+    at = [t.index('id="slide-%s"' % sid) for sid, _ in od.HOME_SLIDES] + [t.index("od-slider-bar")]
+    for k, word in enumerate(("outcomes", "northaxis", "bengaluru")):
+        s = t[at[k]:at[k + 1]]
+        assert '<div class="od-deco" aria-hidden="true"><span class="od-word">' + "<i>%s</i>" % word * 4 in s
+        assert s.count('class="od-toy ') == 2 and s.count('<span class="od-toy od-toy-') == s.count('aria-hidden="true"><svg viewBox="0 0 100 100">')
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    for rule in (".od-slide { position: relative; overflow: hidden; --g1:", ".od-slide-nx { --g1:", ".od-slide-bts { --g1:"):
+        assert rule in css, rule
+    js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
+    # Figures count up only for plain numbers, and the mouse depth only with a fine pointer and motion allowed.
+    assert "var count = function (slide)" in js and '"(hover: hover) and (pointer: fine)"' in js and "if (!still) count(slides[0]);" in js
