@@ -47,11 +47,44 @@
     var fit = function () {
       track.style.height = narrow.matches ? slides[cur].offsetHeight + "px" : "";
     };
+    /* The figures count up from nought: only a plain number with a sign or unit ("$1,000", "74%+", "2x",
+       "29th"), never a time, a range or a word. The words stay in the page for anyone without the script. */
+    var count = function (slide) {
+      Array.prototype.forEach.call(slide.querySelectorAll(".od-proof-row dd, .od-board-out b, .od-board-sum b"), function (el) {
+        var txt = el.getAttribute("data-n") || el.textContent;
+        el.setAttribute("data-n", txt);
+        var m = /^([^\d]*?)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(txt);
+        if (!m || /[A-Za-z]/.test(m[1]) || /\d/.test(m[3])) return;
+        var end = parseFloat(m[2].replace(/,/g, "")), dec = (m[2].split(".")[1] || "").length, comma = m[2].indexOf(",") > -1;
+        var run = (el._odRun || 0) + 1, t0 = 0;
+        el._odRun = run;
+        var fmt = function (v) {
+          var n = comma ? Math.round(v).toLocaleString("en-US") : v.toFixed(dec);
+          return m[1] + n + m[3];
+        };
+        var step = function (ts) {
+          if (el._odRun !== run) return;
+          if (!t0) t0 = ts;
+          var p = Math.min(1, (ts - t0) / 1400);
+          el.textContent = p < 1 ? fmt(end * (1 - Math.pow(1 - p, 3))) : txt;
+          if (p < 1) requestAnimationFrame(step);
+        };
+        el.textContent = fmt(0);
+        setTimeout(function () { requestAnimationFrame(step); }, 350);
+      });
+    };
     var replay = function (slide) {
-      /* The headline rises and the copy fades in again (press.css's .rv / .in), each time. */
-      Array.prototype.forEach.call(slide.querySelectorAll(".rv"), function (el) { el.classList.remove("in"); });
+      /* The headline rises, the highlighter sweeps, the card's rows arrive and the figures count, each time
+         the slide comes into view. The reset itself is instant (.od-replay turns transitions off), so nothing
+         is seen easing back out. */
+      var rv = slide.querySelectorAll(".rv");
+      slide.classList.add("od-replay");
+      Array.prototype.forEach.call(rv, function (el) { el.classList.remove("in"); });
       void slide.offsetWidth;
-      Array.prototype.forEach.call(slide.querySelectorAll(".rv"), function (el) { el.classList.add("in"); });
+      slide.classList.remove("od-replay");
+      void slide.offsetWidth;
+      Array.prototype.forEach.call(rv, function (el) { el.classList.add("in"); });
+      count(slide);
     };
     var mark = function (i, fromScroll) {
       if (i === cur && slides[i].classList.contains("is-on")) return;
@@ -128,11 +161,27 @@
       track.scrollTo({ left: cur * track.clientWidth, behavior: "auto" }); fit();
     });
     if (narrow.addEventListener) narrow.addEventListener("change", fit);
+    /* Depth: with a mouse, the aura, the card and the shapes drift apart a little as the pointer moves. */
+    if (!still && window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      var raf = 0, mx = 0, my = 0;
+      slider.addEventListener("mousemove", function (e) {
+        var r = slider.getBoundingClientRect();
+        mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+        my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        if (!raf) raf = requestAnimationFrame(function () {
+          raf = 0;
+          slider.style.setProperty("--mx", mx.toFixed(3));
+          slider.style.setProperty("--my", my.toFixed(3));
+        });
+      });
+      slider.addEventListener("mouseleave", function () { slider.style.setProperty("--mx", "0"); slider.style.setProperty("--my", "0"); });
+    }
     window.addEventListener("load", fit);
 
     slides.forEach(function (s, k) { if (k) { s.classList.remove("is-on"); if ("inert" in s) s.inert = true; s.setAttribute("aria-hidden", "true"); } });
     slides[0].classList.add("is-on"); slides[0].setAttribute("aria-hidden", "false");
     setPlaying(); fit(); restart();
+    if (!still) count(slides[0]);
   }
 
   /* ── Rupees, as the live estimator writes them ── */

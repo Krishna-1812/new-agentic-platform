@@ -585,7 +585,25 @@ def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion
     assert "scroll-snap-type: x mandatory" in track and "overflow-x: auto" in track
     block = css[css.index("/* ════ The slides at the top of the home page"):css.rindex("@media (prefers-reduced-motion: reduce) {")]
     rm = block[block.rindex("@media (prefers-reduced-motion: reduce) {"):]
-    assert ".od-board-plate" in rm
+    for sel in (".od-board-plate", ".od-word", ".od-toy", ".od-slider .od-board::before", ".od-slider .rv:not(.in) .mk"):
+        assert sel in rm, sel
     js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
     # Autoplay never runs for reduced motion, and holds while the pointer or focus is on the slides.
     assert "stopped = still" in js and '"mouseenter"' in js and '"focusin"' in js and "doc.hidden" in js
+
+
+def test_every_slide_carries_the_same_effects_in_its_own_colours(client):
+    """A giant word drifting behind, two of the site's shapes peeking from behind the card, and a colour pair
+    per slide: decoration only, hidden from screen readers."""
+    t = _slides(client)
+    at = [t.index('id="slide-%s"' % sid) for sid, _ in od.HOME_SLIDES] + [t.index("od-slider-bar")]
+    for k, word in enumerate(("outcomes", "northaxis", "bengaluru")):
+        s = t[at[k]:at[k + 1]]
+        assert '<div class="od-deco" aria-hidden="true"><span class="od-word">' + "<i>%s</i>" % word * 4 in s
+        assert s.count('class="od-toy ') == 2 and s.count('<span class="od-toy od-toy-') == s.count('aria-hidden="true"><svg viewBox="0 0 100 100">')
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    for rule in (".od-slide { position: relative; overflow: hidden; --g1:", ".od-slide-nx { --g1:", ".od-slide-bts { --g1:"):
+        assert rule in css, rule
+    js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
+    # Figures count up only for plain numbers, and the mouse depth only with a fine pointer and motion allowed.
+    assert "var count = function (slide)" in js and '"(hover: hover) and (pointer: fine)"' in js and "if (!still) count(slides[0]);" in js
