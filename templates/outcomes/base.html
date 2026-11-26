@@ -5,8 +5,8 @@
     files (press.css, site.css, site.js, press-play.js) and the same parts,
     with Outcomes Digital's name, mark, menus and footer. Unlisted: noindex
     on every page but the partner pages, which carry a canonical address
-    instead (and an X-Robots-Tag header, outcomes_site.py), and nothing
-    here links to Northaxis or loads its tracking. The one script from outside is Warmly's, on the partner
+    instead (and an X-Robots-Tag header, outcomes_site.py). Nothing
+    here loads Northaxis's tracking, and only the home page's second slide names or links to it. The one script from outside is Warmly's, on the partner
     pages only, once WARMLY_CLIENT_ID is set (WARMLY_PIXEL_PATHS); the footer then says so. Content: outcomes_content.py.
 -#}
 {%- import "site/_parts.html" as ui with context -%}
@@ -34,7 +34,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/press.css?v=8">
 <link rel="stylesheet" href="/static/css/site.css?v=5">
-<link rel="stylesheet" href="/static/outcomes/outcomes.css?v=8">
+<link rel="stylesheet" href="/static/outcomes/outcomes.css?v=10">
 <script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
 {% if warmly_pixel %}{#- Warmly identifies the companies reading the partner pages; never for a browser that asks
     not to be tracked, as the form on the page says. -#}
@@ -109,6 +109,6 @@
 <script src="/static/js/site.js?v=4" defer></script>
 <script src="{{ url_for('static', filename='vendor/anime/anime.nx.min.js') }}?v=4.5.0" defer></script>
 <script src="{{ url_for('static', filename='js/press-play.js') }}?v=6" defer></script>
-<script src="/static/outcomes/outcomes.js?v=1" defer></script>
+<script src="/static/outcomes/outcomes.js?v=3" defer></script>
 </body>
 </html>

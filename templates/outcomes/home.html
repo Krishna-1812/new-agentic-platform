@@ -7,7 +7,16 @@
     team, how it works, who it is for, the proof, the brands, their words and the next step. -#}
 {% block main %}
 {% set allure_q = (od.HOME_QUOTES|selectattr(1, 'equalto', 'Allure Avani')|first) %}
+{% set mentor = od.TEAM[0] %}
 
+{#- The slides at the top: the company (the hero), Northaxis, our product, and the Bengaluru Tech Summit we
+    mentored at. The track is a scroll-snap row, so it swipes and scrolls with no script; outcomes.js adds
+    the tabs' progress, autoplay (paused on hover, focus or a hidden tab, and never with reduced motion),
+    the arrows and the keyboard, and replays each slide's entrance as it comes into view. -#}
+<section class="od-slider" id="highlights" aria-roledescription="carousel" aria-label="{{ od.BRAND }} highlights" data-seconds="{{ od.SLIDE_SECONDS }}">
+<div class="od-slides" id="odSlides" aria-live="off">
+
+<div class="od-slide od-slide-home" id="slide-outcomes" role="group" aria-roledescription="slide" aria-label="1 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[0][1] }}">
 <header class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -44,6 +53,107 @@
     </div>
   </div>
 </header>
+</div>
+
+{#- Northaxis, our product: what it does, one lead from the sign to the meeting, and its numbers. -#}
+<div class="od-slide od-slide-nx" id="slide-northaxis" role="group" aria-roledescription="slide" aria-label="2 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[1][1] }}">
+  <div class="inkband od-stage od-stage-nx">
+    <div class="od-stage-grid">
+      <div class="od-stage-copy">
+        <span class="lbl od-kicker od-kicker-dark rv fade"><i aria-hidden="true"></i>{{ od.NX_KICKER }}</span>
+        <h2 class="d1 od-slide-h rv"><span class="ln"><span>Buyers found.</span></span> <span class="ln"><span>Meetings <span class="mk">booked.</span></span></span></h2>
+        <p class="lead rv fade">{{ od.NX_LEAD.format(signals=site.SIGNALS|length) }}</p>
+        <dl class="od-slide-figs rv fade">
+          <div><dd>{{ site.SIGNALS|length }}</dd><dt>Buying signals watched daily</dt></div>
+          <div><dd>16</dd><dt>Agents on every ad account</dt></div>
+          <div><dd>{{ site.GTM_FEE }}</dd><dt>A month, meetings promised</dt></div>
+        </dl>
+        <div class="btns rv fade">
+          <a class="btn btn-1" href="{{ nx_home }}" data-cta="slide-northaxis">Explore Northaxis</a>
+          <a class="btn btn-2" href="{{ nx_home }}signals">See the {{ site.SIGNALS|length }} signals</a>
+        </div>
+      </div>
+      {#- One lead, followed from the sign to the meeting: sample data, as the Northaxis home page shows it. -#}
+      <div class="od-flow" aria-label="One lead, from the sign to the meeting (sample)">
+        <span class="od-flow-tag">Sample lead</span>
+        <ol class="od-flow-steps">
+          {% for kind, when, who, what in od.NX_FLOW %}
+          <li class="od-flow-step{{ ' is-meeting' if loop.last }}" style="--d:{{ loop.index0 }}">
+            <span class="od-flow-dot" aria-hidden="true">{% if loop.last %}<svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% else %}{{ '%02d'|format(loop.index) }}{% endif %}</span>
+            <div class="od-flow-card">
+              <div class="od-flow-top"><span>{{ kind }}</span><time>{{ when }}</time></div>
+              <b>{{ who }}</b>
+              <p>{{ what }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+{#- The Bengaluru Tech Summit 2026: we mentored there. The summit's colours, its mark on a mentor's pass,
+    and Bengaluru's Vidhana Soudha drawn along the foot of the block. -#}
+<div class="od-slide od-slide-bts" id="slide-bts" role="group" aria-roledescription="slide" aria-label="3 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[2][1] }}">
+  <div class="inkband od-stage od-stage-bts">
+    <img class="od-bts-soudha" src="/static/outcomes/img/bts-soudha.webp" alt="" width="920" height="211" loading="lazy">
+    <div class="od-stage-grid">
+      <div class="od-stage-copy">
+        <span class="lbl od-kicker od-kicker-dark rv fade"><i aria-hidden="true"></i>{{ od.BTS.name }} &middot; {{ od.BTS.theme }}</span>
+        <h2 class="d1 od-slide-h rv"><span class="ln"><span>Invited as <span class="mk">mentors</span></span></span> <span class="ln od-slide-h-sm"><span><span class="it">to Bengaluru Tech Summit.</span></span></span></h2>
+        <p class="lead rv fade">{{ od.BTS_LEAD.format(edition=od.BTS.edition, who=mentor[1], mentors=od.BTS.mentors, startups=od.BTS.startups) }}</p>
+        <ul class="od-bts-facts rv fade">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span><b>{{ od.BTS.dates }}</b>Three days</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/></svg><span><b>{{ od.BTS.venue }}</b>The venue</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.6 3-5.6 6-5.6s5.4 2 6 5.6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.6c2.6.2 4.4 2 5 5.4"/></svg><span><b>{{ od.BTS.mentors }} mentors, {{ od.BTS.startups }} startups</b>Mentor-Mentee Connect</span></li>
+        </ul>
+        <div class="btns rv fade">
+          <a class="btn btn-1" href="{{ url('contact') }}" data-cta="slide-bts">{{ od.CTA_PLAN }}</a>
+          {{ odp.cal(cls="btn-2", cta="slide-bts-call") }}
+        </div>
+      </div>
+      {#- A mentor's pass on its lanyard: the summit's mark, the role, who and when. Decorative; the slide's
+          text says all of it. -#}
+      <div class="od-pass-wrap" aria-hidden="true">
+        <div class="od-pass">
+          <span class="od-pass-strap"></span>
+          <span class="od-pass-clip"></span>
+          <div class="od-pass-head"><img src="/static/outcomes/img/bts-logo.webp" alt="" width="1376" height="440" loading="lazy"></div>
+          <div class="od-pass-role">Mentor</div>
+          <div class="od-pass-who">
+            <img src="/static/outcomes/img/mark.webp" alt="" width="40" height="40">
+            <span><b>{{ od.BRAND }}</b>{{ mentor[1] }} &middot; {{ mentor[2] }}</span>
+          </div>
+          <dl class="od-pass-meta">
+            <div><dt>Dates</dt><dd>{{ od.BTS.dates }}</dd></div>
+            <div><dt>Venue</dt><dd>Hall 4, BIEC</dd></div>
+            <div><dt>Theme</dt><dd>{{ od.BTS.theme }}</dd></div>
+          </dl>
+          <div class="od-pass-foot"><span class="od-pass-code"></span><span>BTS26 &middot; MENTOR</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="wrap od-slider-bar">
+  <div class="od-tabs">
+    {% for sid, label in od.HOME_SLIDES %}
+    <a class="od-tab{{ ' on' if loop.first }}" href="#slide-{{ sid }}" data-slide="{{ loop.index0 }}" aria-controls="slide-{{ sid }}"{% if loop.first %} aria-current="true"{% endif %}>
+      <span class="od-tab-n">{{ '%02d'|format(loop.index) }}</span><span class="od-tab-l">{{ label }}</span>
+      <span class="od-tab-bar" aria-hidden="true"><i></i></span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="od-slider-ctl">
+    <button class="od-ctl" type="button" data-step="-1" aria-label="Previous slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="od-ctl od-ctl-play" type="button" aria-label="Pause the slides" aria-pressed="false" hidden><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5Z"/></svg></button>
+    <button class="od-ctl" type="button" data-step="1" aria-label="Next slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+</div>
+</section>
 
 {#- The difference, row by row: what most agencies report, struck out as it scrolls in, against what we are
     measured on. -#}

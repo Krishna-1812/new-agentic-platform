@@ -3,7 +3,8 @@
 Unlisted, but for the partner pages (LISTED): nothing on the Northaxis site links here, it is in no sitemap or llms.txt, robots.txt already closes
 every path it does not name, and every page and response says noindex. It shares the design system's files
 (press.css, site.css, site.js, press-play.js) but nothing that is Northaxis's own: no Northaxis nav, footer,
-links or visitor tracking. The words are outcomes_content.py's. The forms post to the same intake as
+links or visitor tracking, but for the home page's second slide, which introduces Northaxis as our product
+and links to its site. The words are outcomes_content.py's. The forms post to the same intake as
 /book, tagged "outcomes digital", so they reach the sheet and Slack.
 
 The partner pages (/outcomesdigital/partners, and /agencies and /consultants under it) moved here from the
@@ -118,7 +119,9 @@ def _never_listed(resp):
 
 @bp.route("", strict_slashes=False)
 def home():
-    return _render("home.html", "home", None)
+    # The home page's second slide introduces Northaxis, our product, and links to its site: the one place
+    # on these pages that names or links it.
+    return _render("home.html", "home", None, nx_home=(SITE_URL or request.url_root.rstrip("/")) + "/")
 
 
 @bp.route("/about-us", strict_slashes=False)
