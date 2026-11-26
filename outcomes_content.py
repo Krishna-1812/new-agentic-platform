@@ -69,20 +69,23 @@ HOME_SLIDES = (
 )
 SLIDE_SECONDS = 8
 
+# Every slide is built the same way as the first: a kicker, two lines of headline, a lead, the two buttons
+# and three figures, beside a dark report card (rows, two coloured tiles, a footnote). Only the words change.
+
 # Northaxis: our GTM engineering product, on the same domain. Its figures are read from site_pages in the
 # template (the signal count, the monthly fee), so they stay the ones the Northaxis site shows.
 NX_KICKER = "Our product · Northaxis"
-NX_LEAD = ("Northaxis is our GTM engineering platform. Its agents watch {signals} buying signals every morning, "
-           "find the people ready to buy, write to them in your name and put the meetings in your calendar.")
+NX_LEAD = ("Our GTM engineering platform. Its agents watch {signals} buying signals every morning, find the people "
+           "ready to buy, write to them in your name and book the meeting.")
 # One lead, from the sign to the meeting: sample data, the same story the Northaxis home page tells.
-NX_FLOW = (
-    ("Buying sign · LinkedIn post", "08:12", "Head of Marketing, 80-person HR software company",
-     "“Our cost per lead has doubled this quarter. How are others handling it?”"),
-    ("Lead · scored 91", "09:00", "Fits your profile: B2B software, 50 to 200 people",
-     "Email checked. A first message drafted in your name."),
-    ("Meeting booked", "Thu 11:00", "In your calendar, with the post and the thread",
-     "It counts toward this month’s promise once it takes place."),
+# (what happened, the detail, the figure, what the figure is)
+NX_BOARD = (
+    ("Sign spotted", "LinkedIn post, HR software", "08:12", "Today"),
+    ("Lead scored", "80 people · email checked", "91", "Fit score"),
+    ("Message written", "Drafted in your name", "09:00", "Ready to send"),
+    ("Reply received", "“Happy to talk on Thursday.”", "10:47", "Same morning"),
 )
+NX_SUM = (("11:00", "Thursday: a meeting booked, in your calendar"), ("2h 35m", "from the post to the reply"))
 
 # The Bengaluru Tech Summit 2026: outcomes.digital's own news (its home page banner) and the summit's
 # published facts (dates, venue, theme, the Mentor-Mentee Connect's numbers). The summit has ended, so the
@@ -96,9 +99,10 @@ BTS = {
     "mentors": "80+",
     "startups": "400",
 }
-BTS_LEAD = ("Outcomes Digital was invited as a mentor to the {edition} Bengaluru Tech Summit. Our CEO, {who}, "
-            "joined its Mentor-Mentee Connect, where {mentors} mentors worked with {startups} startups over three "
-            "days at BIEC.")
+BTS_KICKER = "Bengaluru Tech Summit 2026 · AI & Beyond"
+BTS_LEAD = ("We were invited to mentor at the {edition} Bengaluru Tech Summit. Our CEO, {who}, sat with founders at "
+            "its Mentor-Mentee Connect: {mentors} mentors, {startups} startups, three days.")
+
 # The difference, row by row: (what most agencies report, what we are measured on).
 HOME_VS = (
     ("Impressions and reach", "Revenue and orders"),

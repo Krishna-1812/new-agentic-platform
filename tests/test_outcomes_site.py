@@ -533,13 +533,34 @@ def test_the_northaxis_slide_shows_the_product_and_links_to_its_site(client):
     t = _slides(client)
     nx = t[t.index('id="slide-northaxis"'):t.index('id="slide-bts"')]
     assert od.NX_KICKER in nx and od.NX_LEAD.format(signals=len(site.site_pages.SIGNALS)) in nx
-    for step, when, who, line in od.NX_FLOW:
-        assert step in nx and when in nx and who in nx and line in nx
+    for what, detail, fig, note in od.NX_BOARD:
+        assert what in nx and detail in nx and fig in nx and note in nx
+    for fig, what in od.NX_SUM:
+        assert fig in nx and what in nx
+    assert "a sample" in nx  # the lead is sample data, and says so
     assert site.site_pages.GTM_FEE in nx
     links = re.findall(r'href="([^"]+)"', nx)
     assert len(links) == 2 and links[1] == links[0] + "signals" and links[0].endswith("/"), links
     # The links go to the Northaxis site itself, never back into these pages.
     assert not any(h.startswith(site.PREFIX) or "outcomesdigital" in h for h in links), links
+
+
+def test_every_slide_is_built_like_the_first(client):
+    """The three slides share one look: the same paper, kicker, headline, lead, buttons and figures, beside the
+    same dark report card. Only the words change."""
+    t = _slides(client)
+    at = [t.index('id="slide-%s"' % sid) for sid, _ in od.HOME_SLIDES] + [t.index("od-slider-bar")]
+    for k in range(len(od.HOME_SLIDES)):
+        s = t[at[k]:at[k + 1]]
+        for part in ('class="wrap hero od-home-hero"', 'class="lbl od-kicker', 'class="d1 rv"', 'class="mk"',
+                     'class="lead rv fade"', 'class="btn btn-1"', "btn-2", 'class="od-proof-row', 'class="od-board-wrap rv"',
+                     'class="od-board-top"', 'class="od-board-rows"', 'class="od-board-sum"', 'class="c-orange"',
+                     'class="c-sky"', 'class="od-board-foot"'):
+            assert part in s, (od.HOME_SLIDES[k][0], part)
+        assert s.count("<dd>") == 3, od.HOME_SLIDES[k][0]
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    for gone in ("od-stage", "od-pass", "od-bts-", "inkband"):
+        assert gone not in css[css.index("/* ════ The slides at the top"):], gone
 
 
 def test_the_summit_slide_keeps_the_facts_and_the_pass(client):
@@ -550,12 +571,11 @@ def test_the_summit_slide_keeps_the_facts_and_the_pass(client):
         assert fact in bts, fact
     assert od.BTS_LEAD.format(edition=b["edition"], who=od.TEAM[0][1], mentors=b["mentors"],
                               startups=b["startups"]) in bts
-    assert od.CTA_PLAN in bts and od.CALENDLY in bts
-    # The pass is decoration: the slide's words already say all it says.
-    assert '<div class="od-pass-wrap" aria-hidden="true">' in bts
-    for img in ("bts-logo.webp", "bts-soudha.webp"):
-        assert "/static/outcomes/img/" + img in bts
-        assert os.path.getsize(os.path.join(ROOT, "static/outcomes/img", img)) > 1000
+    assert od.BTS_KICKER in bts and od.TEAM[0][1] in bts and od.CALENDLY in bts
+    assert 'href="%s"' % site.url("about-us") in bts
+    # The summit's mark, on its own white plate on the pass, named for a screen reader.
+    assert '<img src="/static/outcomes/img/bts-logo.webp" alt="%s"' % b["name"] in bts
+    assert os.path.getsize(os.path.join(ROOT, "static/outcomes/img/bts-logo.webp")) > 1000
 
 
 def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion():
@@ -565,8 +585,7 @@ def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion
     assert "scroll-snap-type: x mandatory" in track and "overflow-x: auto" in track
     block = css[css.index("/* ════ The slides at the top of the home page"):css.rindex("@media (prefers-reduced-motion: reduce) {")]
     rm = block[block.rindex("@media (prefers-reduced-motion: reduce) {"):]
-    for sel in (".od-pass", ".od-flow-step", ".od-pass-wrap"):
-        assert sel in rm, sel
+    assert ".od-board-plate" in rm
     js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
     # Autoplay never runs for reduced motion, and holds while the pointer or focus is on the slides.
     assert "stopped = still" in js and '"mouseenter"' in js and '"focusin"' in js and "doc.hidden" in js

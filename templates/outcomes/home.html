@@ -55,86 +55,101 @@
 </header>
 </div>
 
-{#- Northaxis, our product: what it does, one lead from the sign to the meeting, and its numbers. -#}
+{#- Slides 2 and 3 are built exactly as the first: the same paper, kicker, headline, lead, buttons and
+    figures, beside the same dark report card. Only the words change, so the three read as one. -#}
+{% set check %}<svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endset %}
+
+{#- Northaxis, our product: what it does, its numbers, and one lead from the sign to the reply. -#}
 <div class="od-slide od-slide-nx" id="slide-northaxis" role="group" aria-roledescription="slide" aria-label="2 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[1][1] }}">
-  <div class="inkband od-stage od-stage-nx">
-    <div class="od-stage-grid">
-      <div class="od-stage-copy">
-        <span class="lbl od-kicker od-kicker-dark rv fade"><i aria-hidden="true"></i>{{ od.NX_KICKER }}</span>
-        <h2 class="d1 od-slide-h rv"><span class="ln"><span>Buyers found.</span></span> <span class="ln"><span>Meetings <span class="mk">booked.</span></span></span></h2>
-        <p class="lead rv fade">{{ od.NX_LEAD.format(signals=site.SIGNALS|length) }}</p>
-        <dl class="od-slide-figs rv fade">
-          <div><dd>{{ site.SIGNALS|length }}</dd><dt>Buying signals watched daily</dt></div>
-          <div><dd>16</dd><dt>Agents on every ad account</dt></div>
-          <div><dd>{{ site.GTM_FEE }}</dd><dt>A month, meetings promised</dt></div>
-        </dl>
-        <div class="btns rv fade">
-          <a class="btn btn-1" href="{{ nx_home }}" data-cta="slide-northaxis">Explore Northaxis</a>
-          <a class="btn btn-2" href="{{ nx_home }}signals">See the {{ site.SIGNALS|length }} signals</a>
-        </div>
+<div class="wrap hero od-home-hero">
+  <div class="od-hero-grid">
+    <div>
+      <span class="lbl od-kicker rv fade"><i aria-hidden="true"></i>{{ od.NX_KICKER }}</span>
+      <h2 class="d1 rv"><span class="ln"><span>Buyers <span class="it">found.</span></span></span> <span class="ln"><span>Meetings <span class="mk">booked.</span></span></span></h2>
+      <p class="lead rv fade">{{ od.NX_LEAD.format(signals=site.SIGNALS|length) }}</p>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="{{ nx_home }}" data-cta="slide-northaxis">Explore Northaxis</a>
+        <a class="btn btn-2" href="{{ nx_home }}signals">See the {{ site.SIGNALS|length }} signals</a>
       </div>
-      {#- One lead, followed from the sign to the meeting: sample data, as the Northaxis home page shows it. -#}
-      <div class="od-flow" aria-label="One lead, from the sign to the meeting (sample)">
-        <span class="od-flow-tag">Sample lead</span>
-        <ol class="od-flow-steps">
-          {% for kind, when, who, what in od.NX_FLOW %}
-          <li class="od-flow-step{{ ' is-meeting' if loop.last }}" style="--d:{{ loop.index0 }}">
-            <span class="od-flow-dot" aria-hidden="true">{% if loop.last %}<svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% else %}{{ '%02d'|format(loop.index) }}{% endif %}</span>
-            <div class="od-flow-card">
-              <div class="od-flow-top"><span>{{ kind }}</span><time>{{ when }}</time></div>
-              <b>{{ who }}</b>
-              <p>{{ what }}</p>
-            </div>
-          </li>
+      <dl class="od-proof-row rv fade">
+        <div><dt>Buying signals watched daily</dt><dd>{{ site.SIGNALS|length }}</dd></div>
+        <div><dt>Agents on every ad account</dt><dd>16</dd></div>
+        <div><dt>A month, meetings promised</dt><dd>{{ site.GTM_FEE }}</dd></div>
+      </dl>
+    </div>
+    {#- One lead, as the Northaxis pipeline shows it: sample data. -#}
+    <div class="od-board-wrap rv">
+      <div class="od-board">
+        <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Live pipeline</span><span>One lead &middot; a sample</span></div>
+        <ul class="od-board-rows">
+          {% for what, detail, fig, note in od.NX_BOARD %}
+          <li style="--d:{{ loop.index0 }}"><div class="od-board-row">
+            <span class="od-board-who"><b>{{ what }}</b><span>{{ detail }}</span></span>
+            <span class="od-board-out"><b>{{ fig }}</b><span>{{ note }}</span></span>
+            <span class="od-board-up" aria-hidden="true">{{ check }}</span>
+          </div></li>
           {% endfor %}
-        </ol>
+        </ul>
+        <div class="od-board-sum">
+          {% for fig, what in od.NX_SUM %}<div class="c-{{ ['orange', 'sky'][loop.index0] }}"><b>{{ fig }}</b><span>{{ what }}</span></div>{% endfor %}
+        </div>
+        <div class="od-board-foot">
+          <span class="od-chips" aria-hidden="true"><i>in</i><i><svg viewBox="0 0 16 16"><path d="M3 4.5h10v6H8l-3 2.5v-2.5H3z"/></svg></i><i><svg viewBox="0 0 16 16"><path d="M4.5 2.5h5l2.5 2.5v8.5h-7.5zM6.5 8h3.5M6.5 10.5h3.5"/></svg></i></span>
+          <span>Watching <b>LinkedIn, Reddit</b> and <b>tender notices</b></span>
+        </div>
       </div>
     </div>
   </div>
 </div>
+</div>
 
-{#- The Bengaluru Tech Summit 2026: we mentored there. The summit's colours, its mark on a mentor's pass,
-    and Bengaluru's Vidhana Soudha drawn along the foot of the block. -#}
+{#- The Bengaluru Tech Summit 2026: we mentored there. The card is a mentor's pass: the summit's mark on
+    its own white plate, who went, when, and the Mentor-Mentee Connect's numbers. -#}
 <div class="od-slide od-slide-bts" id="slide-bts" role="group" aria-roledescription="slide" aria-label="3 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[2][1] }}">
-  <div class="inkband od-stage od-stage-bts">
-    <img class="od-bts-soudha" src="/static/outcomes/img/bts-soudha.webp" alt="" width="920" height="211" loading="lazy">
-    <div class="od-stage-grid">
-      <div class="od-stage-copy">
-        <span class="lbl od-kicker od-kicker-dark rv fade"><i aria-hidden="true"></i>{{ od.BTS.name }} &middot; {{ od.BTS.theme }}</span>
-        <h2 class="d1 od-slide-h rv"><span class="ln"><span>Invited as <span class="mk">mentors</span></span></span> <span class="ln od-slide-h-sm"><span><span class="it">to Bengaluru Tech Summit.</span></span></span></h2>
-        <p class="lead rv fade">{{ od.BTS_LEAD.format(edition=od.BTS.edition, who=mentor[1], mentors=od.BTS.mentors, startups=od.BTS.startups) }}</p>
-        <ul class="od-bts-facts rv fade">
-          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span><b>{{ od.BTS.dates }}</b>Three days</span></li>
-          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/></svg><span><b>{{ od.BTS.venue }}</b>The venue</span></li>
-          <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.6 3-5.6 6-5.6s5.4 2 6 5.6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.6c2.6.2 4.4 2 5 5.4"/></svg><span><b>{{ od.BTS.mentors }} mentors, {{ od.BTS.startups }} startups</b>Mentor-Mentee Connect</span></li>
-        </ul>
-        <div class="btns rv fade">
-          <a class="btn btn-1" href="{{ url('contact') }}" data-cta="slide-bts">{{ od.CTA_PLAN }}</a>
-          {{ odp.cal(cls="btn-2", cta="slide-bts-call") }}
-        </div>
+<div class="wrap hero od-home-hero">
+  <div class="od-hero-grid">
+    <div>
+      <span class="lbl od-kicker rv fade"><i aria-hidden="true"></i>{{ od.BTS_KICKER }}</span>
+      <h2 class="d1 rv"><span class="ln"><span>Mentors at <span class="it">Bengaluru</span></span></span> <span class="ln"><span>Tech <span class="mk">Summit 2026.</span></span></span></h2>
+      <p class="lead rv fade">{{ od.BTS_LEAD.format(edition=od.BTS.edition, who=mentor[1], mentors=od.BTS.mentors, startups=od.BTS.startups) }}</p>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="{{ url('about-us') }}" data-cta="slide-bts">Meet the team</a>
+        {{ odp.cal(cls="btn-2", cta="slide-bts-call") }}
       </div>
-      {#- A mentor's pass on its lanyard: the summit's mark, the role, who and when. Decorative; the slide's
-          text says all of it. -#}
-      <div class="od-pass-wrap" aria-hidden="true">
-        <div class="od-pass">
-          <span class="od-pass-strap"></span>
-          <span class="od-pass-clip"></span>
-          <div class="od-pass-head"><img src="/static/outcomes/img/bts-logo.webp" alt="" width="1376" height="440" loading="lazy"></div>
-          <div class="od-pass-role">Mentor</div>
-          <div class="od-pass-who">
-            <img src="/static/outcomes/img/mark.webp" alt="" width="40" height="40">
-            <span><b>{{ od.BRAND }}</b>{{ mentor[1] }} &middot; {{ mentor[2] }}</span>
-          </div>
-          <dl class="od-pass-meta">
-            <div><dt>Dates</dt><dd>{{ od.BTS.dates }}</dd></div>
-            <div><dt>Venue</dt><dd>Hall 4, BIEC</dd></div>
-            <div><dt>Theme</dt><dd>{{ od.BTS.theme }}</dd></div>
-          </dl>
-          <div class="od-pass-foot"><span class="od-pass-code"></span><span>BTS26 &middot; MENTOR</span></div>
+      <dl class="od-proof-row rv fade">
+        <div><dt>Edition of the summit</dt><dd>{{ od.BTS.edition }}</dd></div>
+        <div><dt>November 2026</dt><dd>17&ndash;19</dd></div>
+        <div><dt>BIEC, Bengaluru</dt><dd>Hall 4</dd></div>
+      </dl>
+    </div>
+    <div class="od-board-wrap rv">
+      <div class="od-board">
+        <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Mentor pass</span><span>{{ od.BTS.dates }}</span></div>
+        <div class="od-board-plate"><img src="/static/outcomes/img/bts-logo.webp" alt="{{ od.BTS.name }}" width="1376" height="440" loading="lazy"><span>Mentor</span></div>
+        <ul class="od-board-rows">
+          {% for who, detail, fig, note, icon in [
+              (mentor[1], 'CEO, ' ~ od.BRAND, 'Mentor', 'Invited', 'M8 8.2a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4ZM3 13.5c.5-2.6 2.5-4 5-4s4.5 1.4 5 4'),
+              (od.BTS.dates, od.BTS.venue, '3', 'Days', 'M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3'),
+              ('Mentor-Mentee Connect', 'Mentors and founders, face to face', od.BTS.startups, 'Startups', 'M5.5 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM1.8 13c.4-2.3 1.8-3.6 3.7-3.6s3.3 1.3 3.7 3.6M11 7.5a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2ZM10.6 9.6c1.9 0 3.2 1.2 3.6 3.4')] %}
+          <li style="--d:{{ loop.index0 }}"><div class="od-board-row">
+            <span class="od-board-who"><b>{{ who }}</b><span>{{ detail }}</span></span>
+            <span class="od-board-out"><b>{{ fig }}</b><span>{{ note }}</span></span>
+            <span class="od-board-up od-board-ic" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="{{ icon }}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div></li>
+          {% endfor %}
+        </ul>
+        <div class="od-board-sum">
+          <div class="c-orange"><b>{{ od.BTS.mentors }}</b><span>mentors invited</span></div>
+          <div class="c-sky"><b>AI</b><span>&amp; Beyond, this year&rsquo;s theme</span></div>
+        </div>
+        <div class="od-board-foot">
+          <img class="od-board-mark" src="/static/outcomes/img/mark.webp" alt="" width="34" height="34">
+          <span><b>{{ od.BRAND }}</b>, mentoring at the {{ od.BTS.edition }} edition</span>
         </div>
       </div>
     </div>
   </div>
+</div>
 </div>
 
 </div>
