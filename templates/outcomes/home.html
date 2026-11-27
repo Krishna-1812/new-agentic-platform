@@ -17,7 +17,6 @@
 <div class="od-slides" id="odSlides" aria-live="off">
 
 <div class="od-slide od-slide-home" id="slide-outcomes" role="group" aria-roledescription="slide" aria-label="1 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[0][1] }}">
-<div class="od-deco" aria-hidden="true"><span class="od-word"><i>outcomes</i><i>outcomes</i><i>outcomes</i><i>outcomes</i></span></div>
 <header class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -32,7 +31,6 @@
     </div>
     {#- The outcome board: what clients measure us on, from the case studies, as a live report would show it. -#}
     <div class="od-board-wrap rv">
-      <span class="od-toy od-toy-a" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['star'] }}"/></svg></span><span class="od-toy od-toy-b" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['quarter'] }}"/></svg></span>
       <div class="od-board">
         <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Outcome report</span><span>What clients measure us on</span></div>
         <ul class="od-board-rows">
@@ -63,7 +61,6 @@
 
 {#- Northaxis, our product: what it does, its numbers, and one lead from the sign to the reply. -#}
 <div class="od-slide od-slide-nx" id="slide-northaxis" role="group" aria-roledescription="slide" aria-label="2 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[1][1] }}">
-<div class="od-deco" aria-hidden="true"><span class="od-word"><i>northaxis</i><i>northaxis</i><i>northaxis</i><i>northaxis</i></span></div>
 <div class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -82,7 +79,6 @@
     </div>
     {#- One lead, as the Northaxis pipeline shows it: sample data. -#}
     <div class="od-board-wrap rv">
-      <span class="od-toy od-toy-a" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['plus'] }}"/></svg></span><span class="od-toy od-toy-b" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['circle'] }}"/></svg></span>
       <div class="od-board">
         <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Live pipeline</span><span>One lead &middot; a sample</span></div>
         <ul class="od-board-rows">
@@ -110,7 +106,6 @@
 {#- The Bengaluru Tech Summit 2026: we mentored there. The card is a mentor's pass: the summit's mark on
     its own white plate, who went, when, and the Mentor-Mentee Connect's numbers. -#}
 <div class="od-slide od-slide-bts" id="slide-bts" role="group" aria-roledescription="slide" aria-label="3 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[2][1] }}">
-<div class="od-deco" aria-hidden="true"><span class="od-word"><i>bengaluru</i><i>bengaluru</i><i>bengaluru</i><i>bengaluru</i></span></div>
 <div class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -128,7 +123,6 @@
       </dl>
     </div>
     <div class="od-board-wrap rv">
-      <span class="od-toy od-toy-a" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['leaf'] }}"/></svg></span><span class="od-toy od-toy-b" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="{{ site.SHAPES['triangle'] }}"/></svg></span>
       <div class="od-board">
         <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Mentor pass</span><span>{{ od.BTS.dates }}</span></div>
         <div class="od-board-plate"><img src="/static/outcomes/img/bts-logo.webp" alt="{{ od.BTS.name }}" width="1376" height="440" loading="lazy"><span>Mentor</span></div>
@@ -180,7 +174,7 @@
     measured on. -#}
 <section class="wrap sec" id="difference">
   <span class="rule rv"></span>
-  {{ odp.head("01", "The difference", "Not just another", "digital marketing agency.", "Agencies get paid for activity. We get measured on outcomes. Here is what that changes for you.") }}
+  {{ odp.head("01", "The difference", "What changes when your agency", "is measured on outcomes.", "Row by row: what a monthly agency report usually shows you, and what we are held to instead.") }}
   <div class="od-vs" style="margin-top:var(--s8)">
     <div class="od-vs-row od-vs-head" aria-hidden="true">
       <span class="od-vs-them">Most agencies report</span><span class="od-vs-arrow"></span><span class="od-vs-us">We&rsquo;re measured on</span>
@@ -198,7 +192,7 @@
 {#- One real campaign, read two ways: where most agencies stop reporting, and where we are held to account. -#}
 <section class="inkband" id="campaign">
   <div class="wrap">
-    <span class="lbl">02 &middot; One real campaign</span>
+    <span class="lbl"><span class="idx">02</span>One real campaign</span>
     <h2 class="d2 rv" style="margin-top:var(--s4)"><span class="ln"><span>Most agencies stop at the leads.</span></span> <span class="ln"><span><span class="it">We stay until buyers <span class="mk">show up.</span></span></span></span></h2>
     <p class="lead rv fade" style="margin-top:var(--s5)">Allure Avani, luxury villas in Bangalore. The same campaign, read two ways.</p>
     <div class="od-chain rv" style="margin-top:var(--s8)">
@@ -229,7 +223,7 @@
 
 <section class="wrap sec-sm" id="how">
   <span class="rule rv"></span>
-  {{ odp.head("04", "How we drive outcomes", "Strategy first.", "Systems that connect. Execution that performs.") }}
+  {{ odp.head("04", "How we work", "From the first audit", "to spend that scales.") }}
   <ol class="od-steps" style="margin-top:var(--s8)">
     {% for tab, title, line, photo in od.HOME_STEPS %}
     <li class="od-step-row">
@@ -243,8 +237,6 @@
     {% endfor %}
   </ol>
 </section>
-
-{{ ui.kin([['Strategy', 'Creative', 'Paid Media', 'CRO'], ['Leads', 'Revenue', 'Growth', 'Outcomes']]) }}
 
 <section class="wrap sec-sm" id="industries">
   <span class="rule rv"></span>
@@ -267,7 +259,7 @@
 
 <section class="wrap sec" id="proof">
   <span class="rule rv"></span>
-  {{ odp.head("06", "Case studies", "Real numbers,", "real campaigns.") }}
+  {{ odp.head("06", "Case studies", "Recent work,", "and what it moved.") }}
   <div class="od-case-grid od-case-grid-5" style="margin-top:var(--s8)">
     {% for c in od.CASES %}{{ odp.case_card(c, loop.index) }}{% endfor %}
   </div>
@@ -276,7 +268,7 @@
 
 <section class="wrap sec-sm od-clients">
   <span class="rule rv"></span>
-  {{ odp.head("07", "Our clients", "Trusted by", "ambitious brands.") }}
+  {{ odp.head("07", "Our clients", "Some of the brands", "we work with.") }}
   <div class="od-cards" style="margin-top:var(--s8)">
     {% for name, ind, img in od.CLIENTS %}
     <figure class="od-card rv fade"><img src="/static/outcomes/img/{{ img }}.webp" alt="{{ name }}" loading="lazy" width="400" height="500"><figcaption><b>{{ name }}</b><span>{{ ind }}</span></figcaption></figure>
