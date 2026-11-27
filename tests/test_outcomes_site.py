@@ -414,6 +414,20 @@ def test_the_pages_carry_their_photos_and_logos(client, path, photos):
         assert "/static/outcomes/img/" + f in body, (path, f)
 
 
+def test_the_step_images_are_our_own_art_at_full_resolution():
+    """The five "How we drive outcomes" images are drawn in scripts/outcomes_art (not stock photos), saved
+    at 2400x1600 so they stay sharp on a retina screen, and kept light."""
+    from PIL import Image
+    src = open(os.path.join(ROOT, "scripts/outcomes_art/steps.html")).read()
+    for n, step in enumerate(od.HOME_STEPS, 1):
+        assert step[3] == "step-%d" % n and 'id="a%d"' % n in src
+        f = os.path.join(ROOT, "static/outcomes/img/step-%d.webp" % n)
+        assert Image.open(f).size == (2400, 1600), f
+        assert os.path.getsize(f) < 250 * 1024, f
+    # The old office stock photos were never shown; they are gone.
+    assert not any(n.startswith("office-") for n in os.listdir(os.path.join(ROOT, "static/outcomes/img")))
+
+
 @pytest.mark.parametrize("path", PATHS)
 def test_one_pair_of_buttons_and_sentence_case_heads_everywhere(client, path):
     t = _text(client, path)
