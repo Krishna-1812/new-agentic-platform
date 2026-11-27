@@ -305,11 +305,11 @@ def test_the_same_figures_and_call_length_everywhere(client):
 
 def test_the_home_page_leads_with_what_we_promise_and_keeps_the_clients_lower(client):
     t = _text(client, site.PREFIX)
-    order = ["We drive", "Not just another", "Most agencies stop at the leads", "Six disciplines",
-             "Understand the business", "Built for the businesses", "Real numbers", "Core Care Clinic", "In their"]
+    order = ["We drive", "What changes when your agency", "Most agencies stop at the leads", "Six disciplines",
+             "Understand the business", "Built for the businesses", "Recent work", "Core Care Clinic", "In their"]
     at = [t.index(x) for x in order]
     assert at == sorted(at), dict(zip(order, at))
-    hero = t[:t.index("Not just another")]
+    hero = t[:t.index("What changes when your agency")]
     assert od.CTA_PLAN in hero and od.CTA_CALL in hero and "$5M+" in hero and "3X" in hero
     for name, line, link, ic, c in od.PILLARS:
         assert name in t and line in t
@@ -330,7 +330,7 @@ def test_the_home_page_has_no_founders_story_section(client):
 
 def _hero(client):
     t = _text(client, site.PREFIX)
-    return t[:t.index("Not just another")]
+    return t[:t.index("What changes when your agency")]
 
 
 def test_the_hero_says_we_are_not_another_agency_and_shows_it(client):
@@ -361,7 +361,7 @@ def test_the_board_figures_match_the_case_studies_and_industry_pages():
 def test_the_difference_rows_strike_what_most_agencies_report(client):
     body = client.get(site.PREFIX).get_data(as_text=True)
     sec = body[body.index('id="difference"'):body.index('id="campaign"')]
-    assert "Not just another" in sec and "digital marketing agency." in sec
+    assert "What changes when your agency" in sec and "is measured on outcomes." in sec
     rows = re.findall(r'<p class="od-vs-them"><span class="od-vs-tag">Most agencies report</span><s>(.*?)</s></p>.*?'
                       r'<p class="od-vs-us"><span class="od-vs-tag">We&rsquo;re measured on</span>(.*?)</p>', sec, re.S)
     assert [(html.unescape(a), html.unescape(b)) for a, b in rows] == list(od.HOME_VS)
@@ -435,7 +435,7 @@ def test_one_pair_of_buttons_and_sentence_case_heads_everywhere(client, path):
                 "Book a strategy call<", "Get Started", "Request a callback<"):
         assert old not in t, (path, old)
     assert od.CTA_PLAN in t
-    nums = re.findall(r'<div class="shead-l"><span class="idx">(\d\d)<|<span class="lbl">(\d\d) · ', t)
+    nums = re.findall(r'<div class="shead-l"><span class="idx">(\d\d)<|<span class="lbl">(?:<span class="idx">)?(\d\d)(?: · |</span>)', t)
     nums = [a or b for a, b in nums]
     # The partner pages number their hero "01 / ...", so their sections count on from 02.
     first = 2 if re.search(r'<span class="idx[^"]*">01 / ', t) else 1
@@ -574,7 +574,7 @@ def test_every_slide_is_built_like_the_first(client):
         assert s.count("<dd>") == 3, od.HOME_SLIDES[k][0]
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
     for gone in ("od-stage", "od-pass", "od-bts-", "inkband"):
-        assert gone not in css[css.index("/* ════ The slides at the top"):], gone
+        assert gone not in css[css.index("/* ════ The slides at the top"):css.index("/* ════ v4: the quiet pass")], gone
 
 
 def test_the_summit_slide_keeps_the_facts_and_the_pass(client):
@@ -599,25 +599,39 @@ def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion
     assert "scroll-snap-type: x mandatory" in track and "overflow-x: auto" in track
     block = css[css.index("/* ════ The slides at the top of the home page"):css.rindex("@media (prefers-reduced-motion: reduce) {")]
     rm = block[block.rindex("@media (prefers-reduced-motion: reduce) {"):]
-    for sel in (".od-board-plate", ".od-word", ".od-toy", ".od-slider .od-board::before", ".od-slider .rv:not(.in) .mk"):
-        assert sel in rm, sel
+    assert ".od-board-plate" in rm
     js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
     # Autoplay never runs for reduced motion, and holds while the pointer or focus is on the slides.
     assert "stopped = still" in js and '"mouseenter"' in js and '"focusin"' in js and "doc.hidden" in js
 
 
-def test_every_slide_carries_the_same_effects_in_its_own_colours(client):
-    """A giant word drifting behind, two of the site's shapes peeking from behind the card, and a colour pair
-    per slide: decoration only, hidden from screen readers."""
-    t = _slides(client)
-    at = [t.index('id="slide-%s"' % sid) for sid, _ in od.HOME_SLIDES] + [t.index("od-slider-bar")]
-    for k, word in enumerate(("outcomes", "northaxis", "bengaluru")):
-        s = t[at[k]:at[k + 1]]
-        assert '<div class="od-deco" aria-hidden="true"><span class="od-word">' + "<i>%s</i>" % word * 4 in s
-        assert s.count('class="od-toy ') == 2 and s.count('<span class="od-toy od-toy-') == s.count('aria-hidden="true"><svg viewBox="0 0 100 100">')
+def test_the_site_carries_no_toy_decoration(client):
+    """The quiet pass: no giant drifting words, toy shapes, scrolling word bands or footer shape tiles on any
+    page; the figures still count up, and nothing follows the mouse."""
+    for path in PATHS:
+        body = client.get(path).get_data(as_text=True)
+        for gone in ('class="od-deco"', 'class="od-toy', 'class="kin"', 'class="toys"'):
+            assert gone not in body, (path, gone)
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
-    for rule in (".od-slide { position: relative; overflow: hidden; --g1:", ".od-slide-nx { --g1:", ".od-slide-bts { --g1:"):
-        assert rule in css, rule
+    for gone in (".od-word", ".od-toy", "--od-spin", "od-aura"):
+        assert gone not in css, gone
     js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
-    # Figures count up only for plain numbers, and the mouse depth only with a fine pointer and motion allowed.
-    assert "var count = function (slide)" in js and '"(hover: hover) and (pointer: fine)"' in js and "if (!still) count(slides[0]);" in js
+    assert "var count = function (slide)" in js and "if (!still) count(slides[0]);" in js and "--mx" not in js
+
+
+def test_the_quiet_pass_is_one_accent_and_stays_on_these_pages():
+    """One orange accent: amber, sky and red become quiet tints, the highlighter becomes orange type, the
+    colophon goes ink. Every override sits under body.od, so the Northaxis pages keep press.css as it was."""
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
+    layer = css[css.index("/* ════ v4: the quiet pass"):]
+    root = layer[layer.index("body.od {"):]
+    root = root[:root.index("}")]
+    for token in ("--amber: #ECE3D2", "--sky:   #DFE4E3", "--red:   #F6DDCD", "--marker: none", "--sun:   #171615"):
+        assert token in root, token
+    assert "body.od .mk { background: none; color: var(--acc-d);" in layer
+    for line in layer.splitlines():
+        line = line.strip()
+        if line.endswith("{") and not line.startswith(("@media", "/*")):
+            assert "body.od" in line or line.startswith("html:has(body.od)"), line
+    press = open(os.path.join(ROOT, "static/css/press.css")).read()
+    assert "--amber:   #FFB500;" in press and "--sky:     #8CCBFF;" in press

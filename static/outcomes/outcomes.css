@@ -660,58 +660,8 @@ html.js .od-board-wrap:not(.in) .od-board-plate { opacity: 0; transform: transla
   .od-board-plate img { height: 36px; }
 }
 
-/* ── What makes the slides catch the eye: one set of effects for all three, a pair of colours per slide ──
-   A giant word drifts behind each slide, an aura glows behind the card, a light runs round its edge, two of
-   the site's shapes peek from behind it, the highlighter sweeps in and the figures count up (outcomes.js).
-   Nothing moves the content's place: the effects sit behind it, and stand still for reduced motion. */
-@property --od-spin { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.od-slide { position: relative; overflow: hidden; --g1: var(--acc); --g2: var(--amber); }
-.od-slide-nx { --g1: var(--sky); --g2: var(--acc); }
-.od-slide-bts { --g1: #6A2BD8; --g2: #D61F7D; }
-.od-slide > .hero { position: relative; z-index: 1; }
-
-.od-deco { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.od-word { position: absolute; left: 0; bottom: -0.3em; display: flex; white-space: nowrap; will-change: transform;
-  font-family: var(--face-display); font-style: italic; font-weight: 600; font-size: clamp(130px, 19vw, 300px); line-height: 1;
-  letter-spacing: -0.045em; animation: od-drift 70s linear infinite; }
-.od-word i { font-style: inherit; padding-right: 0.3em; color: transparent; opacity: .16;
-  background: linear-gradient(90deg, var(--g1), var(--g2)); -webkit-background-clip: text; background-clip: text; }
-@keyframes od-drift { to { transform: translateX(-50%); } }
-
-.od-slider .od-board-wrap { isolation: isolate; }
-.od-slider .od-board-wrap::before { content: ''; position: absolute; z-index: -2; inset: -2% -14% -12% -8%; pointer-events: none;
-  background: radial-gradient(42% 40% at 28% 26%, color-mix(in srgb, var(--g1) 62%, transparent), transparent 70%),
-              radial-gradient(46% 44% at 76% 78%, color-mix(in srgb, var(--g2) 55%, transparent), transparent 72%);
-  transform: translate(calc(var(--mx, 0) * 26px), calc(var(--my, 0) * 26px)); transition: transform 700ms var(--ease);
-  animation: od-aura 12s ease-in-out infinite alternate; }
-@keyframes od-aura { from { translate: -3% 2%; scale: 1; } to { translate: 4% -3%; scale: 1.1; } }
-.od-slider .od-board { transform: translate(calc(var(--mx, 0) * -7px), calc(var(--my, 0) * -7px)); transition: transform 600ms var(--ease);
-  box-shadow: 0 30px 60px rgba(0,0,0,.22), 0 30px 90px -30px color-mix(in srgb, var(--g1) 70%, transparent); }
-/* The light that runs round the card's edge. */
-.od-slider .od-board::before { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1.5px; pointer-events: none;
-  background: conic-gradient(from var(--od-spin), transparent 0deg, var(--g1) 50deg, var(--g2) 110deg, transparent 170deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: od-spin 6s linear infinite; }
-@keyframes od-spin { to { --od-spin: 360deg; } }
-
-/* Two of the site's shapes, peeking from behind the card's corners. */
-.od-toy { position: absolute; z-index: -1; display: block; width: clamp(56px, 5.4vw, 92px); aspect-ratio: 1; pointer-events: none;
-  animation: od-bob 7s ease-in-out infinite; transition: opacity 600ms var(--ease) 500ms, scale 900ms var(--spring) 500ms; }
-.od-toy svg { display: block; width: 100%; height: 100%; transform: translate(calc(var(--mx, 0) * 16px), calc(var(--my, 0) * 16px));
-  transition: transform 700ms var(--ease); }
-.od-toy path { fill: var(--c); }
-.od-toy-a { top: -6px; right: -16px; --c: var(--g2); }
-.od-toy-b { bottom: -4px; left: -10px; width: clamp(48px, 4.4vw, 74px); --c: var(--g1); animation-delay: -3.5s; }
-html.js .od-board-wrap:not(.in) .od-toy { opacity: 0; scale: .3; }
-@keyframes od-bob { 50% { translate: 0 -12px; } }
-
-/* The highlighter sweeps across the marked word as the headline rises. */
-.od-slider .mk { background: linear-gradient(var(--acc), var(--acc)) no-repeat 0 0 / 100% 100%;
-  transition: background-size 800ms var(--ease) 450ms; }
-html.js .od-slider .rv:not(.in) .mk { background-size: 0% 100%; }
 /* While a slide's entrance is reset (outcomes.js), nothing eases back out. */
 .od-replay, .od-replay *, .od-replay *::before { transition: none !important; }
-@media (max-width: 760px) { .od-word { font-size: 120px; bottom: -0.12em; } .od-word i { opacity: .12; } }
 
 /* ── The bar under the slides: a tab per slide with its progress, the arrows and pause ── */
 .od-slider-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s6); padding-top: clamp(16px, 2vw, 28px); }
@@ -747,9 +697,6 @@ html:not(.js) .od-slider-ctl { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .od-slides { scroll-behavior: auto; transition: none; }
   html.js .od-board-wrap:not(.in) .od-board-plate { opacity: 1; transform: none; }
-  .od-word, .od-toy, .od-slider .od-board::before, .od-slider .od-board-wrap::before { animation: none; }
-  html.js .od-board-wrap:not(.in) .od-toy { opacity: 1; scale: 1; }
-  html.js .od-slider .rv:not(.in) .mk { background-size: 100% 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -765,3 +712,136 @@ html:not(.js) .od-slider-ctl { display: none; }
 
 /* Every card sits straight: no tilt at rest or on hover (the shared .model card tilts on hover). */
 .play .model:hover { transform: translateY(-8px); }
+
+/* ════ v4: the quiet pass ════
+   The pages read as generated: five loud colours side by side, toy shapes, a highlighter and an italic second
+   line on every heading, bouncy cards on heavy shadows. This pass keeps every page's structure and calms the
+   surface: warm paper, ink and one orange; three quiet tints where amber, sky and red filled blocks; hairlines
+   instead of drop shadows; tighter corners; a straighter, lighter serif; an ink colophon. All of it is scoped
+   to .od, so the Northaxis pages that share press.css and site.css are untouched. */
+html:has(body.od) { background: #F5F2ED; }
+body.od {
+  --paper: #F5F2ED; --paper2: #EDE8E0; --paper3: #DFD8CD; --card: #FFFFFF;
+  --ink: #171615; --ink2: #4B4742; --ink3: #7A746C;
+  --rule: #E2DCD2; --rule-strong: #CDC5B9;
+  --acc-tx: #C2410C;
+  --acc-d: #EE5216;            /* orange as display text on paper (large type only) */
+  --amber: #ECE3D2;            /* sand    */
+  --sky:   #DFE4E3;            /* mist    */
+  --red:   #F6DDCD;            /* apricot */
+  --sun:   #171615;
+  --marker: none;
+  --r: 10px; --r-lg: 14px;
+  --shadow-block: 0 0 0 1px rgba(23,22,21,.08);
+  --shadow-pill: none;
+  background: var(--paper); color: var(--ink);
+}
+
+/* ── Type: Fraunces upright and straight (no wonk), a weight lighter; italics only where they mean it ── */
+body.od .d1, body.od .d2, body.od .d3, body.od .dq {
+  font-weight: 500; letter-spacing: -0.032em; font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 144; }
+body.od .d4 { font-weight: 500; }
+body.od .it { font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 144; }
+/* A section heading's second line is the same face, upright, a tone lighter: one statement, not a formula. */
+body.od .shead .it, body.od .inkband .d2 .it, body.od .limeband .it { font-style: normal; color: var(--ink3); }
+body.od .inkband .d2 .it { color: #8E877E; }
+body.od .od-case-row-body > b, body.od .od-pillar h3, body.od .od-step-n, body.od .od-step-text h3, body.od .od-ind-body b,
+body.od .foot-word, body.od .od-foot-dot, body.od .od-find h3, body.od .od-person h3, body.od .od-sub, body.od .od-case-body > b,
+body.od .od-flow4 b, body.od .od-journey li, body.od .od-journey-chips li, body.od .od-inline-cta p, body.od .od-proof-card h3,
+body.od .od-vs-us, body.od .od-quote blockquote, body.od .od-case-row-body > b {
+  font-weight: 500; font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 144; }
+body.od .od-quote blockquote { font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 36; font-weight: 400; }
+/* The highlighter becomes the accent colour on the word itself. */
+body.od .mk { background: none; color: var(--acc-d); padding: 0; margin: 0; border-radius: 0; }
+body.od .inkband .mk, body.od .blk.c-ink .mk { color: var(--acc); }
+body.od .d1:has(.mk), body.od .d2:has(.mk), body.od .d3:has(.mk), body.od .pull:has(.mk) { line-height: 1.02; }
+/* Section numbers go; the label stays. */
+body.od .shead-l .idx { display: none; }
+@media (min-width: 901px) { body.od .shead { grid-template-columns: 180px 1fr; } }
+
+/* ── Controls: one quiet weight ── */
+body.od .btn { font-weight: 600; }
+body.od .hero .btn-1, body.od .btn-hero { text-transform: none; font-weight: 600; font-size: 15px; height: 52px;
+  padding-inline: 28px; box-shadow: none; letter-spacing: 0; }
+body.od .btn-1:hover { background: #000; }
+body.od .hero .btn-1::after, body.od .btn-hero::after { font-weight: 400; }
+
+/* ── The kicker: a short orange rule and the words, no pill ── */
+body.od .od-kicker { background: none; box-shadow: none; padding: 0; gap: 12px; color: var(--ink2); }
+body.od .od-kicker i { width: 22px; height: 1.5px; border-radius: 0; background: var(--acc); box-shadow: none; }
+
+/* ── Surfaces: still, with a hairline edge; a darker edge says "this is a link" ── */
+body.od a.od-pillar:hover, body.od .od-case:hover, body.od .od-case-row:hover, body.od .od-card:hover, body.od .od-find:hover,
+body.od .od-person:hover .od-person-img, body.od .od-mosaic-tile:hover, body.od .od-journey li:hover, body.od .od-logo-tile:hover,
+body.od .od-hero-pic:hover .od-journey-chips li, body.od .od-board-rows a:hover { transform: none; }
+body.od a.od-pillar, body.od .od-case, body.od .od-case-row, body.od .od-ind { transition: box-shadow 250ms ease; }
+body.od a.od-pillar:hover, body.od .od-case:hover, body.od .od-case-row:hover { box-shadow: 0 0 0 1px var(--ink); }
+body.od .od-case:hover .od-case-img img, body.od .od-card:hover img, body.od .od-ind:hover > img,
+body.od .od-step-row:hover .od-step-photo img, body.od .od-case-row:hover .od-case-row-img img { transform: scale(1.025); }
+body.od .od-person:hover .od-person-img img { transform: none; }
+
+/* ── Quotes: white cards, the mark in orange ── */
+body.od .od-quote { background: var(--card); color: var(--ink); box-shadow: var(--shadow-block); }
+body.od .od-quote.c-orange, body.od .od-quote.c-amber, body.od .od-quote.c-sky { background: var(--card); }
+body.od .od-quote-mark { fill: var(--acc); opacity: 1; width: 30px; height: 22px; }
+body.od .od-quote blockquote { color: #171615; }
+body.od .od-quote figcaption { color: var(--ink2); }
+body.od .od-quote figcaption b { color: #171615; }
+body.od .inkband .od-quote figcaption, body.od .inkband .od-quote figcaption b { color: #171615; }
+
+/* ── The steps: photo and words; the coloured tag on the photo said the title twice ── */
+body.od .od-step-tag { display: none; }
+body.od .od-step-n { font-weight: 400; font-size: clamp(44px, 4.4vw, 68px); color: var(--acc-d); letter-spacing: -0.04em; }
+body.od .od-step-text { border-top: 1px solid var(--rule-strong); padding-top: var(--s5); }
+
+/* ── Small labels on photos and cards: ink on white, not candy ── */
+body.od .od-ind-body .pill { background: rgba(255,255,255,.92); color: #171615; font-weight: 600; }
+body.od .od-ind-out { background: rgba(255,255,255,.1); }
+body.od .od-ind-out b { color: #FFB089; }
+body.od .od-ind::before { background: linear-gradient(180deg, rgba(23,22,21,0) 30%, rgba(23,22,21,.86) 80%); }
+body.od .od-float { box-shadow: 0 16px 36px -12px rgba(23,22,21,.28); border-radius: 12px; }
+body.od .od-float.c-orange { background: #171615; color: #F5F2ED; }
+body.od .od-float.c-orange b { color: var(--acc); }
+body.od .od-float.c-sky, body.od .od-float.c-amber { background: var(--card); color: #171615; }
+body.od .od-journey-chips li { background: var(--card) !important; color: #171615 !important; box-shadow: 0 10px 26px -10px rgba(23,22,21,.3);
+  font-size: clamp(15px, 1.2vw, 18px); padding: 9px 14px; border-radius: 10px; }
+body.od .od-journey-chips li .idx { color: var(--acc-tx); opacity: 1; }
+body.od .od-journey-chips li:last-child { background: #171615 !important; color: #F5F2ED !important; }
+body.od .od-journey-chips li:last-child .idx { color: var(--acc); }
+body.od .od-tags .pill, body.od .od-person-img .pill { background: rgba(23,22,21,.88); }
+body.od .od-board-sum .c-sky { background: #2A2826; color: #F5F2ED; }
+body.od .od-vs-arrow svg { box-shadow: none; width: 34px; height: 34px; padding: 9px; }
+body.od .od-chips i:nth-child(2) { background: #D9D2C7; }
+body.od .od-board-plate span { background: #171615; }
+body.od .od-logo-tile { border-radius: 10px; box-shadow: 0 0 0 1px rgba(23,22,21,.07); }
+body.od .od-card figcaption { border-radius: 8px; }
+body.od .od-result-pic { border-radius: 10px; box-shadow: none; }
+body.od .od-flow4 li:not(:last-child)::after { box-shadow: 0 0 0 1px var(--rule-strong); }
+body.od .od-calc { box-shadow: 0 24px 60px -28px rgba(23,22,21,.5); }
+
+/* ── The colophon: ink, the wordmark in paper with its .digital in orange ── */
+body.od .foot { background: #171615; color: #F5F2ED; --ink: #F5F2ED; --ink2: #B9B2A8; --ink3: #8E877E; --rule: rgba(245,242,237,.12); }
+body.od .foot-word { color: #F5F2ED; font-weight: 500; }
+body.od .od-foot-dot { color: var(--acc); font-weight: 500; }
+body.od .foot-tag { font-size: clamp(22px, 2.2vw, 32px); color: #F5F2ED; letter-spacing: -0.02em; }
+body.od .foot-col h5 { color: #8E877E; }
+body.od .foot-col a { color: #E4DED5; font-size: 16px; }
+body.od .foot-col a:hover { color: #FFFFFF; }
+body.od .foot .btn-1 { background: var(--acc); color: #171615; }
+body.od .foot .btn-1:hover { background: #FF7A45; }
+body.od .foot-bottom { color: #8E877E; }
+body.od .lbl > .idx { display: none; }
+
+/* ── The six disciplines: white cards with orange icons, Growth Agents the one ink card ── */
+body.od .od-pillar.c-orange, body.od .od-pillar.c-amber, body.od .od-pillar.c-sky, body.od .od-pillar.c-red, body.od .od-pillar.c-card {
+  background: var(--card); color: #171615; }
+body.od .od-pillar .cell-ic svg { stroke: var(--acc); }
+body.od .od-pillar.c-ink .cell-ic svg { stroke: var(--acc); }
+body.od .od-pillar p { color: var(--ink2); opacity: 1; }
+body.od .od-pillar.c-ink p { color: #B9B2A8; }
+body.od .od-pillar .idx { color: var(--ink3); opacity: 1; }
+
+/* ── The partner heroes: the tilted deck and its spinning sticker go; the type carries the hero ── */
+body.od .deck { display: none !important; }
+body.od .said-b.c-amber, body.od .said-b.c-sky { background-image: linear-gradient(var(--paper3), var(--paper3)); }
+@media (max-width: 560px) { body.od .od-pillar { min-height: 0; gap: var(--s4); } body.od .od-pillar h3 { margin-top: var(--s4); } }

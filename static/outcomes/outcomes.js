@@ -161,21 +161,6 @@
       track.scrollTo({ left: cur * track.clientWidth, behavior: "auto" }); fit();
     });
     if (narrow.addEventListener) narrow.addEventListener("change", fit);
-    /* Depth: with a mouse, the aura, the card and the shapes drift apart a little as the pointer moves. */
-    if (!still && window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      var raf = 0, mx = 0, my = 0;
-      slider.addEventListener("mousemove", function (e) {
-        var r = slider.getBoundingClientRect();
-        mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-        my = ((e.clientY - r.top) / r.height - 0.5) * 2;
-        if (!raf) raf = requestAnimationFrame(function () {
-          raf = 0;
-          slider.style.setProperty("--mx", mx.toFixed(3));
-          slider.style.setProperty("--my", my.toFixed(3));
-        });
-      });
-      slider.addEventListener("mouseleave", function () { slider.style.setProperty("--mx", "0"); slider.style.setProperty("--my", "0"); });
-    }
     window.addEventListener("load", fit);
 
     slides.forEach(function (s, k) { if (k) { s.classList.remove("is-on"); if ("inert" in s) s.inert = true; s.setAttribute("aria-hidden", "true"); } });

@@ -47,7 +47,7 @@ HOME_LEAD = ("One connected team for Strategy, Creative, Paid Media, Growth Agen
 HOME_STATS = (("3X", "more qualified leads"), ("40%", "lower customer acquisition cost"))
 # The home page's opening: what makes this not another agency, said in the hero. Every claim here is the
 # site's own (About's values and story, the industry pages' headlines, the case studies' figures).
-HOME_KICKER = "Not another digital marketing agency"
+HOME_KICKER = "Performance marketing, held to revenue"
 HOME_HERO_LEAD = ("Most agencies are paid for activity: impressions, clicks, leads. We’re measured on what your "
                   "business actually banks — orders, admissions, site visits and revenue.")
 # The outcome board in the hero: real results from the case studies and industry pages.
