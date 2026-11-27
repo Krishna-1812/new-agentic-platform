@@ -414,16 +414,16 @@ def test_the_pages_carry_their_photos_and_logos(client, path, photos):
         assert "/static/outcomes/img/" + f in body, (path, f)
 
 
-def test_the_step_images_are_our_own_art_at_full_resolution():
-    """The five "How we drive outcomes" images are drawn in scripts/outcomes_art (not stock photos), saved
-    at 2400x1600 so they stay sharp on a retina screen, and kept light."""
+def test_the_photos_are_high_resolution_and_credited():
+    """The five step photos and the two industry photos are Unsplash photos at 2400x1600, each credited in
+    PHOTO_CREDITS, and kept light enough to load fast."""
     from PIL import Image
-    src = open(os.path.join(ROOT, "scripts/outcomes_art/steps.html")).read()
-    for n, step in enumerate(od.HOME_STEPS, 1):
-        assert step[3] == "step-%d" % n and 'id="a%d"' % n in src
-        f = os.path.join(ROOT, "static/outcomes/img/step-%d.webp" % n)
+    names = [s[3] for s in od.HOME_STEPS] + [c[4] for c in od.INDUSTRY_CARDS if c[4].startswith("photo-")]
+    assert sorted(names) == sorted(n for n, _, _ in od.PHOTO_CREDITS)
+    for n in names:
+        f = os.path.join(ROOT, "static/outcomes/img/%s.webp" % n)
         assert Image.open(f).size == (2400, 1600), f
-        assert os.path.getsize(f) < 250 * 1024, f
+        assert os.path.getsize(f) < 350 * 1024, f
     # The old office stock photos were never shown; they are gone.
     assert not any(n.startswith("office-") for n in os.listdir(os.path.join(ROOT, "static/outcomes/img")))
 

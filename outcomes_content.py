@@ -120,7 +120,15 @@ HOME_CHAIN_SPLIT = 3
 # The one outcome each industry is measured on, as its page puts it.
 INDUSTRY_OUTCOME = {"ecommerce-marketing": "Profitable revenue", "education-marketing": "Admissions",
                     "real-estate-marketing": "Site visits"}
-# How we drive outcomes: (tab, title, line, photo). The live site's five steps and photos, each line said plainly.
+# The photos under static/outcomes/img that are not our own: from Unsplash (free to use under the Unsplash
+# License), at 2400x1600. (file, photographer, photo id on unsplash.com/photos/).
+PHOTO_CREDITS = (
+    ("step-1", "Vitaly Gariev", "jfYazFxTqTQ"), ("step-2", "Ngital", "_zxvCsGzi8Y"),
+    ("step-3", "Abu Saeid", "fdGTi4IcaJc"), ("step-4", "Vitaly Gariev", "yd_RKGH_RH4"),
+    ("step-5", "Loui Kiær", "CielzQJR0SQ"), ("photo-campus", "Pranab Debnath", "XUF2SlqtVfE"),
+    ("photo-tower", "Katie Mont", "YbLSKpcJcNI"),
+)
+# How we drive outcomes: (tab, title, line, photo). The live site's five steps, each line said plainly.
 HOME_STEPS = (
     ("Understand", "Understand the business", "We start with your customer journeys, your product and your numbers, "
      "so we know how you make money before we change anything.", "step-1"),
