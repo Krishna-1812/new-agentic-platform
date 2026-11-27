@@ -892,3 +892,9 @@ body.od .od-ind { min-height: 0; }
 body.od .od-ind > img { position: static; z-index: auto; height: auto; aspect-ratio: 4 / 3; flex: 0 0 auto; }
 body.od .od-ind-body { flex: 1; }
 body.od .od-foot-dot { margin-top: 0.08em; line-height: 1.05; }
+/* The home hero's lines never wrap on wide screens, and the sans is wider than the serif was. */
+body.od .od-home-hero .d1 { font-size: clamp(36px, 3.9vw, 58px); }
+/* A section head set inside a column (the questions beside their answers) stacks its label over a smaller heading. */
+body.od div:not(.wrap) > .shead { grid-template-columns: 1fr; gap: var(--s4); }
+body.od div:not(.wrap) > .shead .d3 { font-size: clamp(28px, 2.6vw, 40px); }
+body.od div:not(.wrap) > .shead .shead-l { padding-top: 0; }
