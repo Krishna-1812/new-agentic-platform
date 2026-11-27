@@ -414,6 +414,20 @@ def test_the_pages_carry_their_photos_and_logos(client, path, photos):
         assert "/static/outcomes/img/" + f in body, (path, f)
 
 
+def test_the_photos_are_high_resolution_and_credited():
+    """The five step photos and the two industry photos are Unsplash photos at 2400x1600, each credited in
+    PHOTO_CREDITS, and kept light enough to load fast."""
+    from PIL import Image
+    names = [s[3] for s in od.HOME_STEPS] + [c[4] for c in od.INDUSTRY_CARDS if c[4].startswith("photo-")]
+    assert sorted(names) == sorted(n for n, _, _ in od.PHOTO_CREDITS)
+    for n in names:
+        f = os.path.join(ROOT, "static/outcomes/img/%s.webp" % n)
+        assert Image.open(f).size == (2400, 1600), f
+        assert os.path.getsize(f) < 350 * 1024, f
+    # The old office stock photos were never shown; they are gone.
+    assert not any(n.startswith("office-") for n in os.listdir(os.path.join(ROOT, "static/outcomes/img")))
+
+
 @pytest.mark.parametrize("path", PATHS)
 def test_one_pair_of_buttons_and_sentence_case_heads_everywhere(client, path):
     t = _text(client, path)
