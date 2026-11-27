@@ -574,7 +574,7 @@ def test_every_slide_is_built_like_the_first(client):
         assert s.count("<dd>") == 3, od.HOME_SLIDES[k][0]
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
     for gone in ("od-stage", "od-pass", "od-bts-", "inkband"):
-        assert gone not in css[css.index("/* ════ The slides at the top"):css.index("/* ════ v4: the quiet pass")], gone
+        assert gone not in css[css.index("/* ════ The slides at the top"):css.index("/* ════ v5: the brand pass")], gone
 
 
 def test_the_summit_slide_keeps_the_facts_and_the_pass(client):
@@ -619,19 +619,26 @@ def test_the_site_carries_no_toy_decoration(client):
     assert "var count = function (slide)" in js and "if (!still) count(slides[0]);" in js and "--mx" not in js
 
 
-def test_the_quiet_pass_is_one_accent_and_stays_on_these_pages():
-    """One orange accent: amber, sky and red become quiet tints, the highlighter becomes orange type, the
-    colophon goes ink. Every override sits under body.od, so the Northaxis pages keep press.css as it was."""
+def test_the_brand_pass_is_one_typeface_no_gradients_and_stays_on_these_pages():
+    """Built from the logo: its navy and orange, tints of those two where amber, sky and red filled blocks, one
+    typeface (Zalando Sans) for headings too, no italics, and no gradient left to paint. Every override sits
+    under body.od, so the Northaxis pages keep press.css as it was."""
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
-    layer = css[css.index("/* ════ v4: the quiet pass"):]
+    layer = css[css.index("/* ════ v5: the brand pass"):]
     root = layer[layer.index("body.od {"):]
-    root = root[:root.index("}")]
-    for token in ("--amber: #ECE3D2", "--sky:   #DFE4E3", "--red:   #F6DDCD", "--marker: none", "--sun:   #171615"):
+    root = root[:root.index("\n}")]
+    for token in ("--nv: #08192C", "--acc: #FC5A08", "--amber: #FFE4D3", "--sky:   #E4EBF3", "--red:   #FFD0B5",
+                  "--marker: none", "--face-display: 'Zalando Sans'"):
         assert token in root, token
-    assert "body.od .mk { background: none; color: var(--acc-d);" in layer
-    for line in layer.splitlines():
-        line = line.strip()
-        if line.endswith("{") and not line.startswith(("@media", "/*")):
-            assert "body.od" in line or line.startswith("html:has(body.od)"), line
+    assert "body.od .it, body.od .it * { font-style: normal !important; }" in layer
+    assert "body.od .od-ind::before { display: none; }" in layer and "mask-image: none" in layer
+    # Nothing in the layer draws a real gradient: a solid fill is the only linear-gradient it uses.
+    for g in re.findall(r"linear-gradient\(([^)]*)\)", layer):
+        assert len(set(x.strip() for x in g.split(","))) == 1, g
+    bare = re.sub(r"/\*.*?\*/", "", layer, flags=re.S)
+    for chunk in bare.split("}"):
+        if "{" in chunk:
+            sel = chunk.split("{")[-2].strip() if chunk.count("{") > 1 else chunk.split("{")[0].strip()
+            assert sel.startswith(("body.od", "html:has(body.od)")), sel
     press = open(os.path.join(ROOT, "static/css/press.css")).read()
-    assert "--amber:   #FFB500;" in press and "--sky:     #8CCBFF;" in press
+    assert "--amber:   #FFB500;" in press and "--sky:     #8CCBFF;" in press and "--face-display: 'Fraunces'" in press
