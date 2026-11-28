@@ -1134,3 +1134,66 @@ body.od .od-tab:hover .od-tab-th, body.od .od-tab.on .od-tab-th { opacity: 1; bo
   body.od .od-slide-win, body.od .od-slide-win img { transition: none !important; transform: none !important; }
   html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); }
 }
+
+/* ════ v9: every page opens on a spread ════
+   The inner pages open the way the home page does: a navy stage, inset like the ink bands, the words on
+   the plain navy at full contrast, a blurred copy of the page's photo tinting it, and the photo itself in
+   the angled window on the right, behind whatever the page sets there (the report card, the estimator, the
+   team, the journey, the proof). The window opens once, as the page loads. */
+body.od .od-spread {
+  --ink: #FFFFFF; --ink2: #D5DCE5; --ink3: #A9B5C4; --rule: rgba(255, 255, 255, .16); --rule-strong: rgba(255, 255, 255, .3);
+  position: relative; isolation: isolate; overflow: hidden; margin: clamp(6px, .8vw, 14px) var(--mar) 0;
+  border-radius: var(--r-lg); background: var(--nv); color: #FFFFFF; }
+body.od .od-spread > .hero { padding-block: clamp(52px, 6.4vw, 104px); }
+body.od .od-spread .od-slide-win { bottom: 0; border-radius: 0;
+  animation: od-win-open 1200ms cubic-bezier(.7, 0, .2, 1) 150ms both; }
+body.od .od-spread .od-slide-win img { transform: none; transition: none; animation: od-win-settle 9s cubic-bezier(.2, .7, .1, 1) both; }
+@keyframes od-win-open { from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); } }
+@keyframes od-win-settle { from { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) {
+  body.od .od-spread .od-slide-win, body.od .od-spread .od-slide-win img { animation: none !important; }
+}
+/* The words, the buttons and the small print, on the navy. */
+body.od .od-spread .mk { color: var(--acc); }
+body.od .od-spread .lead, body.od .od-spread p { color: var(--ink2); }
+body.od .od-spread .lbl, body.od .od-spread .idx, body.od .od-spread .od-small { color: var(--ink3); }
+body.od .od-spread .btn-1 { background: var(--acc); color: var(--nv); }
+body.od .od-spread .btn-1:hover { background: #FFFFFF; color: var(--nv); }
+body.od .od-spread .btn-2 { background: transparent; color: #FFFFFF; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55); }
+body.od .od-spread .btn-2:hover { background: #FFFFFF; color: var(--nv); box-shadow: none; }
+body.od .od-spread .promise li, body.od .od-spread .od-case-index a { color: #FFFFFF; }
+body.od .od-spread .chip { color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); background: transparent; }
+body.od .od-spread .chip.on { background: #FFFFFF; color: var(--nv); }
+body.od .od-spread .od-tags .pill { background: rgba(255, 255, 255, .1); color: #FFFFFF; }
+/* What stands on the photo floats over it. */
+body.od .od-spread :is(.od-calc, .od-float, .od-journey-chips li, .od-mosaic-tile) {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 30px 60px -24px rgba(0, 0, 0, .65); }
+body.od .od-spread .od-hero-pic { min-height: clamp(380px, 34vw, 500px); }
+@media (min-width: 1001px) {
+  /* The words keep clear of the window's slanted edge. */
+  body.od .od-spread :is(.od-hero-grid, .od-ind-grid) > div:first-child { padding-right: clamp(20px, 2.6vw, 44px); }
+  /* A page with nothing on the right keeps its words to the left half. */
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) > * { max-width: 48%; }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) .hero-foot { grid-template-columns: 1fr; gap: var(--s5); }
+}
+@media (max-width: 1000px) {
+  /* Stacked: a page with something on the right keeps the window behind it, in the lower part; a page
+     without shows the photo as a slanted strip along the bottom. */
+  body.od .od-spread .od-slide-win { height: 44%; }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) { padding-bottom: clamp(220px, 50vw, 300px); }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) ~ .od-slide-win,
+  body.od .od-spread:not(:has(.od-hero-grid, .od-ind-grid)) .od-slide-win { height: clamp(200px, 46vw, 280px); }
+  body.od .od-spread .od-hero-pic { min-height: 300px; }
+}
+@media (max-width: 640px) { body.od .od-spread { margin-inline: 12px; } }
+/* The headline is set for the half it has, so it breaks into a few long lines, not many short ones. */
+body.od .od-spread .d1 { font-size: clamp(38px, 4.4vw, 68px); line-height: 1.02; }
+body.od .od-spread .od-svc-hero .d1, body.od .od-spread .od-ind-hero .d1 { font-size: clamp(36px, 4vw, 62px); }
+@media (min-width: 1001px) {
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) > * { max-width: 50%; }
+}
+/* Stacked, the window is a fixed height, so it starts below the words however long they run. */
+@media (max-width: 1000px) {
+  body.od .od-spread:has(.od-hero-grid, .od-ind-grid) .od-slide-win { height: clamp(300px, 76vw, 360px); }
+  body.od .od-spread .od-hero-pic { margin-top: var(--s4); }
+}

@@ -6,6 +6,8 @@
     form at the end posts to the same intake as the other Outcomes Digital forms, to #leads. -#}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["partners/agencies"]) }}
 <header class="wrap hero hero-play">
   {{ ui.deck(site.AGENCY_DECK, "YOUR BRAND • OUR TEAM • NO HIRING •") }}
   <span class="lbl rv fade">Partners &middot; For agencies</span>
@@ -26,8 +28,7 @@
     </div>
   </div>
 </header>
-
-<div class="wrap od-band-top">{{ odp.band("agency-hero", "A team working over printed layouts and colour swatches, coffee to hand", "Behind your name", "Builds, daily checks and monthly reports, done by our team in India and sent out under your agency's brand.") }}</div>
+</div>
 
 {{ ui.ticker([(None, 'Campaign builds'), (None, 'Search terms'), (None, 'Negative keywords'), (None, 'Bids and budgets'), (None, 'Performance Max'), (None, 'Meta creative tests'), (None, 'LinkedIn lead gen'), (None, 'Conversion tracking'), (None, 'Monthly reports'), (None, 'Pitch audits'), (None, 'Landing page checks')], "The work we take off your team") }}
 

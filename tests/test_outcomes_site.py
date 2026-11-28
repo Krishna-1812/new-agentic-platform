@@ -675,7 +675,10 @@ def test_the_brand_pass_is_one_typeface_no_gradients_and_stays_on_these_pages():
         assert len(set(x.strip() for x in g.split(","))) == 1, g
     bare = re.sub(r"/\*.*?\*/", "", layer, flags=re.S)
     for chunk in bare.split("}"):
-        if "{" in chunk:
+        if "@keyframes" in chunk:
+            # A keyframe's frames have no selector of their own; its name is this site's.
+            assert re.search(r"@keyframes od-[\w-]+ \{", chunk), chunk
+        elif "{" in chunk:
             sel = chunk.split("{")[-2].strip() if chunk.count("{") > 1 else chunk.split("{")[0].strip()
             assert sel.startswith(("body.od", "html:has(body.od)", "html.js body.od")), sel
     press = open(os.path.join(ROOT, "static/css/press.css")).read()
@@ -711,3 +714,24 @@ def test_the_home_slides_open_on_photos_and_the_page_ends_on_the_clients_own_wor
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
     layer = css.split("/* ════ v7: the home page, finished", 1)[1]
     assert "gradient" not in layer and "body.od .od-slide-bg img { display: block;" in layer
+
+
+def test_every_inner_page_opens_on_a_spread_with_a_credited_photo(client):
+    """The inner pages open as the home page does: a navy stage with the page's photo, credited, in the
+    angled window and a blurred copy tinting the stage; the photo is decoration (empty alt, hidden from
+    screen readers), and the partner pages no longer repeat it in a band below."""
+    credits = {n: by for n, by, _ in od.PHOTO_CREDITS}
+    pages = dict(od.SPREAD_PHOTOS)
+    pages.update({slug: od.SERVICE_PAGES[slug]["photo"][0] for slug, _ in od.SERVICES})
+    for path, name in pages.items():
+        t = _text(client, site.PREFIX + "/" + path)
+        spread = t.split('<div class="od-spread">', 1)[1].split("</header>", 1)[0]
+        assert '<figure class="od-slide-bg" aria-hidden="true">' in spread, path
+        assert '<img class="od-slide-haze" src="/static/outcomes/img/%s-1200.webp" alt=""' % name in spread, path
+        assert '<span class="od-slide-win"><img src="/static/outcomes/img/%s-1200.webp"' % name in spread, path
+        assert "Photo: %s / Unsplash" % credits[name] in spread, path
+        assert "od-band-top" not in t and 'class="od-hero-photo"' not in t, path
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v9: every page opens on a spread", 1)[1]
+    assert "gradient" not in layer and "@keyframes od-win-open" in layer
+    assert "body.od .od-spread .od-slide-win, body.od .od-spread .od-slide-win img { animation: none !important; }" in layer

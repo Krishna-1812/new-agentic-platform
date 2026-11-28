@@ -5,6 +5,8 @@
 {% set L = od.ECOM_LEAK %}{% set st = L.stages.running %}
 {% set waste = (st.spend * st.rate)|round|int %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["ecommerce-marketing"]) }}
 <header class="wrap hero od-ind-hero">
   <div class="od-ind-grid">
     <div>
@@ -47,6 +49,7 @@
     </div>
   </div>
 </header>
+</div>
 
 {#- The platforms we work on, as the live page shows them under its hero. -#}
 <div class="wrap od-logos-wrap"><span class="lbl">Platforms we work on</span>

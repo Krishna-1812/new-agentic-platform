@@ -3,6 +3,8 @@
 {% import "outcomes/_od.html" as odp with context %}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["real-estate-marketing"]) }}
 <header class="wrap hero od-ind-hero">
   <div class="od-ind-grid">
     <div>
@@ -16,11 +18,11 @@
       <p class="od-small rv fade">No pitch. No obligation. &middot; 45 min strategy call</p>
     </div>
     <div class="od-hero-pic od-hero-tall rv fade">
-      <div class="od-hero-photo">{{ odp.pic("photo-tower", "A residential tower against a sunset sky", "(min-width: 1000px) 40vw, 100vw", eager=True) }}</div>
       <ol class="od-journey-chips" aria-label="One connected system">{% for k, name, line in od.RE_SYSTEM %}<li class="c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ k }}</li>{% endfor %}</ol>
     </div>
   </div>
 </header>
+</div>
 
 <section class="wrap sec-sm" id="problems">
   <span class="rule rv"></span>
