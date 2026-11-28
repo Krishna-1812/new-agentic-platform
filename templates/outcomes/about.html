@@ -24,8 +24,10 @@
 </header>
 </div>
 
-<section class="wrap sec-sm" id="team">
-  <span class="rule rv"></span>
+{#- The team, as panes of glass over the city at dusk. -#}
+<section class="od-glassbed" id="team">
+  <figure class="od-glassbed-bg" aria-hidden="true">{{ odp.pic("home-city", "", "100vw") }}</figure>
+  <div class="wrap">
   {{ odp.head("01", "The team", "Meet", "the team.") }}
   {% for group in [od.TEAM[:2], od.TEAM[2:]] %}
   <div class="od-team{{ ' od-team-leads' if loop.first else ' od-team-rest' }}" style="margin-top:var(--s8)">
@@ -40,6 +42,7 @@
     {% endfor %}
   </div>
   {% endfor %}
+  </div>
 </section>
 
 <section class="inkband">

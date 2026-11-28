@@ -825,3 +825,19 @@ def test_the_partner_cards_are_their_photos_with_the_words_on_glass(client):
     assert "gradient" not in layer and "::after" not in layer
     assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.6)" in layer
     assert "body.od .pk-glass > .pk-pane { background: var(--nv); }" in layer
+
+
+def test_the_team_is_glass_over_the_city(client):
+    """On the About page the team sits on a navy stage over a dimmed city photo, and every person is a
+    pane of the iOS glass with their portrait, name, title and story; solid navy where blur is missing."""
+    t = _text(client, site.PREFIX + "/about-us")
+    team = t.split('<section class="od-glassbed" id="team">', 1)[1].split("</section>", 1)[0]
+    assert '<figure class="od-glassbed-bg" aria-hidden="true"><img ' in team
+    assert team.count('<article class="od-person') == len(od.TEAM)
+    for role, name, title, bio, img in od.TEAM:
+        assert name in team and title in team and bio in team and "/static/outcomes/img/%s.webp" % img in team
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v14: the team, as glass over the city", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
+    assert "body.od .od-glassbed .od-person { background: var(--nv); }" in layer
