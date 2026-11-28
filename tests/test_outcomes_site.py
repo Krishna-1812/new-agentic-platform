@@ -695,10 +695,10 @@ def test_the_home_slides_open_on_photos_and_the_page_ends_on_the_clients_own_wor
     credits = {n: by for n, by, _ in od.PHOTO_CREDITS}
     for (sid, _), s in zip(od.HOME_SLIDES, slides):
         name = od.HOME_SLIDE_PHOTOS[sid]
-        # A blurred copy tints the stage; the photo itself shows in the window, credited on its corner.
+        # A blurred copy tints the stage; the photo itself shows in the window. Its credit lives in the code.
         assert '<img class="od-slide-haze" src="/static/outcomes/img/%s-1200.webp" alt=""' % name in s, sid
         assert '<span class="od-slide-win"><img src="/static/outcomes/img/%s-1200.webp"' % name in s, sid
-        assert "Photo: %s / Unsplash" % credits[name] in s and "loading=" not in s, sid
+        assert "loading=" not in s and name in credits, sid
     # Each tab carries its slide's photo as a thumbnail.
     tabs = t.split('<div class="od-tabs">', 1)[1].split("</div>", 1)[0]
     for sid, _ in od.HOME_SLIDES:
@@ -717,8 +717,8 @@ def test_the_home_slides_open_on_photos_and_the_page_ends_on_the_clients_own_wor
 
 
 def test_every_inner_page_opens_on_a_spread_with_a_credited_photo(client):
-    """The inner pages open as the home page does: a navy stage with the page's photo, credited, in the
-    angled window and a blurred copy tinting the stage; the photo is decoration (empty alt, hidden from
+    """The inner pages open as the home page does: a navy stage with the page's photo (credited in the
+    code) in the angled window and a blurred copy tinting the stage; the photo is decoration (empty alt, hidden from
     screen readers), and the partner pages no longer repeat it in a band below."""
     credits = {n: by for n, by, _ in od.PHOTO_CREDITS}
     pages = dict(od.SPREAD_PHOTOS)
@@ -729,9 +729,16 @@ def test_every_inner_page_opens_on_a_spread_with_a_credited_photo(client):
         assert '<figure class="od-slide-bg" aria-hidden="true">' in spread, path
         assert '<img class="od-slide-haze" src="/static/outcomes/img/%s-1200.webp" alt=""' % name in spread, path
         assert '<span class="od-slide-win"><img src="/static/outcomes/img/%s-1200.webp"' % name in spread, path
-        assert "Photo: %s / Unsplash" % credits[name] in spread, path
+        assert name in credits, path
         assert "od-band-top" not in t and 'class="od-hero-photo"' not in t, path
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
     layer = css.split("/* ════ v9: every page opens on a spread", 1)[1]
     assert "gradient" not in layer and "@keyframes od-win-open" in layer
     assert "body.od .od-spread .od-slide-win, body.od .od-spread .od-slide-win img { animation: none !important; }" in layer
+
+
+def test_no_page_prints_a_photo_credit(client):
+    """The photographers are credited in PHOTO_CREDITS, in the code; no page prints a credit line."""
+    for path in PATHS:
+        t = _text(client, path)
+        assert "Unsplash" not in t and "Photo: " not in t and "od-slide-cap" not in t, path
