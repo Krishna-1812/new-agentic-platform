@@ -755,3 +755,18 @@ def test_what_stands_on_a_photo_is_glass_that_still_reads():
     fallback = layer.split("@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {", 1)[1]
     assert "background: var(--nv)" in fallback
     assert ".od-board-sum" not in layer.split("background: rgba(8, 25, 44", 1)[0]
+
+
+@pytest.mark.parametrize("case", od.CASES, ids=[c["slug"] for c in od.CASES])
+def test_each_case_study_opens_on_its_own_cover_with_its_results_on_glass(client, case):
+    """A case study opens on the spread with its client's own cover in the window (never a stock photo),
+    and its three headline results as a report card, each with its line, over it."""
+    t = _text(client, site.PREFIX + "/case-study/" + case["slug"])
+    spread = t.split('<div class="od-spread">', 1)[1].split("</header>", 1)[0]
+    cover = "/static/outcomes/img/case-%s.webp" % case["slug"]
+    assert '<img class="od-slide-haze" src="%s" alt=""' % cover in spread
+    assert '<span class="od-slide-win"><img src="%s" alt=""' % cover in spread
+    board = spread.split('class="od-board-wrap od-cs-board rv"', 1)[1]
+    for fig, label, line in case["top"]:
+        assert fig in board and label in board and line in board
+    assert t.count('class="blk-price"') == 0

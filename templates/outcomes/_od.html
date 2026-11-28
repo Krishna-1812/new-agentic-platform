@@ -15,11 +15,14 @@
 
 {#- The photo behind a home slide: a soft, blurred copy tints the whole stage, and the photo itself shows
     whole in an angled window on the right, behind the report card. The text stays on the plain navy, so it
-    reads at full contrast. (Its photographer is credited in od.PHOTO_CREDITS, not on the page.) -#}
-{% macro slide_bg(name) -%}
+    reads at full contrast. (Its photographer is credited in od.PHOTO_CREDITS, not on the page.) A case study
+    passes cover, its client's own cover (a path, 900x810), in place of a credited photo. -#}
+{% macro slide_bg(name=None, cover=None) -%}
 <figure class="od-slide-bg" aria-hidden="true">
-  <img class="od-slide-haze" src="/static/outcomes/img/{{ name }}-1200.webp" alt="" width="1200" height="800" decoding="async">
-  <span class="od-slide-win">{{ pic(name, "", "(min-width: 1001px) 56vw, 100vw", eager=True) }}</span>
+  {% if cover %}<img class="od-slide-haze" src="{{ cover }}" alt="" width="900" height="810" decoding="async">
+  <span class="od-slide-win"><img src="{{ cover }}" alt="" width="900" height="810" decoding="async"></span>
+  {%- else %}<img class="od-slide-haze" src="/static/outcomes/img/{{ name }}-1200.webp" alt="" width="1200" height="800" decoding="async">
+  <span class="od-slide-win">{{ pic(name, "", "(min-width: 1001px) 56vw, 100vw", eager=True) }}</span>{% endif %}
 </figure>
 {%- endmacro %}
 

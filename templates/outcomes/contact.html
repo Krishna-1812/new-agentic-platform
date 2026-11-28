@@ -3,12 +3,13 @@
 {% import "outcomes/_od.html" as odp with context %}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["contact"]) }}
 <section class="wrap hero od-contact">
   <div class="split split-top">
     <div>
       <span class="lbl rv fade">Contact Us</span>
       <h1 class="d2 rv"><span class="ln"><span>How can we</span></span> <span class="ln"><span><span class="mk">support you?</span></span></span></h1>
-      <figure class="od-contact-ph rv">{{ odp.pic("contact-team", "Four colleagues smiling round a laptop at a shared table", "(min-width: 1000px) 45vw, 100vw", eager=True) }}</figure>
       <div class="ledger next" style="margin-top:var(--s7)">
         <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Prefer email?</h4><p><a href="mailto:{{ od.EMAIL }}">{{ od.EMAIL }}</a></p></div></div>
         <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>Rather talk now?</h4><p>{{ odp.cal(cls="btn-2") }}</p></div></div>
@@ -21,5 +22,6 @@
     </div>
   </div>
 </section>
+</div>
 
 {% endblock %}
