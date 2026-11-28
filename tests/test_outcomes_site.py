@@ -783,3 +783,16 @@ def test_the_thank_you_page_says_what_happens_next_on_glass(client):
                   "And the best strategy for your business", "mailto:" + od.EMAIL):
         assert words in board, words
     assert "od-band-thanks" not in t
+
+
+def test_the_glass_is_ios_glass_and_still_reads():
+    """The iOS pass: a thinner tint over a deeper, more saturated blur, dimmed underneath so white words keep
+    their contrast, a line of light along the top edge, a light rim and softer corners; solid navy where the
+    browser cannot blur."""
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v12: glass, the way iOS does it", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
+    assert "inset 0 1px 0 rgba(255, 255, 255, .42)" in layer and "border-radius: 26px" in layer
+    fallback = layer.split("@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {", 1)[1]
+    assert "background: var(--nv)" in fallback
