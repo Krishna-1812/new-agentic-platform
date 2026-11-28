@@ -1265,3 +1265,39 @@ body.od .od-spread .od-thanks { min-height: 0; }
 body.od .od-spread:has(.od-thanks) { margin-bottom: var(--sec-sm); }
 body.od .od-thanks-board .od-board-who span { white-space: normal; overflow: visible; }
 body.od .od-thanks-board .od-board-foot a { color: #FFFFFF; text-decoration: underline; text-underline-offset: .2em; }
+
+/* ════ v12: glass, the way iOS does it ════
+   Thinner tint so more of the photo's colour shows through, a deeper blur with the colour turned up and
+   the light turned down underneath (so white words keep their contrast), a bright line of light along
+   the top edge, a fine light rim all round, softer corners, and the rows as lighter panes of the same
+   glass. Words get a faint shadow beneath them, as iOS sets type on glass. */
+body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc), body.od .od-spread :is(.book-card, .od-quote) {
+  background: rgba(10, 28, 48, .42);
+  -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(.62); backdrop-filter: blur(34px) saturate(1.9) brightness(.62);
+  border-radius: 26px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), inset 0 -1px 0 rgba(255, 255, 255, .08),
+    inset 0 0 0 1px rgba(255, 255, 255, .18), 0 30px 70px -24px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .12); }
+body.od :is(.od-slider, .od-spread) :is(.od-board-rows a, .od-board-rows .od-board-row) {
+  border-radius: 18px; background: rgba(255, 255, 255, .1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .08); }
+body.od :is(.od-slider, .od-spread) .od-board-rows a:hover { background: rgba(255, 255, 255, .16); }
+body.od :is(.od-slider, .od-spread) .od-board-sum div { border-radius: 18px; }
+body.od :is(.od-slider, .od-spread) .od-board-sum .c-orange { background: rgba(252, 90, 8, .92); }
+body.od :is(.od-slider, .od-spread) .od-board-sum .c-sky { background: rgba(236, 241, 247, .92); }
+body.od .od-spread .od-journey-chips li, body.od .od-spread .od-float {
+  background: rgba(10, 28, 48, .4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.9) brightness(.58); backdrop-filter: blur(28px) saturate(1.9) brightness(.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), inset 0 0 0 1px rgba(255, 255, 255, .18), 0 18px 40px -16px rgba(0, 0, 0, .55); }
+body.od .od-spread .od-journey-chips li { border-radius: 14px; }
+body.od .od-spread .od-journey-chips li:first-child { background: rgba(252, 90, 8, .92); }
+body.od .od-spread .od-float { border-radius: 20px; }
+/* Type on the glass, as iOS sets it: a faint shadow under the white. */
+body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc, .od-float, .od-journey-chips li:not(:first-child), .book-card label, .od-quote) {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .22); }
+body.od :is(.od-slider, .od-spread) .od-board-sum div { text-shadow: none; }
+/* The glass's own fields: lighter wells inside it. */
+body.od .od-spread .book-card :is(input, textarea) { background: rgba(255, 255, 255, .07); border-radius: 12px 12px 0 0; padding-inline: 12px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc), body.od .od-spread :is(.book-card, .od-quote, .od-float),
+  body.od .od-spread .od-journey-chips li:not(:first-child) { background: var(--nv); }
+}
