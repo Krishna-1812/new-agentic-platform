@@ -635,9 +635,9 @@ def test_the_slides_scroll_without_the_script_and_stand_still_for_reduced_motion
     track = css[css.index(".od-slides {"):]
     track = track[:track.index("}")]
     assert "scroll-snap-type: x mandatory" in track and "overflow-x: auto" in track
-    block = css[css.index("/* ════ The slides at the top of the home page"):css.rindex("@media (prefers-reduced-motion: reduce) {")]
-    rm = block[block.rindex("@media (prefers-reduced-motion: reduce) {"):]
-    assert ".od-board-plate" in rm
+    # Every reduced-motion block, each up to its closing brace at the start of a line.
+    rm = "".join(b.split("\n}\n", 1)[0] for b in css.split("@media (prefers-reduced-motion: reduce) {")[1:])
+    assert ".od-board-plate" in rm and ".od-slide-bg img" in rm and ".od-reel-track" in rm
     js = open(os.path.join(ROOT, "static/outcomes/outcomes.js")).read()
     # Autoplay never runs for reduced motion, and holds while the pointer or focus is on the slides.
     assert "stopped = still" in js and '"mouseenter"' in js and '"focusin"' in js and "doc.hidden" in js
@@ -680,3 +680,25 @@ def test_the_brand_pass_is_one_typeface_no_gradients_and_stays_on_these_pages():
             assert sel.startswith(("body.od", "html:has(body.od)", "html.js body.od")), sel
     press = open(os.path.join(ROOT, "static/css/press.css")).read()
     assert "--amber:   #FFB500;" in press and "--sky:     #8CCBFF;" in press and "--face-display: 'Fraunces'" in press
+
+
+def test_the_home_slides_open_on_photos_and_the_page_ends_on_the_clients_own_words(client):
+    """Each of the three slides has a photo behind it (dimmed by the navy under it, never by a gradient), the
+    first case study leads Recent work, the brands drift past in a reel whose copy is hidden from screen
+    readers, and each home quote carries the client's picture."""
+    t = _text(client, site.PREFIX)
+    slides = re.findall(r'<div class="od-slide [^"]*" id="slide-[\w-]+".*?</figure>', t, re.S)
+    assert len(slides) == len(od.HOME_SLIDES) == 3
+    for s in slides:
+        assert '<figure class="od-slide-bg" aria-hidden="true"><img ' in s and 'alt=""' in s and "loading=" not in s
+    assert "od-case-feature" in t
+    reel = t.split('<div class="od-reel"', 1)[1].split("</div>\n</div>", 1)[0]
+    assert reel.count('class="od-card"') == 2 * len(od.CLIENTS) and reel.count('aria-hidden="true"') == len(od.CLIENTS)
+    quotes = t.split('class="od-quotes od-quotes-2"', 1)[1].split("</section>", 1)[0]
+    faces = {n: img for n, _, img in od.CLIENTS}
+    for q, who, sub in od.HOME_QUOTES:
+        if who != "Allure Avani":
+            assert 'class="od-av od-av-img" src="/static/outcomes/img/%s.webp"' % faces[who] in quotes, who
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v7: the home page, finished", 1)[1]
+    assert "gradient" not in layer and "body.od .od-slide-bg img { display: block;" in layer
