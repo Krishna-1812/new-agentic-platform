@@ -147,7 +147,8 @@ PHOTO_CREDITS = (
     ("partner-agency", "Paolo Resteghini", "WX0scXYukVo"),
     ("partner-consult", "LinkedIn Sales Solutions", "W3Jl3jREpDY"), ("agency-hero", "Vitaly Gariev", "CQzRpVkUorM"),
     ("consult-hero", "Maranda Vandergriff", "7aakZdIl4vg"), ("contact-team", "Jud Mackrill", "Of_m3hMsoAA"),
-    ("thanks-marigold", "Gayatri Malhotra", "A1VgRnA0nfI"),
+    ("thanks-marigold", "Gayatri Malhotra", "A1VgRnA0nfI"), ("slide-northaxis", "Ewan Buck", "xc9B3i-1QiI"),
+    ("slide-bts", "Kartabya Aryal", "dA5KOwv6APY"), ("home-skyline", "Mahadev Ittina", "sEDewKyq6YM"),
 )
 # The photo each industry's five steps carry (the track cards on its page), in step order.
 STEP_PHOTOS = {

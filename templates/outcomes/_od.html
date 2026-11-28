@@ -64,12 +64,13 @@
 </div>
 {%- endmacro %}
 
-{#- A client's words, on a colour block. -#}
-{% macro quote(text, who, sub, c="orange", initials=None) -%}
+{#- A client's words, on a colour block, with their picture (face, a file under static/outcomes/img) or
+    initials beside their name. -#}
+{% macro quote(text, who, sub, c="orange", initials=None, face=None) -%}
 <figure class="od-quote c-{{ c }}">
   <svg class="od-quote-mark" viewBox="0 0 48 36" aria-hidden="true"><path d="M0 36V22C0 9 7 1.5 19 0l2 6C14 8 11 12 11 18h8v18zm27 0V22C27 9 34 1.5 46 0l2 6c-7 2-10 6-10 12h8v18z"/></svg>
   <blockquote>&ldquo;{{ text }}&rdquo;</blockquote>
-  <figcaption>{% if initials %}<span class="od-av">{{ initials }}</span>{% endif %}<span><b>{{ who }}</b><span>{{ sub }}</span></span></figcaption>
+  <figcaption>{% if face %}<img class="od-av od-av-img" src="/static/outcomes/img/{{ face }}.webp" alt="" width="48" height="48" loading="lazy">{% elif initials %}<span class="od-av">{{ initials }}</span>{% endif %}<span><b>{{ who }}</b><span>{{ sub }}</span></span></figcaption>
 </figure>
 {%- endmacro %}
 
