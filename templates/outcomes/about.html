@@ -41,7 +41,10 @@
 
 <section class="inkband">
   <div class="wrap split split-top">
-    <h2 class="d2 rv"><span class="ln"><span>We&rsquo;ve sat on</span></span> <span class="ln"><span><span class="it">your side of the table.</span></span></span></h2>
+    <div class="od-ink-l">
+      <h2 class="d2 rv"><span class="ln"><span>We&rsquo;ve sat on</span></span> <span class="ln"><span><span class="it">your side of the table.</span></span></span></h2>
+      <figure class="od-ink-ph rv">{{ odp.pic("about-table", "Orange chairs around a wooden meeting table", "(min-width: 1000px) 45vw, 100vw") }}</figure>
+    </div>
     <div class="od-story">
       {% for p in od.ABOUT_STORY %}<p class="rv fade">{{ p }}</p>{% endfor %}
       <p class="pull rv fade" style="margin-top:var(--s6)">Ready to scale? <span class="mk">Let&rsquo;s talk numbers.</span></p>
@@ -61,6 +64,10 @@
     {% endfor %}
   </div>
 </section>
+
+<div class="wrap od-trio-wrap">
+  {{ odp.trio([("about-blr-1", "Auto-rickshaws passing the Vidhana Soudha in Bengaluru"), ("about-blr-2", "A yellow and green auto-rickshaw speeding down a street"), ("about-blr-3", "An Indian city from above, a train running past in the evening light")], "Bengaluru, home to many of the brands we grow and to the Tech Summit we mentored at.") }}
+</div>
 
 <section class="wrap sec-sm">
   <span class="rule rv"></span>

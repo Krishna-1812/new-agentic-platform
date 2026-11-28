@@ -7,6 +7,30 @@
 <a class="btn {{ cls }}" href="{{ od.CALENDLY }}" target="_blank" rel="noopener" data-cta="{{ cta }}">{{ label or od.CTA_CALL }}</a>
 {%- endmacro %}
 
+{#- A photo from static/outcomes/img (credited in od.PHOTO_CREDITS), at the two sizes each is saved in:
+    name-1200.webp and name.webp (2400 wide). sizes says how wide it shows, so a phone fetches the small one. -#}
+{% macro pic(name, alt="", sizes="(min-width: 1000px) 50vw, 100vw", eager=False) -%}
+<img src="/static/outcomes/img/{{ name }}-1200.webp" srcset="/static/outcomes/img/{{ name }}-1200.webp 1200w, /static/outcomes/img/{{ name }}.webp 2400w" sizes="{{ sizes }}" alt="{{ alt }}" width="1200" height="800"{% if not eager %} loading="lazy"{% endif %} decoding="async">
+{%- endmacro %}
+
+{#- A photo across the page, with a short caption card set on its corner (under it on a phone), when
+    there is text for one. -#}
+{% macro band(name, alt, kicker=None, text=None, id=None) -%}
+<figure class="od-band rv"{% if id %} id="{{ id }}"{% endif %}>
+  <div class="od-band-img">{{ pic(name, alt, "100vw") }}</div>
+  {% if text %}<figcaption class="od-band-cap"><span class="lbl">{{ kicker }}</span><p>{{ text }}</p></figcaption>{% endif %}
+</figure>
+{%- endmacro %}
+
+{#- Two or three photos as one picture, with one caption: a large one and, beside it, the other one or
+    two stacked. items are (name, alt). -#}
+{% macro trio(items, caption) -%}
+<figure class="od-trio od-trio-{{ items|length }} rv">
+  {% for name, alt in items %}<div class="od-trio-{{ 'abc'[loop.index0] }}">{{ pic(name, alt, "(min-width: 1000px) 62vw, 100vw" if loop.first else "(min-width: 1000px) 38vw, 50vw") }}</div>{% endfor %}
+  <figcaption>{{ caption }}</figcaption>
+</figure>
+{%- endmacro %}
+
 {#- A section's head, numbered in the margin like Northaxis's (ui.head), with this site's words. -#}
 {% macro head(n, label, title, italic=None, lead=None) -%}
 {% call ui.head(n, label, lead) %}<span class="ln"><span>{{ title }}</span></span>{% if italic %} <span class="ln"><span><span class="it">{{ italic }}</span></span></span>{% endif %}{% endcall %}
@@ -62,9 +86,10 @@
 </a>
 {%- endmacro %}
 
-{#- The closing block: the sky band, with the growth plan and the strategy call. -#}
-{% macro cta(title, text, label=None, href=None, call=True) -%}
-<section class="limeband" aria-label="Next step">
+{#- The closing block: the orange band, with the growth plan and the strategy call, and a photo beside
+    it when photo is given ((name, alt)). -#}
+{% macro cta(title, text, label=None, href=None, call=True, photo=None) -%}
+<section class="limeband{{ ' od-cta-ph' if photo }}" aria-label="Next step">
   <div class="wrap">
     <div class="shead">
       <div class="shead-l"><span class="lbl">Next step</span></div>
@@ -73,6 +98,7 @@
         <p class="lead rv fade">{{ text }}</p>
         <div class="btns rv fade"><a class="btn btn-1 btn-hero" href="{{ href or url('contact') }}" data-cta="band"{% if href and href.startswith('http') %} target="_blank" rel="noopener"{% endif %}>{{ label or od.CTA_PLAN }}</a>{% if call %}{{ cal(cls="btn-2") }}{% endif %}</div>
       </div>
+      {% if photo %}<div class="od-cta-img rv">{{ pic(photo[0], photo[1], "(min-width: 1000px) 40vw, 100vw") }}</div>{% endif %}
     </div>
   </div>
 </section>

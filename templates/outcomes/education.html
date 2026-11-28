@@ -19,7 +19,7 @@
       <p class="od-small rv fade">No pitch. No obligation. &middot; {{ od.EDU_CALL_MIN }} min free strategy call</p>
     </div>
     <div class="od-hero-pic od-hero-tall rv fade">
-      <div class="od-hero-photo"><img src="/static/outcomes/img/photo-campus.webp" alt="A red-brick college building across a green lawn" width="2400" height="1600"></div>
+      <div class="od-hero-photo">{{ odp.pic("photo-campus", "A red-brick college building across a green lawn", "(min-width: 1000px) 40vw, 100vw", eager=True) }}</div>
       <ol class="od-journey-chips" aria-label="Enquiry to enrolment">{% for st in od.EDU_JOURNEY %}<li class="c-{{ ['orange', 'amber', 'sky', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ st }}</li>{% endfor %}</ol>
     </div>
   </div>
@@ -30,7 +30,9 @@
   {{ odp.head("01", "Who it's for", "Built for every kind of", "education journey.") }}
   <div class="blks blks-3" style="margin-top:var(--s8)">
     {% for name, decides, text, fills in od.EDU_WHO %}
-    <article class="blk c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
+    {% set ph = [("edu-k12", "Two schoolgirls in uniform, writing at their desks"), ("edu-college", "A college student with a laptop on red steps, smiling"), ("edu-pg", "Postgraduate students writing at a shared table")][loop.index0] %}
+    <article class="blk blk-ph c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
+      <figure class="blk-img">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 33vw, 100vw") }}</figure>
       <div class="blk-top"><span class="lbl">{{ decides }}</span>{{ ui.icon(['home', 'cap', 'briefcase'][loop.index0]) }}</div>
       <h3>{{ name }}</h3>
       <p>{{ text }}</p>
@@ -75,7 +77,8 @@
       </div>
       <div class="track-view"><div class="track-rail">
         {% for k, name, line in od.EDU_SYSTEM %}
-        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><span class="track-k">{{ k }}</span><h4>{{ name }}</h4><p>{{ line }}</p></article>
+        {% set ph = od.STEP_PHOTOS["edu"][loop.index0] %}
+        <article class="track-card track-card-ph c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}" style="--i:{{ loop.index0 }}"><div class="track-txt"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><span class="track-k">{{ k }}</span><h4>{{ name }}</h4><p>{{ line }}</p></div><figure class="track-ph">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 45vw, 100vw") }}</figure></article>
         {% endfor %}
       </div></div>
     </div>
@@ -89,6 +92,8 @@
   <div style="margin-top:var(--s8)">{{ odp.logos(od.EDU_LOGOS, "Schools and colleges we work with") }}</div>
   <ul class="od-inst-list rv fade">{% for t in od.EDU_TRUSTED %}<li>{{ t }}</li>{% endfor %}</ul>
 </section>
+
+<div class="wrap">{{ odp.band("edu-class", "Schoolchildren in uniform crowding round a newspaper", "Who it is all for", "Behind every enquiry is a family choosing where a child will learn. We market to that decision, not to a click.") }}</div>
 
 <section class="inkband" id="calc">
   <div class="wrap split split-top">

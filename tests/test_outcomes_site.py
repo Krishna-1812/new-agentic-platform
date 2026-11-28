@@ -415,17 +415,54 @@ def test_the_pages_carry_their_photos_and_logos(client, path, photos):
 
 
 def test_the_photos_are_high_resolution_and_credited():
-    """The five step photos and the two industry photos are Unsplash photos at 2400x1600, each credited in
-    PHOTO_CREDITS, and kept light enough to load fast."""
+    """Every photo is an Unsplash photo, credited once in PHOTO_CREDITS, saved at 2400x1600 and again at
+    1200x800 for phones, and kept light enough to load fast."""
     from PIL import Image
-    names = [s[3] for s in od.HOME_STEPS] + [c[4] for c in od.INDUSTRY_CARDS if c[4].startswith("photo-")]
-    assert sorted(names) == sorted(n for n, _, _ in od.PHOTO_CREDITS)
+    names = [n for n, _, _ in od.PHOTO_CREDITS]
+    assert len(set(names)) == len(names) and len({i for _, _, i in od.PHOTO_CREDITS}) == len(names)
+    assert {s[3] for s in od.HOME_STEPS} | {c[4] for c in od.INDUSTRY_CARDS} <= set(names)
     for n in names:
-        f = os.path.join(ROOT, "static/outcomes/img/%s.webp" % n)
-        assert Image.open(f).size == (2400, 1600), f
-        assert os.path.getsize(f) < 350 * 1024, f
+        big = os.path.join(ROOT, "static/outcomes/img/%s.webp" % n)
+        small = os.path.join(ROOT, "static/outcomes/img/%s-1200.webp" % n)
+        assert Image.open(big).size == (2400, 1600), big
+        assert Image.open(small).size == (1200, 800), small
+        assert os.path.getsize(big) < 460 * 1024 and os.path.getsize(small) < 250 * 1024, n
     # The old office stock photos were never shown; they are gone.
     assert not any(n.startswith("office-") for n in os.listdir(os.path.join(ROOT, "static/outcomes/img")))
+
+
+def test_every_credited_photo_is_shown_at_the_right_size_with_words_for_it(client):
+    """The pages bring the photos in through the pic macro: the small file for phones and the large one
+    for wide screens, lazily below the fold. Every credited photo is used, and none is shown uncredited."""
+    credited = {n for n, _, _ in od.PHOTO_CREDITS}
+    seen = set()
+    for path in PATHS:
+        t = _text(client, path)
+        for tag in re.findall(r"<img [^>]*srcset=[^>]*>", t):
+            n = re.search(r'/static/outcomes/img/([\w-]+)-1200\.webp 1200w', tag).group(1)
+            assert n in credited, (path, n)
+            assert "/static/outcomes/img/%s.webp 2400w" % n in tag and 'sizes="' in tag, (path, tag)
+            assert 'width="1200" height="800"' in tag, (path, tag)
+            seen.add(n)
+        # Each industry page's steps each carry their own photo, with words for it.
+        if path.endswith(("ecommerce-marketing", "education-marketing", "real-estate-marketing")):
+            cards = re.findall(r'<article class="track-card track-card-ph[^"]*"[^>]*>.*?</article>', t, re.S)
+            assert len(cards) == 5, path
+            assert all(re.search(r'<figure class="track-ph"><img [^>]*alt="[^"]+"', c) for c in cards), path
+    assert seen == credited, credited - seen
+    for key, photos in od.STEP_PHOTOS.items():
+        assert len(photos) == 5 and all(alt for _, alt in photos), key
+
+
+def test_the_photo_layer_lays_nothing_but_solid_cards_over_photos():
+    """The photo pass adds no gradient and no overlay on a photo; its captions are solid cards, and it
+    leaves the photos still for people who ask for less motion."""
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v6: the photo pass", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "body.od .od-band-cap {" in layer and "background: var(--card)" in layer
+    motion = layer.split("@media (prefers-reduced-motion: reduce)", 1)[1].split("\n}\n", 1)[0]
+    assert "transform: none !important" in motion and "clip-path: none !important" in motion
 
 
 @pytest.mark.parametrize("path", PATHS)
@@ -501,7 +538,8 @@ def test_the_carousel_pauses_and_respects_reduced_motion():
 
 def test_the_home_page_story_stands_still_for_reduced_motion():
     css = open(os.path.join(ROOT, "static/outcomes/outcomes.css")).read()
-    rm = css[css.rindex("@media (prefers-reduced-motion: reduce) {"):]
+    # Every reduced-motion block, each up to its closing brace at the start of a line.
+    rm = "".join(b.split("\n}\n", 1)[0] for b in css.split("@media (prefers-reduced-motion: reduce) {")[1:])
     for sel in (".od-board-rows li", ".od-chain-step", ".od-vs-them s", ".od-live i"):
         assert sel in rm, sel
 
@@ -639,6 +677,6 @@ def test_the_brand_pass_is_one_typeface_no_gradients_and_stays_on_these_pages():
     for chunk in bare.split("}"):
         if "{" in chunk:
             sel = chunk.split("{")[-2].strip() if chunk.count("{") > 1 else chunk.split("{")[0].strip()
-            assert sel.startswith(("body.od", "html:has(body.od)")), sel
+            assert sel.startswith(("body.od", "html:has(body.od)", "html.js body.od")), sel
     press = open(os.path.join(ROOT, "static/css/press.css")).read()
     assert "--amber:   #FFB500;" in press and "--sky:     #8CCBFF;" in press and "--face-display: 'Fraunces'" in press

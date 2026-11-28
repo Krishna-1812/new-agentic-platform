@@ -121,13 +121,52 @@ HOME_CHAIN_SPLIT = 3
 INDUSTRY_OUTCOME = {"ecommerce-marketing": "Profitable revenue", "education-marketing": "Admissions",
                     "real-estate-marketing": "Site visits"}
 # The photos under static/outcomes/img that are not our own: from Unsplash (free to use under the Unsplash
-# License), at 2400x1600. (file, photographer, photo id on unsplash.com/photos/).
+# License), each at 2400x1600 (file.webp) and 1200x800 (file-1200.webp, for phones; the pic macro picks).
+# (file, photographer, photo id on unsplash.com/photos/).
 PHOTO_CREDITS = (
     ("step-1", "Vitaly Gariev", "jfYazFxTqTQ"), ("step-2", "Ngital", "_zxvCsGzi8Y"),
     ("step-3", "Abu Saeid", "fdGTi4IcaJc"), ("step-4", "Vitaly Gariev", "yd_RKGH_RH4"),
     ("step-5", "Loui Kiær", "CielzQJR0SQ"), ("photo-campus", "Pranab Debnath", "XUF2SlqtVfE"),
     ("photo-tower", "Katie Mont", "YbLSKpcJcNI"),
+    ("home-city", "satyaprakash kumawat", "ky1d-IWCBis"), ("home-wall", "Paymo", "cD6KxGylYo4"),
+    ("home-desk", "The Connected Narrative", "aEv8ednzJ2E"), ("about-table", "Jakub Żerdzicki", "0_OlKblZ4eY"),
+    ("about-blr-1", "Letian Zhang", "HJrZwkwa1ww"), ("about-blr-2", "Akshay Nanavati", "Qtd0c_FanWg"),
+    ("about-blr-3", "Sanket Shah", "F_3qCaaSadc"), ("svc-seo", "Justin Morgan", "VxLhYXuLQN8"),
+    ("svc-ppc", "Jakob Owens", "WUmb_eBrpjs"), ("svc-cro", "Julio Lopez", "O3t84DQ5Wwg"),
+    ("ecom-1", "Ruthson Zimmerman", "FVwG5OzPuzo"), ("ecom-2", "Nathana Rebouças", "x9WGMWwp1NM"),
+    ("ecom-3", "Onur Binay", "rsL06-rwpt4"), ("ecom-4", "M. Cooper", "V5XaBkW6PO8"),
+    ("ecom-5", "SumUp", "Aqc7znjxROM"), ("ecom-ship", "Cova Software", "QyFMymchZDE"),
+    ("edu-k12", "Swastik Arora", "TcKmus54ij0"), ("edu-college", "AMIT RANJAN", "3S0Ucv4BDCk"),
+    ("edu-pg", "Aswin Thomas Bony", "SPO0ST4nVbY"), ("edu-1", "ROBIN WORRALL", "FPt10LXK0cg"),
+    ("edu-2", "Vitaly Gariev", "QzY81G7dbOo"), ("edu-3", "Myriam Jessier", "eveI7MOcSmw"),
+    ("edu-4", "Christina @ wocintechchat.com M", "eF7HN40WbAQ"), ("edu-5", "Muhammad Rizwan", "VnydpKiCDaY"),
+    ("edu-class", "jaikishan patel", "2eMemvByB-8"), ("re-1", "Sanju Pandita", "S-7g_8S8cec"),
+    ("re-2", "Vitaly Gariev", "5Y-o8vHJL8M"), ("re-3", "Apex Virtual Education", "KNQUEQwTCY4"),
+    ("re-4", "Luke Chesser", "JKUTrJ4vK00"), ("re-5", "Jakub Żerdzicki", "bqUZEAeWuok"),
+    ("re-build", "Sirav Talwar", "x2i-8elwwjo"), ("re-home", "Prydumano Design", "VZ2z8ozzy10"),
+    ("partner-agency", "Paolo Resteghini", "WX0scXYukVo"),
+    ("partner-consult", "LinkedIn Sales Solutions", "W3Jl3jREpDY"), ("agency-hero", "Vitaly Gariev", "CQzRpVkUorM"),
+    ("consult-hero", "Maranda Vandergriff", "7aakZdIl4vg"), ("contact-team", "Jud Mackrill", "Of_m3hMsoAA"),
+    ("thanks-marigold", "Gayatri Malhotra", "A1VgRnA0nfI"),
 )
+# The photo each industry's five steps carry (the track cards on its page), in step order.
+STEP_PHOTOS = {
+    "ecom": (("ecom-1", "Hands on a laptop showing sales charts"),
+             ("ecom-2", "A shopper scrolling a store on a phone"),
+             ("ecom-3", "A camera on a tripod, framing a product shot"),
+             ("ecom-4", "A founder packing an order into a box"),
+             ("ecom-5", "Someone scrolling a feed of products on a phone")),
+    "edu": (("edu-1", "Students on their phones"),
+            ("edu-2", "A counsellor on a call at her desk"),
+            ("edu-3", "Enquiry reports on a laptop"),
+            ("edu-4", "Two people talking across a small table"),
+            ("edu-5", "A graduate holding his cap and smiling")),
+    "re": (("re-1", "A villa's pool and loungers"),
+           ("re-2", "A salesperson on a call, taking notes"),
+           ("re-3", "Charts on a laptop, reviewed together"),
+           ("re-4", "Lead analytics on a laptop screen"),
+           ("re-5", "House keys held up at an open door")),
+}
 # How we drive outcomes: (tab, title, line, photo). The live site's five steps, each line said plainly.
 HOME_STEPS = (
     ("Understand", "Understand the business", "We start with your customer journeys, your product and your numbers, "
@@ -154,7 +193,7 @@ PILLARS = (
 INDUSTRY_CARDS = (
     ("ecommerce-marketing", "eCommerce", "Impressions fade. Outcomes stay.",
      "Data, website, ads and creative - fixed and scaled together, so your marketing actually pays for itself.",
-     "card-madge-beauty"),
+     "ecom-ship"),
     ("education-marketing", "Edu Tech", "More enquiries isn’t the goal. The goal is more admissions.",
      "We help schools and colleges fill seats with students who actually enrol.", "photo-campus"),
     ("real-estate-marketing", "Real Estate", "More leads isn’t the goal. The goal is more site visits.",
@@ -398,7 +437,8 @@ CASES_BY_SLUG = {c["slug"]: c for c in CASES}
 # An FAQ answer is a string, or (intro, [points], closing); a point may be "Label: text".
 SERVICE_PAGES = {
     "seo-services": {
-        "photo": "step-3", "proof": ("artistic-yoga", "+131%", "Keyword growth for Artistic Yoga"),
+        "photo": ("svc-seo", "A search console report: clicks, impressions, click rate and position"),
+        "photo2": ("step-3", "Code on two screens, late in the evening"), "proof": ("artistic-yoga", "+131%", "Keyword growth for Artistic Yoga"),
         "label": "SEO", "page_title": "SEO Services That Drive Revenue, Not Just Rankings",
         "title": "SEO built around revenue, not just rankings",
         "lead": "Rankings without revenue are a vanity metric. We build SEO strategy around the keywords, pages, and "
@@ -457,7 +497,8 @@ SERVICE_PAGES = {
         ),
     },
     "ppc-management": {
-        "photo": "step-5", "proof": ("allure-avani", "214", "Qualified leads for Allure Avani"),
+        "photo": ("svc-ppc", "A phone showing a brand's profile, held up among city billboards"),
+        "photo2": ("step-5", "Charts on a laptop, reviewed with a pen"), "proof": ("allure-avani", "214", "Qualified leads for Allure Avani"),
         "label": "PPC & Paid Media", "page_title": "PPC & Paid Media Management - Google Ads & Meta Ads",
         "title": "Paid campaigns built to convert, not just click",
         "lead": "More clicks mean nothing without more revenue. We manage Google Ads and Meta Ads around "
@@ -519,7 +560,8 @@ SERVICE_PAGES = {
         ),
     },
     "cro-services": {
-        "photo": "step-1", "proof": ("madge-beauty", "70%", "of Madge Beauty’s orders via the new landing page"),
+        "photo": ("svc-cro", "A shopper paying by card on a laptop"),
+        "photo2": ("step-1", "A team mapping a customer journey on sticky notes"), "proof": ("madge-beauty", "70%", "of Madge Beauty’s orders via the new landing page"),
         "label": "CRO", "page_title": "Conversion Rate Optimization (CRO) Services",
         "title": "Turn more visitors into customers - without spending more on traffic",
         "lead": "More traffic is expensive. A better-converting page is free after it’s built. We find and fix the "

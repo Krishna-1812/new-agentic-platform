@@ -73,7 +73,8 @@
       </div>
       <div class="track-view"><div class="track-rail">
         {% for name, line in od.ECOM_STEPS %}
-        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><h4>{{ name }}</h4><p>{{ line }}</p></article>
+        {% set ph = od.STEP_PHOTOS["ecom"][loop.index0] %}
+        <article class="track-card track-card-ph c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}" style="--i:{{ loop.index0 }}"><div class="track-txt"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><h4>{{ name }}</h4><p>{{ line }}</p></div><figure class="track-ph">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 45vw, 100vw") }}</figure></article>
         {% endfor %}
       </div></div>
     </div>
@@ -124,6 +125,8 @@
     {% endfor %}
   </div>
 </section>
+
+<div class="wrap">{{ odp.band("ecom-ship", "A man scanning an order in a stockroom lined with boxes", "Behind every order", "Every campaign we run ends where yours does: an order picked, packed and shipped at a profit.") }}</div>
 
 <section class="inkband">
   <div class="wrap">

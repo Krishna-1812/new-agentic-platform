@@ -898,3 +898,119 @@ body.od .od-home-hero .d1 { font-size: clamp(36px, 3.9vw, 58px); }
 body.od div:not(.wrap) > .shead { grid-template-columns: 1fr; gap: var(--s4); }
 body.od div:not(.wrap) > .shead .d3 { font-size: clamp(28px, 2.6vw, 40px); }
 body.od div:not(.wrap) > .shead .shead-l { padding-top: 0; }
+
+/* ════ v6: the photo pass ════
+   Real photographs (from Unsplash, credited in outcomes_content.PHOTO_CREDITS), used in a few deliberate
+   ways: a band across the page with a caption card on its corner; a mosaic of two or three; a photo set
+   inside a card (the pillars, the journeys, the partner cards, each step of the industry pages); a photo
+   in the ink bands; and one beside the closing call. Nothing is laid over a photo but a solid card. */
+
+body.od :is(.od-band-img, .od-trio > div, .track-ph, .blk-img, .pk-img, .od-pillar-ph, .od-ink-ph,
+  .od-cta-img, .od-contact-ph) { margin: 0; overflow: hidden; background: var(--paper3); }
+body.od :is(.od-band-img, .od-trio > div, .track-ph, .blk-img, .pk-img, .od-pillar-ph, .od-ink-ph,
+  .od-cta-img, .od-contact-ph) img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* As each comes into view it settles from a slight zoom, and the large ones open from a narrower frame. */
+html.js body.od :is(.od-band, .od-trio, .od-pillar-ph, .od-ink-ph, .od-cta-img) img {
+  transform: scale(1.08); transition: transform 1800ms cubic-bezier(.2, .7, .1, 1); }
+html.js body.od :is(.od-band, .od-trio, .od-pillar-ph, .od-ink-ph, .od-cta-img).in img { transform: none; }
+html.js body.od :is(.od-band-img, .od-trio > div) {
+  clip-path: inset(4% 3% 4% 3% round var(--r-lg)); transition: clip-path 1200ms cubic-bezier(.2, .7, .1, 1); }
+html.js body.od :is(.od-band.in .od-band-img, .od-trio.in > div) { clip-path: inset(0 0 0 0 round var(--r-lg)); }
+html.js body.od .od-trio.in > .od-trio-b { transition-delay: 120ms; }
+html.js body.od .od-trio.in > .od-trio-c { transition-delay: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+  body.od :is(.od-band, .od-trio, .od-pillar-ph, .od-ink-ph, .od-cta-img) img { transform: none !important; transition: none !important; }
+  body.od :is(.od-band-img, .od-trio > div) { clip-path: none !important; transition: none !important; }
+}
+
+/* The band: a wide photo with a white caption card on its lower-left corner. */
+body.od .od-band { position: relative; margin: 0; }
+body.od .od-band-img { border-radius: var(--r-lg); aspect-ratio: 21 / 9; }
+body.od .od-band-cap { position: absolute; left: clamp(16px, 2.6vw, 40px); bottom: clamp(16px, 2.6vw, 40px); max-width: 430px;
+  background: var(--card); color: var(--ink); border-radius: var(--r); padding: var(--s5) var(--s6) var(--s6);
+  box-shadow: 0 24px 48px -28px rgba(8, 25, 44, .55); }
+body.od .od-band-cap .lbl { display: flex; align-items: center; gap: 10px; color: var(--acc-tx); }
+body.od .od-band-cap .lbl::before { content: ""; width: 24px; height: 2px; background: var(--acc); }
+body.od .od-band-cap p { margin-top: var(--s3); font-size: clamp(17px, 1.35vw, 20px); line-height: 1.42; font-weight: 500; color: var(--ink); }
+body.od .od-band-top { padding-block: var(--s6) var(--s4); }
+body.od .od-band-top .od-band-img { aspect-ratio: 5 / 2; }
+body.od .od-band-thanks { padding-bottom: var(--sec); }
+body.od .od-band-thanks .od-band-img { aspect-ratio: 5 / 2; }
+@media (max-width: 760px) {
+  body.od .od-band-img, body.od .od-band-top .od-band-img, body.od .od-band-thanks .od-band-img { aspect-ratio: 4 / 3; }
+  body.od .od-band-cap { position: relative; left: auto; bottom: auto; max-width: none; margin: -48px 12px 0; padding: var(--s4) var(--s5) var(--s5); }
+}
+
+/* The mosaic: one large photo, and beside it one more or two stacked, with a caption under them. */
+body.od .od-trio { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); grid-template-rows: 1fr 1fr; gap: var(--s4); margin: 0; }
+body.od .od-trio > div { border-radius: var(--r-lg); min-height: 0; }
+body.od .od-trio-a { grid-row: 1 / 3; aspect-ratio: 4 / 3; }
+body.od .od-trio-2 { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: auto; }
+body.od .od-trio-2 .od-trio-a { grid-row: auto; aspect-ratio: auto; height: clamp(320px, 36vw, 540px); }
+body.od .od-trio figcaption { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: var(--s2);
+  font-size: var(--fs-sm, 15px); color: var(--ink2); }
+body.od .od-trio figcaption::before { content: ""; flex: 0 0 24px; height: 2px; background: var(--acc); }
+body.od .od-trio-wrap { padding-block: var(--s4) var(--sec-sm); }
+@media (max-width: 760px) {
+  body.od .od-trio, body.od .od-trio-2 { grid-template-columns: 1fr 1fr; grid-template-rows: auto; gap: var(--s3); }
+  body.od .od-trio-a, body.od .od-trio-2 .od-trio-a { grid-row: auto; grid-column: 1 / -1; aspect-ratio: 4 / 3; height: auto; }
+  body.od .od-trio > .od-trio-b, body.od .od-trio > .od-trio-c { aspect-ratio: 1 / 1; }
+  body.od .od-trio-2 > .od-trio-b { grid-column: 1 / -1; aspect-ratio: 3 / 2; }
+}
+
+/* The pillars: the photo stands as the first tile, two rows tall on a wide screen. */
+body.od .od-pillar-ph { border-radius: var(--r-lg); min-height: 260px; }
+@media (min-width: 1001px) {
+  body.od .od-pillars-ph { grid-template-columns: minmax(0, 1.25fr) repeat(3, minmax(0, 1fr)); }
+  body.od .od-pillars-ph .od-pillar-ph { grid-row: span 2; }
+}
+@media (max-width: 1000px) and (min-width: 561px) { body.od .od-pillars-ph .od-pillar-ph { grid-column: 1 / -1; aspect-ratio: 21 / 9; min-height: 0; } }
+@media (max-width: 560px) { body.od .od-pillars-ph .od-pillar-ph { aspect-ratio: 4 / 3; min-height: 0; } }
+
+/* A photo set inside a card, inset by a thin frame of the card's own colour. */
+body.od .blk-ph { padding: 10px 10px clamp(26px, 3vw, 40px); }
+body.od .blk-ph > :not(.blk-img) { margin-inline: clamp(16px, 2.2vw, 30px); }
+body.od .blk-img { aspect-ratio: 4 / 3; border-radius: calc(var(--r-lg) - 8px); margin-bottom: var(--s5); }
+body.od .blk-ph h3 { margin-top: var(--s5); }
+body.od .pk-ph { padding: 10px 10px clamp(28px, 3.4vw, 48px); }
+body.od .pk-ph > :not(.pk-img) { margin-inline: clamp(18px, 2.6vw, 40px); }
+body.od .pk-img { aspect-ratio: 16 / 9; border-radius: calc(var(--r-lg) - 8px); margin-bottom: var(--s6); }
+body.od .pk-ph .pk-img img { transition: transform 900ms var(--ease); }
+body.od .pk-ph:hover .pk-img img { transform: scale(1.03); }
+
+/* Each step of an industry page: its words on the left, its photo on the right. On a wide screen the
+   steps stack like a deck as the page scrolls, each one stopping a little below the last. */
+body.od .track-card-ph { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(20px, 3vw, 48px);
+  align-items: stretch; justify-content: initial; min-height: clamp(380px, 34vw, 470px);
+  padding: 10px 10px 10px clamp(28px, 3.6vw, 56px); }
+body.od .track-card-ph .track-txt { display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; padding-block: clamp(18px, 2.6vw, 40px); }
+body.od .track-card-ph .track-n { font-size: clamp(48px, 5vw, 80px); margin-bottom: auto; }
+body.od .track-card-ph h4 { font-size: clamp(28px, 2.7vw, 42px); }
+body.od .track-ph { border-radius: calc(var(--r-lg) - 8px); }
+@media (min-width: 1001px) and (prefers-reduced-motion: no-preference) {
+  body.od .track:not(.is-pinned) .track-card-ph { position: sticky; top: calc(var(--nav-h) + 20px + var(--i, 0) * 14px); }
+}
+@media (max-width: 760px) {
+  body.od .track-card-ph { grid-template-columns: 1fr; min-height: 0; padding: 10px; gap: 0; }
+  body.od .track-ph { order: -1; aspect-ratio: 3 / 2; }
+  body.od .track-card-ph .track-txt { padding: var(--s5) clamp(14px, 4vw, 22px) var(--s4); }
+}
+
+/* A photo in an ink band, under its heading. */
+body.od .od-ink-ph { margin-top: var(--s7); border-radius: var(--r); aspect-ratio: 3 / 2; }
+body.od .od-ink-l { min-width: 0; }
+
+/* The closing call, with a photo on its right. */
+@media (min-width: 1001px) {
+  body.od .od-cta-ph .shead { grid-template-columns: 180px minmax(0, 1fr) minmax(0, .8fr); align-items: center; }
+}
+body.od .od-cta-img { border-radius: var(--r); aspect-ratio: 4 / 3; box-shadow: 0 24px 48px -30px rgba(8, 25, 44, .6); }
+@media (max-width: 1000px) { body.od .od-cta-img { margin-top: var(--s6); aspect-ratio: 16 / 9; } }
+
+/* Contact: a photo under the heading. */
+body.od .od-contact-ph { margin-top: var(--s6); border-radius: var(--r-lg); aspect-ratio: 16 / 9; }
+/* A band followed by an ink band keeps a section's breath between them. */
+body.od .wrap:has(> .od-band) + :is(.inkband, .limeband) { margin-top: var(--sec-sm); }
+body.od .od-contact .od-contact-ph { margin-top: var(--s7); }
+body.od .pk.c-orange .lbl { color: var(--nv); }
