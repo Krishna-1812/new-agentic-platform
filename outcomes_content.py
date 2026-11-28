@@ -68,6 +68,8 @@ HOME_SLIDES = (
     ("bts", "Bengaluru Tech Summit 2026"),
 )
 SLIDE_SECONDS = 8
+# The photo behind each slide (a file credited in PHOTO_CREDITS), also its tab's thumbnail.
+HOME_SLIDE_PHOTOS = {"outcomes": "home-city", "northaxis": "slide-northaxis", "bts": "slide-bts"}
 
 # Every slide is built the same way as the first: a kicker, two lines of headline, a lead, the two buttons
 # and three figures, beside a dark report card (rows, two coloured tiles, a footnote). Only the words change.

@@ -17,7 +17,7 @@
 <div class="od-slides" id="odSlides" aria-live="off">
 
 <div class="od-slide od-slide-home" id="slide-outcomes" role="group" aria-roledescription="slide" aria-label="1 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[0][1] }}">
-<figure class="od-slide-bg" aria-hidden="true">{{ odp.pic("home-city", "", "100vw", eager=True) }}</figure>
+{{ odp.slide_bg(od.HOME_SLIDE_PHOTOS["outcomes"]) }}
 <header class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -62,7 +62,7 @@
 
 {#- Northaxis, our product: what it does, its numbers, and one lead from the sign to the reply. -#}
 <div class="od-slide od-slide-nx" id="slide-northaxis" role="group" aria-roledescription="slide" aria-label="2 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[1][1] }}">
-<figure class="od-slide-bg" aria-hidden="true">{{ odp.pic("slide-northaxis", "", "100vw", eager=True) }}</figure>
+{{ odp.slide_bg(od.HOME_SLIDE_PHOTOS["northaxis"]) }}
 <div class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -108,7 +108,7 @@
 {#- The Bengaluru Tech Summit 2026: we mentored there. The card is a mentor's pass: the summit's mark on
     its own white plate, who went, when, and the Mentor-Mentee Connect's numbers. -#}
 <div class="od-slide od-slide-bts" id="slide-bts" role="group" aria-roledescription="slide" aria-label="3 of {{ od.HOME_SLIDES|length }}: {{ od.HOME_SLIDES[2][1] }}">
-<figure class="od-slide-bg" aria-hidden="true">{{ odp.pic("slide-bts", "", "100vw", eager=True) }}</figure>
+{{ odp.slide_bg(od.HOME_SLIDE_PHOTOS["bts"]) }}
 <div class="wrap hero od-home-hero">
   <div class="od-hero-grid">
     <div>
@@ -160,7 +160,7 @@
   <div class="od-tabs">
     {% for sid, label in od.HOME_SLIDES %}
     <a class="od-tab{{ ' on' if loop.first }}" href="#slide-{{ sid }}" data-slide="{{ loop.index0 }}" aria-controls="slide-{{ sid }}"{% if loop.first %} aria-current="true"{% endif %}>
-      <span class="od-tab-n">{{ '%02d'|format(loop.index) }}</span><span class="od-tab-l">{{ label }}</span>
+      <span class="od-tab-th" aria-hidden="true"><img src="/static/outcomes/img/{{ od.HOME_SLIDE_PHOTOS[sid] }}-1200.webp" alt="" width="1200" height="800" decoding="async"></span><span class="od-tab-n">{{ '%02d'|format(loop.index) }}</span><span class="od-tab-l">{{ label }}</span>
       <span class="od-tab-bar" aria-hidden="true"><i></i></span>
     </a>
     {% endfor %}

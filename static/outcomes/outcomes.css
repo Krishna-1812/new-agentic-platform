@@ -1087,3 +1087,50 @@ body.od .od-quotes-2 .od-quote { padding: clamp(28px, 3.2vw, 48px); }
 body.od .od-quotes-2 .od-quote blockquote { font-size: clamp(18px, 1.45vw, 22px); line-height: 1.5; }
 body.od .od-quotes-2 .od-quote figcaption { margin-top: var(--s6); }
 @media (max-width: 760px) { body.od .od-slider .od-home-hero { padding-bottom: 116px; } }
+
+/* ════ v8: the slides, as an editorial spread ════
+   The words sit on the plain navy at full contrast. A soft, blurred copy of the slide's photo tints the
+   whole stage; the photo itself shows whole, in an angled window on the right, behind the report card.
+   As each slide comes on, its window opens from the right edge and the photo settles; the photographer is
+   credited on the window's corner, and each tab carries its slide's photo as a thumbnail. */
+body.od .od-slide-bg .od-slide-haze { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px);
+  object-fit: cover; opacity: .2; filter: blur(32px) saturate(.9); transform: none; transition: none; }
+body.od .od-slide-win { position: absolute; top: 0; right: 0; bottom: clamp(84px, 7.4vw, 108px); width: 50%; overflow: hidden; background: var(--nv2);
+  border-bottom-left-radius: 0; border-bottom-right-radius: var(--r-lg);
+  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); transition: clip-path 1100ms cubic-bezier(.7, 0, .2, 1); }
+body.od .od-slide-win img { position: absolute; inset: 0; opacity: .92; filter: none; transform: scale(1.12);
+  transition: transform 9s cubic-bezier(.2, .7, .1, 1); }
+body.od .od-slide.is-on .od-slide-win img { transform: none; }
+body.od .od-slide-bts .od-slide-win img { opacity: .8; }
+html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
+body.od .od-slide-cap { position: absolute; top: clamp(16px, 1.8vw, 26px); right: clamp(16px, 1.8vw, 26px); z-index: 2;
+  padding: 6px 12px; border-radius: 99px; background: rgba(8, 25, 44, .72); color: rgba(255, 255, 255, .86);
+  font-size: 11px; font-weight: 500; letter-spacing: .02em; white-space: nowrap; }
+/* The words keep clear of the window's slanted edge. */
+@media (min-width: 1001px) { body.od .od-slider .od-hero-grid > div:first-child { padding-right: clamp(20px, 2.6vw, 44px); } }
+/* The board floats over the photo. */
+body.od .od-slider .od-board { box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 50px 90px -30px rgba(0, 0, 0, .7); }
+/* The tabs: a thumbnail of each slide's photo, ringed in orange while it is on. */
+body.od .od-slider .od-tab { grid-template-columns: auto auto minmax(0, 1fr); align-items: center; }
+body.od .od-tab-th { width: 46px; height: 32px; border-radius: 7px; overflow: hidden; opacity: .6; box-shadow: 0 0 0 1px rgba(255, 255, 255, .2);
+  transition: opacity var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
+body.od .od-tab-th img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.od .od-tab:hover .od-tab-th, body.od .od-tab.on .od-tab-th { opacity: 1; box-shadow: 0 0 0 2px var(--acc); }
+@media (max-width: 1000px) {
+  /* Stacked: the window holds the lower part of the slide, behind the card, its top edge on a slant. */
+  body.od .od-slide-win { top: auto; left: 0; bottom: clamp(84px, 14vw, 104px); width: auto; height: 46%; border-radius: 0;
+    clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%); }
+  html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
+  body.od .od-slide-cap { top: auto; bottom: clamp(96px, 16vw, 120px); }
+}
+@media (max-width: 760px) {
+  /* A phone shows each tab as its thumbnail alone, and leaves the credit to the larger screens. */
+  body.od .od-slide-cap { display: none; }
+  body.od .od-slider .od-tab { grid-template-columns: auto; justify-items: start; }
+  body.od .od-slider .od-tab-n { display: none; }
+  body.od .od-tab-th { width: 44px; height: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.od .od-slide-win, body.od .od-slide-win img { transition: none !important; transform: none !important; }
+  html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%); }
+}
