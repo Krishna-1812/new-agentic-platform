@@ -770,3 +770,16 @@ def test_each_case_study_opens_on_its_own_cover_with_its_results_on_glass(client
     for fig, label, line in case["top"]:
         assert fig in board and label in board and line in board
     assert t.count('class="blk-price"') == 0
+
+
+def test_the_thank_you_page_says_what_happens_next_on_glass(client):
+    """The thank-you page opens on the spread, its words unchanged, with what happens next (taken from its
+    own message) as a glass report card over the photo, and a way to write in before the call."""
+    t = _text(client, site.PREFIX + "/thank-you")
+    spread = t.split('<div class="od-spread">', 1)[1].split("</header>", 1)[0]
+    assert od.THANKS_TEXT in spread and "smarter growth." in spread
+    board = spread.split('class="od-board-wrap od-thanks-board rv"', 1)[1]
+    for words in ("Request received", "Submitted successfully", "A growth specialist", "Gets in touch with you",
+                  "And the best strategy for your business", "mailto:" + od.EMAIL):
+        assert words in board, words
+    assert "od-band-thanks" not in t
