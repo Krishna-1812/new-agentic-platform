@@ -810,3 +810,18 @@ def test_the_404_opens_on_glass_with_the_ways_back(client):
     for href in (site.url() + "#what", site.url() + "#industries", site.url("case-studies"), site.url("contact")):
         assert 'href="%s"' % href in board, href
     assert "isn’t here." in spread
+
+
+def test_the_partner_cards_are_their_photos_with_the_words_on_glass(client):
+    """On /partners each way in is a card that is its photo, edge to edge, with its words on a pane of the
+    iOS glass; solid navy where the browser cannot blur."""
+    t = _text(client, site.PREFIX + "/partners")
+    cards = re.findall(r'<a class="pk pk-ph pk-glass c-\w+".*?</a>', t, re.S)
+    assert len(cards) == 2
+    for c in cards:
+        assert c.index('<figure class="pk-img">') < c.index('<span class="pk-pane">')
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v13: the partner cards, as glass on their photos", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.6)" in layer
+    assert "body.od .pk-glass > .pk-pane { background: var(--nv); }" in layer
