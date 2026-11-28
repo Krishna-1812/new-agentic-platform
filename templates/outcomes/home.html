@@ -261,13 +261,16 @@
   </div>
 </section>
 
-<section class="wrap sec" id="proof">
-  <span class="rule rv"></span>
+{#- Recent work, as panes of glass over a dimmed screen of results (as on the case studies page). -#}
+<section class="od-glassbed od-proof-bed" id="proof">
+  <figure class="od-glassbed-bg" aria-hidden="true">{{ odp.pic("re-4", "", "100vw") }}</figure>
+  <div class="wrap">
   {{ odp.head("06", "Case studies", "Recent work,", "and what it moved.") }}
   <div class="od-case-grid od-case-grid-5 od-case-feature" style="margin-top:var(--s8)">
     {% for c in od.CASES %}{{ odp.case_card(c, loop.index) }}{% endfor %}
   </div>
   <div class="btns sec-foot"><a class="btn btn-2" href="{{ url('case-studies') }}">All case studies</a></div>
+  </div>
 </section>
 
 <section class="wrap sec-sm od-clients od-clients-head">

@@ -859,3 +859,18 @@ def test_the_case_studies_list_is_glass(client):
     assert "gradient" not in layer and "::after" not in layer
     assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
     assert "body.od .od-cases-bed .od-case-row { background: var(--nv); }" in layer
+
+
+def test_the_home_page_recent_work_is_glass(client):
+    """On the home page, Recent work sits on the navy stage over the dimmed results screen, each case study
+    a pane of the iOS glass with its cover, name and headline result; solid navy without blur."""
+    t = _text(client, site.PREFIX)
+    bed = t.split('<section class="od-glassbed od-proof-bed" id="proof">', 1)[1].split("</section>", 1)[0]
+    assert '<figure class="od-glassbed-bg" aria-hidden="true"><img ' in bed and "od-case-feature" in bed
+    for c in od.CASES:
+        assert c["name"] in bed and c["top"][0][0] in bed and "/static/outcomes/img/case-%s.webp" % c["slug"] in bed
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v16: the home page's recent work, as glass", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
+    assert "body.od .od-proof-bed .od-case { background: var(--nv); }" in layer
