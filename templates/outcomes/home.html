@@ -209,7 +209,8 @@
 <section class="wrap sec" id="what">
   <span class="rule rv"></span>
   {{ odp.head("03", "What we do", "Six disciplines,", "one accountable team.", od.HOME_LEAD) }}
-  <div class="od-pillars" style="margin-top:var(--s8)">
+  <div class="od-pillars od-pillars-ph" style="margin-top:var(--s8)">
+    <figure class="od-pillar-ph rv">{{ odp.pic("home-wall", "Two people planning a campaign on a whiteboard, against an orange wall", "(min-width: 1000px) 25vw, 100vw") }}</figure>
     {% for name, line, link, ic, c in od.PILLARS %}
     {% if link %}<a class="od-pillar c-{{ c }}" href="{{ url(link) }}">{% else %}<div class="od-pillar c-{{ c }}">{% endif %}
       <div class="od-pillar-top">{{ ui.icon(ic) }}<span class="idx">{{ '%02d'|format(loop.index) }}</span></div>
@@ -227,7 +228,7 @@
   <ol class="od-steps" style="margin-top:var(--s8)">
     {% for tab, title, line, photo in od.HOME_STEPS %}
     <li class="od-step-row">
-      <div class="od-step-photo rv fade"><img src="/static/outcomes/img/{{ photo }}.webp" alt="" loading="lazy" width="2400" height="1600"><span class="od-step-tag c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}">{{ tab }}</span></div>
+      <div class="od-step-photo rv fade">{{ odp.pic(photo, "", "(min-width: 1000px) 50vw, 100vw") }}<span class="od-step-tag c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}">{{ tab }}</span></div>
       <div class="od-step-text rv fade">
         <span class="od-step-n">{{ '%02d'|format(loop.index) }}</span>
         <h3>{{ title }}</h3>
@@ -244,7 +245,7 @@
   <div class="od-inds" style="margin-top:var(--s8)">
     {% for slug, name, headline, line, photo in od.INDUSTRY_CARDS %}
     <a class="od-ind rv fade" href="{{ url(slug) }}">
-      <img src="/static/outcomes/img/{{ photo }}.webp" alt="" loading="lazy">
+      {{ odp.pic(photo, "", "(min-width: 1000px) 33vw, 100vw") }}
       <span class="od-ind-body">
         <span class="pill">{{ name }}</span>
         <b>{{ headline }}</b>
@@ -276,6 +277,8 @@
   </div>
 </section>
 
+<div class="wrap">{{ odp.band("home-city", "A city at dusk, seen from above, its streets lit up", "Where the work happens", "Our team in India, working for brands from Bengaluru to Dubai, on the numbers each one is measured on.") }}</div>
+
 <section class="wrap sec">
   {{ odp.head("08", "What our clients say", "In their", "own words.") }}
   <div class="od-quotes od-quotes-2" style="margin-top:var(--s8)">
@@ -283,6 +286,6 @@
   </div>
 </section>
 
-{{ odp.cta("Let&rsquo;s find your next outcome.", "Tell us the one number you need to move. We'll show you where the growth is hiding and what to fix first.") }}
+{{ odp.cta("Let&rsquo;s find your next outcome.", "Tell us the one number you need to move. We'll show you where the growth is hiding and what to fix first.", photo=("home-desk", "Two people at a laptop over coffee, working through a plan")) }}
 
 {% endblock %}

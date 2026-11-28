@@ -16,7 +16,7 @@
       <p class="od-small rv fade">No pitch. No obligation. &middot; 45 min strategy call</p>
     </div>
     <div class="od-hero-pic od-hero-tall rv fade">
-      <div class="od-hero-photo"><img src="/static/outcomes/img/photo-tower.webp" alt="A residential tower against a sunset sky" width="2400" height="1600"></div>
+      <div class="od-hero-photo">{{ odp.pic("photo-tower", "A residential tower against a sunset sky", "(min-width: 1000px) 40vw, 100vw", eager=True) }}</div>
       <ol class="od-journey-chips" aria-label="One connected system">{% for k, name, line in od.RE_SYSTEM %}<li class="c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="idx">{{ '%02d'|format(loop.index) }}</span>{{ k }}</li>{% endfor %}</ol>
     </div>
   </div>
@@ -56,13 +56,18 @@
       </div>
       <div class="track-view"><div class="track-rail">
         {% for k, name, line in od.RE_SYSTEM %}
-        <article class="track-card c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><span class="track-k">{{ k }}</span><h4>{{ name }}</h4><p>{{ line }}</p></article>
+        {% set ph = od.STEP_PHOTOS["re"][loop.index0] %}
+        <article class="track-card track-card-ph c-{{ ['orange', 'amber', 'sky', 'red', 'ink'][loop.index0] }}" style="--i:{{ loop.index0 }}"><div class="track-txt"><span class="track-n">{{ '%02d'|format(loop.index) }}</span><span class="track-k">{{ k }}</span><h4>{{ name }}</h4><p>{{ line }}</p></div><figure class="track-ph">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 45vw, 100vw") }}</figure></article>
         {% endfor %}
       </div></div>
     </div>
   </div>
   <p class="od-rail-cap rv fade"><span>Marketing</span><b>One connected system</b><span>Sales</span></p>
 </section>
+
+<div class="wrap od-trio-wrap">
+  {{ odp.trio([("re-build", "High-rise apartments above a green corridor, a railway line beyond"), ("re-home", "A bright living room with a green sofa and tall windows")], "From the tower going up to the home inside it: we market to the buyers who will come and see both.") }}
+</div>
 
 <section class="inkband" id="results">
   <div class="wrap">

@@ -19,7 +19,9 @@
 <section class="wrap sec-sm">
   <div class="pks">
     {% for k in site.PARTNER_KINDS %}
-    <a class="pk c-{{ k.c }}" href="{{ url('partners/' ~ k.slug) }}">
+    {% set ph = {'agencies': ('partner-agency', 'Three people laughing together over their laptops'), 'consultants': ('partner-consult', 'Two people talking across a table in a sunlit room')}[k.slug] %}
+    <a class="pk pk-ph c-{{ k.c }}" href="{{ url('partners/' ~ k.slug) }}">
+      <figure class="pk-img">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 50vw, 100vw") }}</figure>
       <span class="lbl">{{ k.k }}</span>
       <h2 class="d2">{{ k.name }}</h2>
       <p class="pk-line">{{ k.line }}</p>
