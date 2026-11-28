@@ -1,21 +1,43 @@
 {% extends "outcomes/base.html" %}
 {% import "site/_parts.html" as ui with context %}
 {% import "outcomes/_od.html" as odp with context %}
+{#- The thank-you page: the same spread as the other pages, with what happens next (all of it from
+    od.THANKS_TEXT) as a report card of glass over the photo. -#}
 {% block main %}
+{% set check %}<svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endset %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["thank-you"]) }}
 <header class="wrap hero od-thanks">
-  <span class="lbl rv fade">Thank you</span>
-  <h1 class="d1 rv"><span class="ln"><span>You&rsquo;re one step closer</span></span> <span class="ln"><span>to <span class="mk">smarter growth.</span></span></span></h1>
-  <div class="hero-foot">
-    <span class="idx rv fade">Request received</span>
-    <div class="rv fade"><p class="lead">{{ od.THANKS_TEXT }}</p></div>
-    <div class="btns rv fade">
-      <a class="btn btn-1" href="{{ url('case-studies') }}">See our case studies</a>
-      <a class="btn btn-2" href="{{ url() }}">Back to home</a>
+  <div class="od-hero-grid">
+    <div>
+      <span class="lbl rv fade">Thank you</span>
+      <h1 class="d1 rv"><span class="ln"><span>You&rsquo;re one step closer</span></span> <span class="ln"><span>to <span class="mk">smarter growth.</span></span></span></h1>
+      <p class="lead rv fade">{{ od.THANKS_TEXT }}</p>
+      <div class="btns rv fade">
+        <a class="btn btn-1" href="{{ url('case-studies') }}">See our case studies</a>
+        <a class="btn btn-2" href="{{ url() }}">Back to home</a>
+      </div>
+    </div>
+    <div class="od-board-wrap od-thanks-board rv">
+      <div class="od-board">
+        <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Request received</span><span>What happens next</span></div>
+        <ul class="od-board-rows">
+          {% for what, detail, when in [('Your request', 'Submitted successfully', 'Done'),
+                                        ('A growth specialist', 'Gets in touch with you', 'Shortly'),
+                                        ('Your goals', 'And the best strategy for your business', 'On the call')] %}
+          <li style="--d:{{ loop.index0 }}"><div class="od-board-row">
+            <span class="od-board-who"><b>{{ what }}</b><span>{{ detail }}</span></span>
+            <span class="od-board-out"><b>{{ loop.index }}</b><span>{{ when }}</span></span>
+            <span class="od-board-up{{ '' if loop.first else ' od-board-ic' }}" aria-hidden="true">{% if loop.first %}{{ check }}{% else %}<svg viewBox="0 0 16 16"><path d="M8 4.5v4l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>{% endif %}</span>
+          </div></li>
+          {% endfor %}
+        </ul>
+        <div class="od-board-foot"><img class="od-board-mark" src="/static/outcomes/img/mark.webp" alt="" width="34" height="34"><span>Questions before then? <a href="mailto:{{ od.EMAIL }}"><b>{{ od.EMAIL }}</b></a></span></div>
+      </div>
     </div>
   </div>
 </header>
-
-<div class="wrap od-band-thanks">{{ odp.band("thanks-marigold", "Heaps of orange and yellow marigold garlands at a flower market") }}</div>
+</div>
 
 {% endblock %}

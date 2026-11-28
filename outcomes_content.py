@@ -157,7 +157,8 @@ PHOTO_CREDITS = (
 # The photo in the angled window behind each inner page's opening spread (the home slides have their own).
 SPREAD_PHOTOS = {"about-us": "home-wall", "ecommerce-marketing": "ecom-hero", "education-marketing": "photo-campus",
                  "real-estate-marketing": "photo-tower", "partners": "partners-hero", "partners/agencies": "agency-hero",
-                 "partners/consultants": "consult-hero", "case-studies": "cases-hero", "contact": "contact-team"}
+                 "partners/consultants": "consult-hero", "case-studies": "cases-hero", "contact": "contact-team",
+                 "thank-you": "thanks-marigold"}
 # The photo each industry's five steps carry (the track cards on its page), in step order.
 STEP_PHOTOS = {
     "ecom": (("ecom-1", "Hands on a laptop showing sales charts"),

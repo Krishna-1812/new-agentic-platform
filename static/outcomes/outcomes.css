@@ -1259,3 +1259,9 @@ body.od .od-spread .od-cs-hero .d1 { font-size: clamp(36px, 4.2vw, 64px); }
 body.od .od-spread .od-contact .split > div:last-child > .lbl { display: none; }
 body.od .od-spread .od-contact .split > div:last-child > div { margin-top: 0 !important; }
 body.od .od-spread:has(.od-contact) { margin-bottom: var(--sec-sm); }
+/* The thank-you page: what happens next, numbered, on the glass card; the page keeps a breath before the
+   footer. */
+body.od .od-spread .od-thanks { min-height: 0; }
+body.od .od-spread:has(.od-thanks) { margin-bottom: var(--sec-sm); }
+body.od .od-thanks-board .od-board-who span { white-space: normal; overflow: visible; }
+body.od .od-thanks-board .od-board-foot a { color: #FFFFFF; text-decoration: underline; text-underline-offset: .2em; }
