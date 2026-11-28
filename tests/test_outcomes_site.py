@@ -689,8 +689,17 @@ def test_the_home_slides_open_on_photos_and_the_page_ends_on_the_clients_own_wor
     t = _text(client, site.PREFIX)
     slides = re.findall(r'<div class="od-slide [^"]*" id="slide-[\w-]+".*?</figure>', t, re.S)
     assert len(slides) == len(od.HOME_SLIDES) == 3
-    for s in slides:
-        assert '<figure class="od-slide-bg" aria-hidden="true"><img ' in s and 'alt=""' in s and "loading=" not in s
+    credits = {n: by for n, by, _ in od.PHOTO_CREDITS}
+    for (sid, _), s in zip(od.HOME_SLIDES, slides):
+        name = od.HOME_SLIDE_PHOTOS[sid]
+        # A blurred copy tints the stage; the photo itself shows in the window, credited on its corner.
+        assert '<img class="od-slide-haze" src="/static/outcomes/img/%s-1200.webp" alt=""' % name in s, sid
+        assert '<span class="od-slide-win"><img src="/static/outcomes/img/%s-1200.webp"' % name in s, sid
+        assert "Photo: %s / Unsplash" % credits[name] in s and "loading=" not in s, sid
+    # Each tab carries its slide's photo as a thumbnail.
+    tabs = t.split('<div class="od-tabs">', 1)[1].split("</div>", 1)[0]
+    for sid, _ in od.HOME_SLIDES:
+        assert '/static/outcomes/img/%s-1200.webp' % od.HOME_SLIDE_PHOTOS[sid] in tabs, sid
     assert "od-case-feature" in t
     reel = t.split('<div class="od-reel"', 1)[1].split("</div>\n</div>", 1)[0]
     assert reel.count('class="od-card"') == 2 * len(od.CLIENTS) and reel.count('aria-hidden="true"') == len(od.CLIENTS)
