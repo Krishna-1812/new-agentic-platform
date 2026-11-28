@@ -1091,8 +1091,8 @@ body.od .od-quotes-2 .od-quote figcaption { margin-top: var(--s6); }
 /* ════ v8: the slides, as an editorial spread ════
    The words sit on the plain navy at full contrast. A soft, blurred copy of the slide's photo tints the
    whole stage; the photo itself shows whole, in an angled window on the right, behind the report card.
-   As each slide comes on, its window opens from the right edge and the photo settles; the photographer is
-   credited on the window's corner, and each tab carries its slide's photo as a thumbnail. */
+   As each slide comes on, its window opens from the right edge and the photo settles, and each tab
+   carries its slide's photo as a thumbnail. */
 body.od .od-slide-bg .od-slide-haze { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px);
   object-fit: cover; opacity: .2; filter: blur(32px) saturate(.9); transform: none; transition: none; }
 body.od .od-slide-win { position: absolute; top: 0; right: 0; bottom: clamp(84px, 7.4vw, 108px); width: 50%; overflow: hidden; background: var(--nv2);
@@ -1103,9 +1103,6 @@ body.od .od-slide-win img { position: absolute; inset: 0; opacity: .92; filter: 
 body.od .od-slide.is-on .od-slide-win img { transform: none; }
 body.od .od-slide-bts .od-slide-win img { opacity: .8; }
 html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
-body.od .od-slide-cap { position: absolute; top: clamp(16px, 1.8vw, 26px); right: clamp(16px, 1.8vw, 26px); z-index: 2;
-  padding: 6px 12px; border-radius: 99px; background: rgba(8, 25, 44, .72); color: rgba(255, 255, 255, .86);
-  font-size: 11px; font-weight: 500; letter-spacing: .02em; white-space: nowrap; }
 /* The words keep clear of the window's slanted edge. */
 @media (min-width: 1001px) { body.od .od-slider .od-hero-grid > div:first-child { padding-right: clamp(20px, 2.6vw, 44px); } }
 /* The board floats over the photo. */
@@ -1121,11 +1118,9 @@ body.od .od-tab:hover .od-tab-th, body.od .od-tab.on .od-tab-th { opacity: 1; bo
   body.od .od-slide-win { top: auto; left: 0; bottom: clamp(84px, 14vw, 104px); width: auto; height: 46%; border-radius: 0;
     clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%); }
   html.js body.od .od-slide:not(.is-on) .od-slide-win { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
-  body.od .od-slide-cap { top: auto; bottom: clamp(96px, 16vw, 120px); }
 }
 @media (max-width: 760px) {
-  /* A phone shows each tab as its thumbnail alone, and leaves the credit to the larger screens. */
-  body.od .od-slide-cap { display: none; }
+  /* A phone shows each tab as its thumbnail alone. */
   body.od .od-slider .od-tab { grid-template-columns: auto; justify-items: start; }
   body.od .od-slider .od-tab-n { display: none; }
   body.od .od-tab-th { width: 44px; height: 30px; }
