@@ -841,3 +841,21 @@ def test_the_team_is_glass_over_the_city(client):
     assert "gradient" not in layer and "::after" not in layer
     assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
     assert "body.od .od-glassbed .od-person { background: var(--nv); }" in layer
+
+
+def test_the_case_studies_list_is_glass(client):
+    """On /case-studies every case study is a pane of the iOS glass over a dimmed screen of results, its
+    client's cover inset and its name, tags and three results on the glass; solid navy without blur."""
+    t = _text(client, site.PREFIX + "/case-studies")
+    bed = t.split('<section class="od-glassbed od-cases-bed">', 1)[1].split("</section>", 1)[0]
+    assert '<figure class="od-glassbed-bg" aria-hidden="true"><img ' in bed
+    assert bed.count('class="od-case-row rv fade"') == len(od.CASES)
+    for c in od.CASES:
+        assert c["name"] in bed and "/static/outcomes/img/case-%s.webp" % c["slug"] in bed
+        for fig, label, _ in c["top"]:
+            assert fig in bed and label in bed
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v15: the case studies, as glass", 1)[1]
+    assert "gradient" not in layer and "::after" not in layer
+    assert "backdrop-filter: blur(34px) saturate(1.9) brightness(.62)" in layer
+    assert "body.od .od-cases-bed .od-case-row { background: var(--nv); }" in layer

@@ -15,7 +15,10 @@
 </header>
 </div>
 
-<section class="wrap sec-sm">
+{#- The case studies, as panes of glass over a dimmed screen of results. -#}
+<section class="od-glassbed od-cases-bed">
+  <figure class="od-glassbed-bg" aria-hidden="true">{{ odp.pic("re-4", "", "100vw") }}</figure>
+  <div class="wrap">
   <div class="od-case-list">
     {% for c in od.CASES %}
     <a class="od-case-row rv fade" href="{{ url('case-study/' ~ c.slug) }}">
@@ -30,6 +33,7 @@
       </span>
     </a>
     {% endfor %}
+  </div>
   </div>
 </section>
 

@@ -1361,3 +1361,27 @@ body.od .od-glassbed .od-team-rest { gap: var(--s4); }
   body.od .od-glassbed .od-person { background: var(--nv); }
 }
 @media (max-width: 640px) { body.od .od-glassbed { margin-inline: 12px; } }
+
+/* ════ v15: the case studies, as glass ════
+   The list of case studies sits on the same navy stage as the team, over a dimmed screen of results; each
+   case study is a pane of the iOS glass, its client's cover inset in it and its name, tags and three
+   results in white on the glass. */
+body.od .od-cases-bed .od-case-row {
+  padding: 10px; gap: 0; border-radius: 28px; background: rgba(10, 28, 48, .42); color: #FFFFFF; text-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+  -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(.62); backdrop-filter: blur(34px) saturate(1.9) brightness(.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), inset 0 -1px 0 rgba(255, 255, 255, .08),
+    inset 0 0 0 1px rgba(255, 255, 255, .18), 0 30px 70px -24px rgba(0, 0, 0, .6); }
+body.od .od-cases-bed .od-case-row:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 0 0 1.5px var(--acc), 0 30px 70px -24px rgba(0, 0, 0, .6); }
+body.od .od-cases-bed .od-case-row-img { border-radius: 20px; background: var(--nv2); }
+body.od .od-cases-bed .od-case-row-body { padding: clamp(20px, 3vw, 44px); }
+body.od .od-cases-bed .od-case-row-body > b { color: #FFFFFF; }
+body.od .od-cases-bed .od-case-row-body .idx, body.od .od-cases-bed .od-case-row-body .lbl { color: rgba(255, 255, 255, .66); }
+body.od .od-cases-bed .od-case-row-figs { color: rgba(255, 255, 255, .72); }
+body.od .od-cases-bed .od-case-row-figs b { color: var(--acc); }
+body.od .od-cases-bed .od-tags .pill { background: rgba(255, 255, 255, .12); color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); text-shadow: none; }
+body.od .od-cases-bed .more { color: #FFFFFF; }
+body.od .od-cases-bed .od-case-row:hover .more { color: var(--acc); }
+body.od .od-cases-bed + .limeband { margin-top: 0; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.od .od-cases-bed .od-case-row { background: var(--nv); }
+}
