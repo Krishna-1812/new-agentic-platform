@@ -1301,3 +1301,6 @@ body.od .od-spread .book-card :is(input, textarea) { background: rgba(255, 255, 
   body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc), body.od .od-spread :is(.book-card, .od-quote, .od-float),
   body.od .od-spread .od-journey-chips li:not(:first-child) { background: var(--nv); }
 }
+/* The 404: the ways back, on the glass card; the page keeps a breath before the footer. */
+body.od .od-spread:has(.od-404) { margin-bottom: var(--sec-sm); }
+body.od .od-404-board .od-board-who span { white-space: normal; overflow: visible; }

@@ -721,7 +721,7 @@ def test_every_inner_page_opens_on_a_spread_with_a_credited_photo(client):
     code) in the angled window and a blurred copy tinting the stage; the photo is decoration (empty alt, hidden from
     screen readers), and the partner pages no longer repeat it in a band below."""
     credits = {n: by for n, by, _ in od.PHOTO_CREDITS}
-    pages = dict(od.SPREAD_PHOTOS)
+    pages = {k: v for k, v in od.SPREAD_PHOTOS.items() if k != "404"}  # the 404 has its own test
     pages.update({slug: od.SERVICE_PAGES[slug]["photo"][0] for slug, _ in od.SERVICES})
     for path, name in pages.items():
         t = _text(client, site.PREFIX + "/" + path)
@@ -796,3 +796,17 @@ def test_the_glass_is_ios_glass_and_still_reads():
     assert "inset 0 1px 0 rgba(255, 255, 255, .42)" in layer and "border-radius: 26px" in layer
     fallback = layer.split("@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {", 1)[1]
     assert "background: var(--nv)" in fallback
+
+
+def test_the_404_opens_on_glass_with_the_ways_back(client):
+    """The 404 opens on the spread with its own photo and the ways back (what we do, who we work with, the
+    case studies, the contact page) as a glass card of links, and still answers 404."""
+    r = client.get(site.PREFIX + "/no-such-page")
+    assert r.status_code == 404
+    t = html.unescape(r.get_data(as_text=True))
+    spread = t.split('<div class="od-spread">', 1)[1].split("</header>", 1)[0]
+    assert '<span class="od-slide-win"><img src="/static/outcomes/img/%s-1200.webp"' % od.SPREAD_PHOTOS["404"] in spread
+    board = spread.split('<nav class="od-board" aria-label="Ways back">', 1)[1]
+    for href in (site.url() + "#what", site.url() + "#industries", site.url("case-studies"), site.url("contact")):
+        assert 'href="%s"' % href in board, href
+    assert "isn’t here." in spread

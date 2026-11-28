@@ -158,7 +158,7 @@ PHOTO_CREDITS = (
 SPREAD_PHOTOS = {"about-us": "home-wall", "ecommerce-marketing": "ecom-hero", "education-marketing": "photo-campus",
                  "real-estate-marketing": "photo-tower", "partners": "partners-hero", "partners/agencies": "agency-hero",
                  "partners/consultants": "consult-hero", "case-studies": "cases-hero", "contact": "contact-team",
-                 "thank-you": "thanks-marigold"}
+                 "thank-you": "thanks-marigold", "404": "about-blr-2"}
 # The photo each industry's five steps carry (the track cards on its page), in step order.
 STEP_PHOTOS = {
     "ecom": (("ecom-1", "Hands on a laptop showing sales charts"),
