@@ -742,3 +742,16 @@ def test_no_page_prints_a_photo_credit(client):
     for path in PATHS:
         t = _text(client, path)
         assert "Unsplash" not in t and "Photo: " not in t and "od-slide-cap" not in t, path
+
+
+def test_what_stands_on_a_photo_is_glass_that_still_reads():
+    """The cards on the slide and page photos are frosted glass: translucent navy over a blurred, darkened
+    photo, with a solid navy fallback where the browser cannot blur; the figure tiles stay solid."""
+    css = open(os.path.join(ROOT, "static/outcomes/outcomes.css"), encoding="utf-8").read()
+    layer = css.split("/* ════ v10: glass over the photos", 1)[1]
+    assert "gradient" not in layer
+    assert "body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc) {" in layer
+    assert "backdrop-filter: blur(22px) saturate(1.4) brightness(.72)" in layer and "-webkit-backdrop-filter" in layer
+    fallback = layer.split("@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {", 1)[1]
+    assert "background: var(--nv)" in fallback
+    assert ".od-board-sum" not in layer.split("background: rgba(8, 25, 44", 1)[0]
