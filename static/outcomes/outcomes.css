@@ -1009,10 +1009,8 @@ body.od .od-cta-img { border-radius: var(--r); aspect-ratio: 4 / 3; box-shadow: 
 @media (max-width: 1000px) { body.od .od-cta-img { margin-top: var(--s6); aspect-ratio: 16 / 9; } }
 
 /* Contact: a photo under the heading. */
-body.od .od-contact-ph { margin-top: var(--s6); border-radius: var(--r-lg); aspect-ratio: 16 / 9; }
 /* A band followed by an ink band keeps a section's breath between them. */
 body.od .wrap:has(> .od-band) + :is(.inkband, .limeband) { margin-top: var(--sec-sm); }
-body.od .od-contact .od-contact-ph { margin-top: var(--s7); }
 body.od .pk.c-orange .lbl { color: var(--nv); }
 
 /* ════ v7: the home page, finished ════
@@ -1166,18 +1164,18 @@ body.od .od-spread :is(.od-calc, .od-float, .od-journey-chips li, .od-mosaic-til
 body.od .od-spread .od-hero-pic { min-height: clamp(380px, 34vw, 500px); }
 @media (min-width: 1001px) {
   /* The words keep clear of the window's slanted edge. */
-  body.od .od-spread :is(.od-hero-grid, .od-ind-grid) > div:first-child { padding-right: clamp(20px, 2.6vw, 44px); }
+  body.od .od-spread :is(.od-hero-grid, .od-ind-grid, .split) > div:first-child { padding-right: clamp(20px, 2.6vw, 44px); }
   /* A page with nothing on the right keeps its words to the left half. */
-  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) > * { max-width: 48%; }
-  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) .hero-foot { grid-template-columns: 1fr; gap: var(--s5); }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid, .split)) > * { max-width: 48%; }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid, .split)) .hero-foot { grid-template-columns: 1fr; gap: var(--s5); }
 }
 @media (max-width: 1000px) {
   /* Stacked: a page with something on the right keeps the window behind it, in the lower part; a page
      without shows the photo as a slanted strip along the bottom. */
   body.od .od-spread .od-slide-win { height: 44%; }
-  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) { padding-bottom: clamp(220px, 50vw, 300px); }
-  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) ~ .od-slide-win,
-  body.od .od-spread:not(:has(.od-hero-grid, .od-ind-grid)) .od-slide-win { height: clamp(200px, 46vw, 280px); }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid, .split)) { padding-bottom: clamp(220px, 50vw, 300px); }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid, .split)) ~ .od-slide-win,
+  body.od .od-spread:not(:has(.od-hero-grid, .od-ind-grid, .split)) .od-slide-win { height: clamp(200px, 46vw, 280px); }
   body.od .od-spread .od-hero-pic { min-height: 300px; }
 }
 @media (max-width: 640px) { body.od .od-spread { margin-inline: 12px; } }
@@ -1185,11 +1183,11 @@ body.od .od-spread .od-hero-pic { min-height: clamp(380px, 34vw, 500px); }
 body.od .od-spread .d1 { font-size: clamp(38px, 4.4vw, 68px); line-height: 1.02; }
 body.od .od-spread .od-svc-hero .d1, body.od .od-spread .od-ind-hero .d1 { font-size: clamp(36px, 4vw, 62px); }
 @media (min-width: 1001px) {
-  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid)) > * { max-width: 50%; }
+  body.od .od-spread > .hero:not(:has(.od-hero-grid, .od-ind-grid, .split)) > * { max-width: 50%; }
 }
 /* Stacked, the window is a fixed height, so it starts below the words however long they run. */
 @media (max-width: 1000px) {
-  body.od .od-spread:has(.od-hero-grid, .od-ind-grid) .od-slide-win { height: clamp(300px, 76vw, 360px); }
+  body.od .od-spread:has(.od-hero-grid, .od-ind-grid, .split) .od-slide-win { height: clamp(300px, 76vw, 360px); }
   body.od .od-spread .od-hero-pic { margin-top: var(--s4); }
 }
 
@@ -1232,3 +1230,32 @@ body.od .od-spread .od-float span, body.od .od-spread .od-float i { color: rgba(
   body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc), body.od .od-spread .od-journey-chips li:not(:first-child),
   body.od .od-spread .od-float { background: var(--nv); }
 }
+
+/* ════ v11: the contact page and the case studies, on glass ════
+   Contact opens on the spread with its form as a pane of the same glass: light fields on the frosted navy,
+   a white line under the field in use. A case study opens on its client's own cover, with its three
+   headline results as a report card of glass. */
+body.od .od-spread .book-card, body.od .od-spread .od-quote {
+  --ink: #FFFFFF; --ink2: rgba(255, 255, 255, .82); --ink3: rgba(255, 255, 255, .66);
+  --rule: rgba(255, 255, 255, .16); --rule-strong: rgba(255, 255, 255, .3);
+  background: rgba(8, 25, 44, .6); color: #FFFFFF;
+  -webkit-backdrop-filter: blur(22px) saturate(1.4) brightness(.72); backdrop-filter: blur(22px) saturate(1.4) brightness(.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 0 0 1px rgba(255, 255, 255, .1), 0 40px 80px -28px rgba(0, 0, 0, .7); }
+body.od .od-spread .book-card :is(input, textarea) { color: #FFFFFF; caret-color: var(--acc); }
+body.od .od-spread .book-card :is(input, textarea):-webkit-autofill { -webkit-text-fill-color: #FFFFFF; box-shadow: inset 0 0 0 40px #13283F; }
+body.od .od-spread .book-card .f-err { color: #FFB199; }
+body.od .od-spread .book-card :is(.f-done h3, .f-done p) { color: #FFFFFF; }
+body.od .od-spread .od-quote :is(blockquote, figcaption, figcaption b, figcaption span) { color: #FFFFFF; }
+body.od .od-spread .od-quote figcaption span span { color: rgba(255, 255, 255, .7); }
+body.od .od-spread .ledger-row a:not(.btn) { color: #FFFFFF; text-decoration: underline; text-underline-offset: .2em; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.od .od-spread :is(.book-card, .od-quote) { background: var(--nv); }
+}
+/* The case study's results card: its lines wrap, so each reads in full. */
+body.od .od-cs-board .od-board-who span { white-space: normal; overflow: visible; }
+body.od .od-cs-board .od-board-out b { font-size: clamp(30px, 2.8vw, 42px); }
+body.od .od-spread .od-cs-hero .d1 { font-size: clamp(36px, 4.2vw, 64px); }
+/* The form needs no label over the photo, and the page keeps a breath before the footer. */
+body.od .od-spread .od-contact .split > div:last-child > .lbl { display: none; }
+body.od .od-spread .od-contact .split > div:last-child > div { margin-top: 0 !important; }
+body.od .od-spread:has(.od-contact) { margin-bottom: var(--sec-sm); }

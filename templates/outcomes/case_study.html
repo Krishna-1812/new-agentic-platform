@@ -3,6 +3,8 @@
 {% import "outcomes/_od.html" as odp with context %}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(cover="/static/outcomes/img/case-" ~ case.slug ~ ".webp") }}
 <header class="wrap hero od-cs-hero">
   <div class="od-ind-grid">
     <div>
@@ -12,20 +14,25 @@
       <p class="lead rv fade" style="margin-top:var(--s5)">{{ case.sub }}</p>
       <span class="od-small rv fade" style="display:block">Prepared by {{ od.BRAND }}</span>
     </div>
-    <div class="od-cs-cover rv fade"><img src="/static/outcomes/img/case-{{ case.slug }}.webp" alt="{{ case.name }}" width="900" height="810"></div>
+    {#- The headline results, as a report card on the client's own cover. -#}
+    <div class="od-board-wrap od-cs-board rv">
+      <div class="od-board">
+        <div class="od-board-top"><span class="od-live"><i aria-hidden="true"></i>Results</span><span>{{ case.date }}</span></div>
+        <ul class="od-board-rows">
+          {% for fig, label, line in case.top %}
+          <li style="--d:{{ loop.index0 }}"><div class="od-board-row">
+            <span class="od-board-who"><b>{{ label }}</b><span>{{ line }}</span></span>
+            <span class="od-board-out"><b>{{ fig }}</b></span>
+            <span class="od-board-up" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div></li>
+          {% endfor %}
+        </ul>
+        <div class="od-board-foot"><span><b>{{ case.name }}</b> &middot; {{ case.category }}</span></div>
+      </div>
+    </div>
   </div>
 </header>
-
-<section class="wrap">
-  <div class="blks blks-3">
-    {% for fig, label, line in case.top %}
-    <article class="blk c-{{ ['orange', 'amber', 'sky'][loop.index0] }}">
-      <div class="blk-price">{{ fig }}<small>{{ label }}</small></div>
-      <p>{{ line }}</p>
-    </article>
-    {% endfor %}
-  </div>
-</section>
+</div>
 
 <section class="wrap sec">
   <span class="rule rv"></span>
