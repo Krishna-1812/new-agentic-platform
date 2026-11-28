@@ -3,6 +3,8 @@
 {% import "outcomes/_od.html" as odp with context %}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["about-us"]) }}
 <header class="wrap hero">
   <div class="od-hero-grid">
     <div>
@@ -20,6 +22,7 @@
     </div>
   </div>
 </header>
+</div>
 
 <section class="wrap sec-sm" id="team">
   <span class="rule rv"></span>

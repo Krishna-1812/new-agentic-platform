@@ -3,6 +3,8 @@
 {% import "outcomes/_od.html" as odp with context %}
 {% block main %}
 
+<div class="od-spread">
+{{ odp.slide_bg(od.SPREAD_PHOTOS["case-studies"]) }}
 <header class="wrap hero">
   <span class="lbl rv fade">Case Studies</span>
   <h1 class="d1 rv"><span class="ln"><span>Case</span></span> <span class="ln"><span><span class="mk">studies.</span></span></span></h1>
@@ -11,6 +13,7 @@
     <div class="rv fade"><ul class="od-case-index">{% for c in od.CASES %}<li><a href="{{ url('case-study/' ~ c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>
   </div>
 </header>
+</div>
 
 <section class="wrap sec-sm">
   <div class="od-case-list">

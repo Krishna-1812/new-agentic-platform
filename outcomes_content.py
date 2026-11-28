@@ -151,7 +151,13 @@ PHOTO_CREDITS = (
     ("consult-hero", "Maranda Vandergriff", "7aakZdIl4vg"), ("contact-team", "Jud Mackrill", "Of_m3hMsoAA"),
     ("thanks-marigold", "Gayatri Malhotra", "A1VgRnA0nfI"), ("slide-northaxis", "Ewan Buck", "xc9B3i-1QiI"),
     ("slide-bts", "Kartabya Aryal", "dA5KOwv6APY"), ("home-skyline", "Mahadev Ittina", "sEDewKyq6YM"),
+    ("ecom-hero", "Dan Burton", "oNlMfgwLbWI"), ("partners-hero", "Austin Distel", "wD1LRb9OeEo"),
+    ("cases-hero", "Markus Winkler", "IrRbSND5EUc"),
 )
+# The photo in the angled window behind each inner page's opening spread (the home slides have their own).
+SPREAD_PHOTOS = {"about-us": "home-wall", "ecommerce-marketing": "ecom-hero", "education-marketing": "photo-campus",
+                 "real-estate-marketing": "photo-tower", "partners": "partners-hero", "partners/agencies": "agency-hero",
+                 "partners/consultants": "consult-hero", "case-studies": "cases-hero"}
 # The photo each industry's five steps carry (the track cards on its page), in step order.
 STEP_PHOTOS = {
     "ecom": (("ecom-1", "Hands on a laptop showing sales charts"),
