@@ -1192,3 +1192,43 @@ body.od .od-spread .od-svc-hero .d1, body.od .od-spread .od-ind-hero .d1 { font-
   body.od .od-spread:has(.od-hero-grid, .od-ind-grid) .od-slide-win { height: clamp(300px, 76vw, 360px); }
   body.od .od-spread .od-hero-pic { margin-top: var(--s4); }
 }
+
+/* ════ v10: glass over the photos ════
+   Whatever stands on a slide's or a page's photo (the report cards, the estimator, the journey, the proof)
+   is frosted glass: a deep navy you can half see through, the photo behind it blurred and brightened, a
+   fine light edge on top and a soft shadow under. The words on it stay white, the small print a step down,
+   and the orange and pale figure tiles stay solid, so every figure still reads at full contrast. */
+body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc) {
+  background: rgba(8, 25, 44, .6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4) brightness(.72); backdrop-filter: blur(22px) saturate(1.4) brightness(.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 0 0 1px rgba(255, 255, 255, .1), 0 40px 80px -28px rgba(0, 0, 0, .7); }
+/* The rows inside are a lighter pane of the same glass. */
+body.od :is(.od-slider, .od-spread) :is(.od-board-rows a, .od-board-rows .od-board-row) {
+  background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
+body.od :is(.od-slider, .od-spread) .od-board-rows a:hover { background: rgba(255, 255, 255, .13); }
+body.od :is(.od-slider, .od-spread) .od-board-who span { color: rgba(255, 255, 255, .7); }
+body.od :is(.od-slider, .od-spread) .od-board-out span, body.od :is(.od-slider, .od-spread) .od-board-foot { color: rgba(255, 255, 255, .82); }
+body.od :is(.od-slider, .od-spread) .od-board-top { color: rgba(255, 255, 255, .66); }
+body.od :is(.od-slider, .od-spread) .od-board-foot { border-top-color: rgba(255, 255, 255, .14); }
+body.od :is(.od-slider, .od-spread) .od-board-ic { background: rgba(255, 255, 255, .12); }
+body.od :is(.od-slider, .od-spread) .od-board-sum div { box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .5); }
+body.od :is(.od-slider, .od-spread) .od-faces img, body.od :is(.od-slider, .od-spread) .od-chips i { box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); border-color: transparent; }
+/* The estimator's lines, labels and steppers on the glass. */
+body.od .od-spread .od-calc-hd { border-bottom-color: rgba(255, 255, 255, .14); }
+body.od .od-spread :is(.od-calc-l, .od-calc-ends) { color: rgba(255, 255, 255, .7); }
+body.od .od-spread .od-step { border-color: rgba(255, 255, 255, .3); }
+/* The journey and the proof, as small panes of the same glass. */
+body.od .od-spread .od-journey-chips li, body.od .od-spread .od-float {
+  background: rgba(8, 25, 44, .66); color: #FFFFFF;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) brightness(.62); backdrop-filter: blur(16px) saturate(1.4) brightness(.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 0 0 1px rgba(255, 255, 255, .12), 0 18px 40px -16px rgba(0, 0, 0, .6); }
+body.od .od-spread .od-journey-chips li .idx { color: var(--acc); opacity: 1; }
+body.od .od-spread .od-journey-chips li:first-child { background: var(--acc); color: var(--nv); }
+body.od .od-spread .od-journey-chips li:first-child .idx { color: var(--nv); }
+body.od .od-spread .od-float b { color: var(--acc); }
+body.od .od-spread .od-float span, body.od .od-spread .od-float i { color: rgba(255, 255, 255, .86); }
+/* Where the browser cannot blur what is behind, the glass is solid navy, so the words still read. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.od :is(.od-slider, .od-spread) :is(.od-board, .od-calc), body.od .od-spread .od-journey-chips li:not(:first-child),
+  body.od .od-spread .od-float { background: var(--nv); }
+}
