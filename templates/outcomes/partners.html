@@ -23,13 +23,16 @@
   <div class="pks">
     {% for k in site.PARTNER_KINDS %}
     {% set ph = {'agencies': ('partner-agency', 'Three people laughing together over their laptops'), 'consultants': ('partner-consult', 'Two people talking across a table in a sunlit room')}[k.slug] %}
-    <a class="pk pk-ph c-{{ k.c }}" href="{{ url('partners/' ~ k.slug) }}">
+    {#- The photo fills the card; the words sit on a pane of glass over its lower part. -#}
+    <a class="pk pk-ph pk-glass c-{{ k.c }}" href="{{ url('partners/' ~ k.slug) }}">
       <figure class="pk-img">{{ odp.pic(ph[0], ph[1], "(min-width: 1000px) 50vw, 100vw") }}</figure>
-      <span class="lbl">{{ k.k }}</span>
-      <h2 class="d2">{{ k.name }}</h2>
-      <p class="pk-line">{{ k.line }}</p>
-      <ul class="ticks">{% for p in k.points %}<li>{{ p }}</li>{% endfor %}</ul>
-      <span class="pk-go">See how it works {{ ui.arrow() }}</span>
+      <span class="pk-pane">
+        <span class="lbl">{{ k.k }}</span>
+        <h2 class="d2">{{ k.name }}</h2>
+        <p class="pk-line">{{ k.line }}</p>
+        <ul class="ticks">{% for p in k.points %}<li>{{ p }}</li>{% endfor %}</ul>
+        <span class="pk-go">See how it works {{ ui.arrow() }}</span>
+      </span>
     </a>
     {% endfor %}
   </div>
